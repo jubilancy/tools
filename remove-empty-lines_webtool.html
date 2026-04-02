@@ -1,0 +1,66 @@
+<textarea id="input" rows="10" cols="60"></textarea>
+<br>
+<button id="remove">Remove empty lines</button>
+<button id="copy">Copy result</button>
+<br>
+<textarea id="output" rows="10" cols="60"></textarea>
+
+<script>
+  function removeEmptyLines(text) {
+    return text
+      .split(/\r?\n/)
+      .filter(line => line.trim() !== '')
+      .join('\n');
+  }
+
+  // Fallback copy function that works even when Clipboard API is blocked
+  function copyToClipboard(text) {
+    // Try modern Clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(() => alert('Copied!'))
+        .catch(err => {
+          // If blocked, use fallback
+          fallbackCopy(text);
+        });
+    } else {
+      // Use fallback directly
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';  // Prevent scrolling
+    textarea.style.opacity = '0';       // Hide it
+    document.body.appendChild(textarea);
+    textarea.select();
+    
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        alert('Copied!');
+      } else {
+        alert('Copy failed');
+      }
+    } catch (err) {
+      alert('Copy failed: ' + err);
+    }
+    
+    document.body.removeChild(textarea);
+  }
+
+  const input  = document.getElementById('input');
+  const output = document.getElementById('output');
+  const removeBtn = document.getElementById('remove');
+  const copyBtn   = document.getElementById('copy');
+
+  removeBtn.addEventListener('click', () => {
+    output.value = removeEmptyLines(input.value);
+  });
+
+  copyBtn.addEventListener('click', () => {
+    copyToClipboard(output.value);
+  });
+</script>

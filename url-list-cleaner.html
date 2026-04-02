@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="This list cleaning tool to filter URL lists. Duplicate URLs or domains will be removed, sorted, clean them up by leaving one URL per domain or only unique URLs.">
+    <meta name="csrf-token" content="JBeZ0PixIde17MduQqF2F3AifZVg2KuZ7T5i0IgG">
+
+
+    <meta property="og:title" content="URL List Cleaner - Get Sorted Unique Domain URLs" />
+    <meta property="og:description" content="This list cleaning tool to filter URL lists. Duplicate URLs or domains will be removed, sorted, clean them up by leaving one URL per domain or only unique URLs." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.coderstool.com/url-list-cleaner" />
+    <meta property="og:image" content="https://www.coderstool.com/img/og/2/web-page-tools.png" />
+    <meta property="og:site_name" content="No Code Developers Tools - CodersTool.com" />
+    <meta name="twitter:title" content="URL List Cleaner - Get Sorted Unique Domain URLs" />
+    <meta name="twitter:description" content="This list cleaning tool to filter URL lists. Duplicate URLs or domains will be removed, sorted, clean them up by leaving one URL per domain or only unique URLs.">
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:image" content="https://www.coderstool.com/img/og/2/web-page-tools.png" />
+    <meta name="twitter:site" content="@CodersTool" />
+    <link rel="shortcut icon" href="https://www.coderstool.com/img/favicon.png">
+    <link rel="apple-touch-icon" href="https://www.coderstool.com/img/apple-touch-icon.png">
+    <title>URL List Cleaner - Get Sorted Unique Domain URLs</title>
+    <link rel="canonical" href="https://www.coderstool.com/url-list-cleaner" />
+
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    <link rel="dns-prefetch" href="https://ajax.googleapis.com">
+    <link rel="dns-prefetch" href="https://apis.google.com">
+    <link rel="dns-prefetch" href="https://www.gstatic.com">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//www.google-analytics.com">
+
+    <link rel="prefetch" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,300" as="style" />
+
+
+
+    <!-- Modified Bootstrap CSS to preload and load asynchronously 
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
+    </noscript>
+    -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
+
+    <noscript id="deferred-styles">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.3/toastr.min.css" integrity="sha256-R91pD48xW+oHbpJYGn5xR0Q7tMhH4xOrWn1QqMRINtA=" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tarekraafat-autocomplete.js/10.2.7/css/autoComplete.min.css">
+    </noscript>
+
+    <link rel="stylesheet" href="https://www.coderstool.com/css/app-main.css?id=9401ab15d5f72dd56a63ae73fbcf6ada">
+    <style>
+        #commands .cleaner-btn {
+            outline: none;
+            margin: 0 0 .6em .6em;
+        }
+    </style>
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "@id": "https://www.coderstool.com/#organization",
+            "name": "CodersTool",
+            "url": "https://www.coderstool.com",
+            "logo": "https://www.coderstool.com/img/coderstool-card.png",
+            "sameAs": ["https://twitter.com/CodersTool", "https://www.facebook.com/CodersTool", "https://www.pinterest.com/CodersTool", "https://www.youtube.com/c/CodersTool"]
+        }
+    </script>
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "@id": "https://www.coderstool.com/#website",
+            "url": "https://www.coderstool.com",
+            "name": "CodersTool",
+            "publisher": {
+                "@id": "https://www.coderstool.com/#organization"
+            },
+            "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://www.coderstool.com/search?query={query}",
+                "query-input": "required name=query"
+            }
+        }
+    </script>
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "@id": "https://www.coderstool.com/url-list-cleaner/#webpage",
+            "url": "https://www.coderstool.com/url-list-cleaner",
+            "name": "URL List Cleaner - Get Sorted Unique Domain URLs",
+            "description": "This list cleaning tool to filter URL lists. Duplicate URLs or domains will be removed, sorted, clean them up by leaving one URL per domain or only unique URLs.",
+            "isPartOf": {
+                "@id": "https://www.coderstool.com/#website"
+            },
+            "publisher": {
+                "@id": "https://www.coderstool.com/#organization"
+            }
+        }
+    </script>
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "@id": "https://www.coderstool.com/url-list-cleaner/#app",
+            "name": "URL List Cleaner - Get Sorted Unique Domain URLs",
+            "applicationCategory": "UtilityApplication",
+            "operatingSystem": "Any",
+            "url": "https://www.coderstool.com/url-list-cleaner",
+            "description": "This list cleaning tool to filter URL lists. Duplicate URLs or domains will be removed, sorted, clean them up by leaving one URL per domain or only unique URLs.",
+            "isAccessibleForFree": true,
+            "publisher": {
+                "@id": "https://www.coderstool.com/#organization"
+            }
+        }
+    </script> <!-- Google Tag Manager -->
+    <script>
+        (function(w, d, s, l, i) {
+            w[l] = w[l] || [];
+            w[l].push({
+                'gtm.start': new Date().getTime(),
+                event: 'gtm.js'
+            });
+            var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s),
+                dl = l != 'dataLayer' ? '&l=' + l : '';
+            j.async = true;
+            j.src =
+                'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+            f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-N3K3V2J');
+    </script>
+    <!-- End Google Tag Manager -->
+</head>
+
+<body>
+    <script>
+        document.documentElement.setAttribute('data-bs-theme', localStorage.getItem('themeMode') || 'light');
+    </script>
+
+    <div id="wrapper">
+        <div class="container-fluid">
+            <nav class="navbar navbar-expand-lg" style="min-height:26px;">
+                <a class="navbar-brand" href="https://www.coderstool.com"><img id="ctlogo" src="https://www.coderstool.com/img/logo-header.png" height="44" width="136" alt="CodersTool"></a>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav justify-content-end flex-grow-1 pe-4" style="white-space: nowrap;">
+                        <li class="nav-item position-relative">
+                            <form id="page-box" class="page-search d-flex" role="search">
+                                <input type="text" class="form-control" name="q" maxlength="15" placeholder="Search for tools" autocomplete="off" id="search">
+                                <div class="page-search__icon"><i class="fa fa-search"></i></div>
+                            </form>
+                            <ul class="list-inline list-group-accent search-results" id="index-results"></ul>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/sitemap">Sitemap</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                SEO
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/text-content-tools">Text Content Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/seo-tools">SEO Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/backlinks-tool">Link Building Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/meta-tags">Web Code Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/security-tools">Security Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/web-page-tools">Web Page Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/web-tools">Website Tools</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Coding
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/test-data-tools">Test Data Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/time-tools">Time Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/network-tools">Network Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/designer-tools">Designer Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/color-conversion">Color Conversion Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/data-format-conversion">Data Format Conversion Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/unicode-utf-tools">Unicode UTF Converter</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/image-editing-tools">Image Editing Tools</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Programing
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/database-tools">Database Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/encode-decode-tools">Encode Decode Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/conversion-tools">Programmer Calculator</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/dev-tools">Developer Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/sorting-algorithms">Sorting Algorithms</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/code-editor-tools">Code Editor Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/encryption-tools">Encryption Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/base64-tools">Base64 Tools</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                General
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/tags/team-building">Team Building</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/unit-conversion-tools">Unit Converters</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/charting-tools">Charting Tools</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/cheat-sheets">Cheat Sheets</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/financial-tools">Financial Tools</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Tutorials
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/quiz">MCQ Quiz</a></li>
+                                <li><a class="dropdown-item" href="https://www.coderstool.com/snippets">Snippets</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" aria-current="page" href="https://www.coderstool.com/blog">Blog</a>
+                        </li>
+                        <li class="nav-item px-2 page-mode__icon">
+                            <a class="nav-link" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E4NPAWCPZHMBW"><strong>
+                                    <i class="fa fa-coffee fa-2 pe-2" aria-hidden="true"></i></strong></a>
+                        </li>
+                        <li class="nav-item px-2 page-mode__icon">
+                            <a class="nav-link dark-mode-icon" href="#" title="Change theme" data-theme-toggle aria-label="Change theme">
+                                <svg width="1em" height="1em" class="dmicon">
+                                    <use xlink:href="#theme-1"></use>
+                                </svg>
+                            </a>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="d-none">
+                                <defs>
+                                    <symbol id="theme-m" viewBox="0 0 16 16">
+                                        <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"></path>
+                                    </symbol>
+                                </defs>
+                            </svg><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="d-none">
+                                <defs>
+                                    <symbol id="theme-s" viewBox="0 0 16 16">
+                                        <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"></path>
+                                        <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"></path>
+                                    </symbol>
+                                </defs>
+                            </svg>
+                        </li>
+                    </ul>
+                </div>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+            </nav>
+        </div>
+        <div id="page-wrapper" class="pt-2 pb-4">
+            <div class="row">
+                <div class="adsense adsense--inline--4" style="">
+                    <ins style="display:block; width: 100%; height: 100%;" data-ad-format="fluid" data-full-width-responsive="true" data-ad-client="ca-pub-8651993678496444" data-ad-slot="6444728631"></ins>
+                    <p class="adsense__loading"><span>&hellip;</span></p>
+                </div>
+                <div class="col-xs-12">
+                    <div class="sharing-buttons-end">
+                        <ul class="list-unstyled social-buttons d-flex">
+                            <li class="mx-1"><a class="" href="#"><span data-social="twitter" title="twitter" style="display:inline-block; width:16px; height:16px;" class="fa-brands fa-twitter"></span></a></li>
+                            <li class="mx-1"><a class="" href="#"><span data-social="facebook" title="facebook" style="display:inline-block; width:16px; height:16px;" class="fa-brands fa-facebook"></span></a></li>
+                            <li class="mx-1"><a class="" href="#"><span data-social="linkedin" title="linkedin" style="display:inline-block; width:16px; height:16px;" class="fa-brands fa-linkedin"></span></a></li>
+                            <li class="mx-1"><a class="" href="#"><span data-social="reddit" title="reddit" style="display:inline-block; width:16px; height:16px;" class="fa-brands fa-reddit"></span></a></li>
+                        </ul>
+                    </div>
+
+                    <div class="d-flex align-items-center list-programs-title">
+                        <h1 id="title">URL List Cleaner <i id="favToolImg" class="hideden" style="cursor: pointer; font-size:large;" aria-hidden="true" class="fa fa-star-o" title="make it favourite"></i></h1>
+                        <div class="ms-auto lh-1">
+                            <a href="https://www.coderstool.com/web-page-tools" title="Show tools in this category"><i class="fa fa-sliders fa-2x"></i></a>
+                        </div>
+                    </div>
+
+                    <span class="clearfix">
+                        <div class="float-end">
+
+                            <ul class="tags">
+                                <li class="tag"><a class="nav-link" href="https://www.coderstool.com/tags/sort">Sort</a></li>
+                                <li class="tag"><a class="nav-link" href="https://www.coderstool.com/web-page-tools">Web</a></li>
+                            </ul>
+                        </div>
+                    </span>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="title">URL List Cleaner - remove duplicates, sorted domain list</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="mb-4">
+                                    <div class="card-body">
+                                        <form><input type="hidden" name="_token" value="JBeZ0PixIde17MduQqF2F3AifZVg2KuZ7T5i0IgG" autocomplete="off">
+                                            <div class="form-group">
+                                                <div class="col-md-12">
+                                                    <label>Enter your URLs to Clean</label>
+                                                    <textarea placeholder="Enter one URL per line then 'Clean Your List'" required="" class="form-control" rows="8" id="linklist"></textarea>
+                                                    <div class="code_buttons">
+                                                        <label id="linecount"></label>
+                                                        <span class="go_right">
+                                                            <button id="undochange" class="buttonsm btn-outline-secondary"><i class="fa fa-rotate-left"></i> Undo</button></button>
+                                                            <button id="singlecopy" data-label="Copy to clipboard" class="buttonsm">
+                                                                <i class="fa fa-clipboard"></i> Copy</button>
+                                                            <button type="reset" class="buttonsm btn-outline-secondary"> <i class="fa-regular fa-file"></i> Clear</button></button>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="clearfix"></div>
+                                            <br />
+                                            <div class="row form-group">
+                                                <div id="commands">
+                                                    <div class="col-md-12">
+                                                        <button id="parseUrl" class="cleaner-btn btn btn-primary">Extract URLs</button>
+                                                        <button id="addhttp" class="cleaner-btn btn btn-primary">Add https://www.</button>
+                                                    </div>
+                                                    <div class="col-md-12">
+                                                        <button id="rtdomain" class="cleaner-btn btn btn-primary">Root Domain</button>
+                                                        <button id="madomain" class="cleaner-btn btn btn-primary">Main Domain</button>
+                                                        <button id="root" class="cleaner-btn btn btn-primary">Trim to Root</button>
+                                                        <button id="subfolder" class="cleaner-btn btn btn-primary">Trim to Subfolder</button>
+                                                        <button id="delslash" class="cleaner-btn btn btn-primary col-1-2">Trim Ending /</button>
+                                                    </div>
+                                                    <div class="col-md-12">
+                                                        <button id="urls" class="cleaner-btn btn btn-primary">Remove Duplicate URLs</button>
+                                                        <button id="domains" class="cleaner-btn btn btn-primary">Remove Duplicate Domain</button>
+                                                        <button id="removehttp" class="cleaner-btn btn btn-primary">Remove https Variations</button>
+                                                        <button id="removewww" class="cleaner-btn btn btn-primary">Remove www.</button>
+
+                                                    </div>
+                                                    <div class="col-md-12">
+                                                        <button id="httpsort" class="cleaner-btn btn btn-secondary">Sort by Line</button>
+                                                        <button id="sort_domain_tld" class="cleaner-btn btn btn-secondary">Sort by
+                                                            Domain+TLD</button>
+                                                        <button id="sort_domain" class="cleaner-btn btn btn-secondary">Sort by Domain</button>
+                                                        <button id="sort_tld" class="cleaner-btn btn btn-secondary">Sort by TLD</button>
+                                                        <button id="sort_length" class="cleaner-btn btn btn-secondary">Sort by Length</button>
+                                                        <button id="sort_random" class="cleaner-btn btn btn-secondary">Sort Random</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="clearfix"></div>
+                                            <div class="py-2 __gas"> </div>
+                                            <br />
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <input type="hidden" id="identifier" value="AJ58">
+                        </div>
+                    </div>
+                    <div class="my-4">
+                        <span class="list-programs-title related-tools mb-2 h5">Try These Related Tools</span>
+                        <div class="d-flex flex-wrap">
+                            <div class="bs_listing bs_sm">
+                                <a href="https://www.coderstool.com/utm-link-builder">
+                                    <div class="bs_sm">UTM Link Builder</div>
+                                </a>
+                            </div>
+                            <div class="bs_listing bs_sm">
+                                <a href="https://www.coderstool.com/url-link-splitter-parse-query">
+                                    <div class="bs_sm">URL Splitter</div>
+                                </a>
+                            </div>
+                            <div class="bs_listing bs_sm">
+                                <a href="https://www.coderstool.com/page-speed-test">
+                                    <div class="bs_sm">Web Page Speed Checker</div>
+                                </a>
+                            </div>
+                            <div class="bs_listing bs_sm">
+                                <a href="https://www.coderstool.com/website-page-size-checker">
+                                    <div class="bs_sm">Website Page Size Checker</div>
+                                </a>
+                            </div>
+                            <div class="bs_listing bs_sm">
+                                <a href="https://www.coderstool.com/pagespeed-insights-checker">
+                                    <div class="bs_sm">Pagespeed Insights Checker</div>
+                                </a>
+                            </div>
+                            <div class="bs_listing bs_sm">
+                                <a href="https://www.coderstool.com/redirect-checker">
+                                    <div class="bs_sm">Redirect Checker</div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="adsense adsense--inline--3" style="">
+                            <ins style="display:block; width: 100%; height: 100%;" data-ad-format="fluid" data-full-width-responsive="true" data-ad-client="ca-pub-8651993678496444" data-ad-slot="6444728631"></ins>
+                            <p class="adsense__loading"><span>&hellip;</span></p>
+                        </div>
+                        <div class="content-info">
+                            <h3>What is a URL List Cleaner?</h3>
+                            <p>A URL list cleaner is a tool or software that helps clean and organize a list of URLs by removing duplicates, sorting them, and validating their format. These tools are often used by webmasters, web admins, SEO professionals, and digital marketers to manage and analyze large lists of URLs for various purposes. The main functions of a URL list cleaner typically include the following:</p>
+                            <ol>
+                                <li><strong>Removing duplicates</strong>: The tool identifies and removes duplicate URLs from the list to ensure only unique URLs remain.</li>
+                                <li><strong>Sorting</strong>: It sorts URLs alphabetically, by length, or by other criteria, making it easier to analyze and manage the list.</li>
+                                <li><strong>Validating format</strong>: A URL list cleaner checks the format of each URL to ensure it adheres to the standard structure (e.g., "<a href="https://www.example.com/">https://www.example.com</a>"). It may also remove or flag URLs that do not conform to the standard format.</li>
+                                <li><strong>Removing unwanted elements</strong>: Some URL cleaners can remove specific elements or parameters from the URLs, such as tracking parameters or query strings, to create cleaner and more readable lists.</li>
+                                <li><strong>Filtering</strong>: Advanced URL list cleaners may offer filtering options, including or excluding URLs containing specific keywords or matching certain patterns.</li>
+                            </ol>
+                            <p>These tools can be standalone applications, web-based services, or plugins integrated into popular SEO and analytics software. URL list cleaners help streamline the process of working with large lists of URLs, making it easier to identify and focus on relevant and high-quality links.</p>
+                            <h3>Why break a url string into separate parts</h3>
+                            <p>This tool aids in the filtering of URL lists. Duplicate URLs or domains will be removed, leaving only the first URL detected. All variations of http://, https://, http://www., and https:// will be removed from the beginning of any URL if you use Remove HTTP Variations. Add https://www. to the beginning of all URLs that do not already have a https:// prefix.<br><br>This list cleaning tool is so powerful: It allows you to merge lists from different sources and clean them up by leaving one URL per domain or only unique URLs.&nbsp;We extract domain names from websites (URLs) or text such as HTML source code and display domain names.</p>
+                            <h3>How to Use Our Trim URLs to Root Domain Tool?</h3>
+                            <p>The tool is quite simple to use. Follow these steps to reduce the URL to the root domain:</p>
+                            <ol>
+                                <li>Create a list of URLs on excel that you want to convert to the domain name and standardize</li>
+                                <li>Copy the list and paste the complete URL into the Trim URL input section.</li>
+                                <li>Click on the approriate button for perform a clean function</li>
+                                <li>Your result will appear in the input box</li>
+                            </ol>
+                            <h3>What you can Remove from a URL</h3>
+                            <p>If a URL contains a question mark or a pound symbol, you can usually remove anything after it and still have a functional link. That's all there is to it.<br>Please keep in mind that removing items may cause changes to the page you're loading.<br>If you remove an anchor link, the link will send you to the entire website rather than a specific section. If you're not sure, copy and paste the clean URL into a browser. It will work for others if it works for you.</p>
+                            <p>If you don't want to do the guesswork, you can use the URL Cleaner tool to handle your cleanup. Simply paste the messed-up URL, and it will return the clean version.</p>
+                            <p>Alternatively, the Token Stripper for Chrome and Firefox automatically eliminates UTM, tracking tokens and unnecassary parts from every page you visit if you'd rather never see code like this in URLs you copy.</p>
+                            <h3>Domain Cleaner for Lists of Domains, URLs, Web Links</h3>
+                            <p>Domain cleaning is best used for lists of domains and URLs. To get a clean list of domains, throw in messy URLs to remove duplicates and invalid data.</p>
+                            <p>The online utility lets users generate by a list of clean, sorted, and deduplicated URLs, with options for selectively include/exclude specific directory or folder path. Use it to remove tracking codes, strip tracking parameters, UTM tags and clean/strip characters from text/URL list.</p>
+                            <p>&nbsp;</p>
+                            <h3>Section 1: Building a Strong Foundation Through Clean URLs</h3>
+                            <p><i>Explore essential tips and best practices for refining your links so your site’s URL structure truly supports your SEO goals.</i></p>
+                            <h3>Minimizing Duplicate URLs for Better SEO</h3>
+                            <p>Duplicate URLs can hurt your search engine rankings by splitting link equity and confusing crawlers. When you clean up duplicates, you streamline how search engines index your pages. By consolidating content under a single, canonical URL, you ensure crawlers direct all their attention to your most relevant pages. You also help prevent accidental duplication that might cause keyword cannibalization. In short, a tidy, duplicate-free URL list is one of the most straightforward ways to boost your overall SEO strategy.</p>
+                            <h3>Avoiding Malicious or Spammy Links</h3>
+                            <p>You’ll want to guard your site and content against links that lead to unwanted or harmful destinations. Malicious and spammy URLs not only jeopardize the safety of your audience but can also diminish your site’s trustworthiness in the eyes of search engines. By routinely cleaning and filtering out suspicious links, you reinforce your reputation and provide a secure experience. Staying vigilant helps you protect your SEO performance and the integrity of your brand’s online presence.</p>
+                            <h3>Navigating Subdomains and Folders</h3>
+                            <p>When cleaning your URL lists, it’s crucial to consider how subdomains and folder structures affect your website’s navigation. Subdomains can segment your content, while separate folders can help organize related materials. If you’re managing multiple subdomains or deep folder hierarchies, a systematic approach to cleaning ensures you keep each area organized and consistent. Clear, well-structured URLs reduce visitor confusion, aiding both human users and search bots in quickly finding the right content. Over time, such clarity pays off in better rankings.</p>
+                            <h3>Checking for Broken Links and 404 Errors</h3>
+                            <p>Broken links and 404 errors leave a poor impression on visitors and impede search engine crawlers. When you remove or fix these problems, you enhance user experience and help maintain a logical site structure. Incorporating automated checks into your URL cleaning process can quickly identify problematic links that need updating or redirecting. By proactively addressing broken links, you ensure your website continues functioning smoothly, minimizing user frustration and retaining valuable “link juice” for relevant pages.</p>
+                            <h3>Section 2: Elevating Your URL Management Techniques</h3>
+                            <p><i>Delve deeper into advanced methods and complementary strategies that help you effectively organize, optimize, and analyze your URLs.</i></p>
+                            <h3>Understanding the Impact of Query Parameters on Traffic</h3>
+                            <p>Query parameters can provide valuable data but also clutter your URLs when used excessively. By selectively managing or removing these parameters, your URL structure remains concise and user-friendly. An overly complicated URL with irrelevant parameters can deter visitors and complicate analytics tracking. On the other hand, preserving the right parameters can offer insights for targeted marketing campaigns. Striking a balance between clarity and data collection is the key to optimizing your URL list for traffic.</p>
+                            <h3>Crafting SEO-Friendly Slugs</h3>
+                            <p>A well-crafted slug can make a big difference in how search engines interpret your page’s content. When you shorten and refine your URL slugs, you provide immediate clarity about your page’s topic. By focusing on relevant keywords and eliminating unnecessary words, you improve both user readability and crawl efficiency. As part of the cleaning process, reviewing existing slugs is wise, ensuring they’re descriptive, consistent, and aligned with current SEO standards. This approach helps every URL pull its weight online.</p>
+                            <h3>Sorting and Classifying Your URLs</h3>
+                            <p>Effective URL management often depends on how you sort and classify your links. You can rapidly identify which URLs need attention by assigning categories or tags—such as product pages, blog posts, or external references. This streamlined approach makes it easier to apply bulk edits, remove outdated content, or isolate specific sets of links for deeper analysis. As you refine your workflow, you’ll appreciate how consistent naming conventions and logical groupings simplify future clean-ups and ongoing site maintenance.</p>
+                            <h3>Integrating Your URL Work with Other SEO Tools</h3>
+                            <p>Maximizing your site’s performance involves more than just a clean URL list. Integrating your cleaning efforts with other SEO solutions—like keyword analytics platforms, rank trackers, and backlink monitoring tools—forms a complete picture of your site’s health. Doing so makes spotting trends, opportunities, and potential issues easier across multiple data points. By making URL list cleaning part of a broader toolkit, you’ll more effectively boost rankings and preserve a smooth, user-friendly experience.</p>
+                        </div>
+                    </div>
+                    <blockquote class="blockquote">
+                        <p>Computer coding is a life skill for this generation.</p>
+                        <footer class="blockquote-footer">Tamara Zentis MS</footer>
+                    </blockquote><br>
+
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row mt-4" style="padding:0;margin:16px 0; min-height:100px;">
+            <div class="adsense " style="">
+                <ins style="display:block; width: 100%; height: 100%;" data-ad-format="fluid" data-full-width-responsive="true" data-ad-client="ca-pub-8651993678496444" data-ad-slot="6444728631"></ins>
+                <p class="adsense__loading"><span>&hellip;</span></p>
+            </div>
+        </div>
+    </div>
+    <div id="footertool" class="border-top pt-2 pb-5">
+        <div class="container">
+            <div class="fs-4 my-2 text-center">CodersTool Categories</div>
+            <div class="row align-items-start">
+                <div class="col">
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/text-content-tools">
+                            <div class="bs_sm">Text Content Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/seo-tools">
+                            <div class="bs_sm">SEO Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/backlinks-tool">
+                            <div class="bs_sm">Link Building Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/meta-tags">
+                            <div class="bs_sm">Web Code Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/security-tools">
+                            <div class="bs_sm">Security Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/web-page-tools">
+                            <div class="bs_sm">Web Page Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/web-tools">
+                            <div class="bs_sm">Website Tools</div>
+                        </a>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/test-data-tools">
+                            <div class="bs_sm">Test Data Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/time-tools">
+                            <div class="bs_sm">Time Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/network-tools">
+                            <div class="bs_sm">Network Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/designer-tools">
+                            <div class="bs_sm">Designer Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/color-conversion">
+                            <div class="bs_sm">Color Conversion Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/data-format-conversion">
+                            <div class="bs_sm">Data Format Conversion Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/unicode-utf-tools">
+                            <div class="bs_sm">Unicode UTF Converter</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/image-editing-tools">
+                            <div class="bs_sm">Image Editing Tools</div>
+                        </a>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/database-tools">
+                            <div class="bs_sm">Database Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/encode-decode-tools">
+                            <div class="bs_sm">Encode Decode Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/conversion-tools">
+                            <div class="bs_sm">Programmer Calculator</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/dev-tools">
+                            <div class="bs_sm">Developer Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/sorting-algorithms">
+                            <div class="bs_sm">Sorting Algorithms</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/code-editor-tools">
+                            <div class="bs_sm">Code Editor Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/encryption-tools">
+                            <div class="bs_sm">Encryption Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/base64-tools">
+                            <div class="bs_sm">Base64 Tools</div>
+                        </a>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/unit-conversion-tools">
+                            <div class="bs_sm">Unit Converters</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/charting-tools">
+                            <div class="bs_sm">Charting Tools</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/cheat-sheets">
+                            <div class="bs_sm">Cheat Sheets</div>
+                        </a>
+                    </div>
+                    <div class="bs_listing bs_sm">
+                        <a href="https://www.coderstool.com/financial-tools">
+                            <div class="bs_sm">Financial Tools</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div>
+        <footer id="footer" class="pt-4 pt-md-5">
+            <div class="container">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="pt-2">
+                            <a class="navbar-brand" href="https://www.coderstool.com"><img id="ctlogof" src="https://www.coderstool.com/img/logo-header.png" height="44" width="136" alt="CodersTool"></a>
+                        </div>
+                        <p class="pt-2">Free world-class online tool for all. We provide the opportunity to progress through technology & develop tomorrow’s skills.</p>
+                        <div class="pb-4">
+                            <div class="_chromext">
+                                <a href="https://chrome.google.com/webstore/detail/bmojppephkmpfcpobohhohljicnkdpnh" target="_blank" rel="noopener" class="">
+                                    <i class="fa-brands fa-chrome"></i> Get Chrome Extension</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="h3 fw-6 pb-2">Links</div>
+                        <ul class="list-unstyled">
+                            <li><a class="list-inline-item border-0 py-1" href="https://www.coderstool.com/sitemap">Site Map</a></li>
+                            <li><a class="list-inline-item border-0 py-1" href="https://www.coderstool.com/contact">Contact</a></li>
+                            <li><a class="list-inline-item border-0 py-1" href="https://www.coderstool.com/about">About</a></li>
+                            <li><a class="list-inline-item border-0 py-1" href="https://www.coderstool.com/blog">Blog </a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="h3 fw-6 pb-3">Support Us</div>
+                        <div class="sharing-buttons-start">
+                            <ul class="list-unstyled social-buttons d-flex">
+                                <li class="mx-1"><a class="" href="#"><span data-social="twitter" title="twitter" style="display:inline-block; width:16px; height:16px;" class="fa-brands fa-twitter"></span></a></li>
+                                <li class="mx-1"><a class="" href="#"><span data-social="facebook" title="facebook" style="display:inline-block; width:16px; height:16px;" class="fa-brands fa-facebook"></span></a></li>
+                                <li class="mx-1"><a class="" href="#"><span data-social="linkedin" title="linkedin" style="display:inline-block; width:16px; height:16px;" class="fa-brands fa-linkedin"></span></a></li>
+                                <li class="mx-1"><a class="" href="#"><span data-social="reddit" title="reddit" style="display:inline-block; width:16px; height:16px;" class="fa-brands fa-reddit"></span></a></li>
+                            </ul>
+                        </div>
+                        <span class="text-muted pt-1">If you find this tool helpful, please share it with others.</span>
+                        <div class="py-3">
+                            <a class="pe-3" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E4NPAWCPZHMBW"><strong>
+                                    Buy Us A <i class="fa fa-coffee fa-2 pe-2" aria-hidden="true"></i></strong></a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="h3 fw-6 pb-2">Follow Us</div>
+                        <div class="social-buttons mt-3">
+                            <a href="https://www.facebook.com/CodersTool" target="_blank" rel="nofollow noopener">
+                                <span class="fa-brands fa-square-facebook"></span>
+                            </a>
+                            <a href="https://x.com/CodersTool" target="_blank" rel="nofollow noopener">
+                                <span class="fa-brands fa-square-twitter"></span>
+                            </a>
+                            <a href="https://github.com/coderstool-com" target="_blank" rel="nofollow noopener" alt="CodersTool on GitHub">
+                                <span class="fa-brands fa-square-github"></span>
+                            </a>
+                            <a href="https://www.youtube.com/c/CodersTool?sub_confirmation=1" target="_blank" rel="nofollow noopener">
+                                <span class="fa-brands fa-square-youtube"></span>
+                            </a>
+                            <a href="https://www.pinterest.com/CodersTool" target="_blank" rel="nofollow noopener">
+                                <span class="fa-brands fa-square-pinterest"></span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center border-top border-success-subtle py-3">
+                    <span class="list-inline">
+                        <span class="list-inline-item border-0">&copy; 2026 CodersTool. All rights reserved. </span>
+                        | <a class="list-inline-item border-0 px-3" href="https://www.coderstool.com/privacy">Privacy</a>
+                        | <a class="list-inline-item border-0 px-3" href="https://www.coderstool.com/terms">Terms of Use</a> |
+                    </span>
+                </div>
+        </footer>
+    </div>
+
+
+
+
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script async src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script async src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.min.js"></script>
+    <script async src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.3/toastr.min.js"></script>
+
+    <!-- Changed local all.js to load with defer -->
+    <script defer src="https://www.coderstool.com/js/all.js?id=08f5d62535dd31c676c168dbdea174d5"></script>
+    <script defer src="https://www.coderstool.com/js/adsenseLoader.js?id=f4f0d0fb35fadfb61806ca02ae55d56a"></script>
+
+    <script async src="//cdnjs.cloudflare.com/ajax/libs/goodshare.js/6.1.5/goodshare.min.js"></script>
+
+    <script defer src="https://www.coderstool.com/js/c_url.js?id=51d74b6220ddd1227f329c665325df8b"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            CodersTool.url_link_clean();
+        });
+    </script>
+    <script>
+        var loadDeferredStyles = function() {
+            var addStylesNode = document.getElementById("deferred-styles");
+            var replacement = document.createElement("div");
+            replacement.innerHTML = addStylesNode.textContent;
+            document.body.appendChild(replacement)
+            addStylesNode.parentElement.removeChild(addStylesNode);
+        };
+        var raf = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+            window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+        if (raf) raf(function() {
+            window.setTimeout(loadDeferredStyles, 0);
+        });
+        else window.addEventListener('load', loadDeferredStyles);
+
+        document.addEventListener("DOMContentLoaded", function() {
+            CodersTool.init();
+            CodersTool.app_search();
+            // CodersTool.app_search2();
+        });
+    </script>
+    <script async src="https://www.coderstool.com/js/modetheme.js?id=3b94051ff14be7cf58ca6112cb740723"></script>
+    <script defer src="https://www.coderstool.com/dist/js/core/adsloader.js?id=2c355aecccc9b38f8589b23e6288e33e"></script>
+    <script type="text/javascript">
+        (function(c, l, a, r, i, t, y) {
+            c[a] = c[a] || function() {
+                (c[a].q = c[a].q || []).push(arguments)
+            };
+            t = l.createElement(r);
+            t.async = 1;
+            t.src = "https://www.clarity.ms/tag/" + i;
+            y = l.getElementsByTagName(r)[0];
+            y.parentNode.insertBefore(t, y);
+        })(window, document, "clarity", "script", "fl0a00r3nk");
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"831b7dd3fbce4511a94eb2e6f47fb0e3","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+
+</html>

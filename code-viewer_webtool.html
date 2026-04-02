@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Online Viewer - Live Preview & Editor</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 400;
+            margin-bottom: 10px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn-success { background: #27ae60; }
+        .btn-success:hover { background: #229954; }
+
+        .btn-warning { background: #f39c12; }
+        .btn-warning:hover { background: #e67e22; }
+
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+
+        .btn-secondary { background: #95a5a6; }
+        .btn-secondary:hover { background: #7f8c8d; }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 120px);
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .editor-panel, .preview-panel {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: #34495e;
+            color: white;
+            padding: 10px 15px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #editor {
+            flex: 1;
+            width: 100%;
+            font-size: 14px;
+            position: relative;
+        }
+
+        #preview {
+            flex: 1;
+            border: none;
+            background: white;
+            width: 100%;
+        }
+
+        .status-bar {
+            background: #ecf0f1;
+            padding: 5px 15px;
+            font-size: 12px;
+            color: #7f8c8d;
+            border-top: 1px solid #bdc3c7;
+        }
+
+        .kbd {
+            background: #34495e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .toolbar {
+                font-size: 12px;
+            }
+
+            .btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>HTML Online Viewer</h1>
+        <div class="toolbar">
+            <button class="btn btn-success" onclick="previewInTab()" title="Alt+1">
+                📄 Preview
+            </button>
+            <button class="btn btn-success" onclick="highlightInTab()" title="Alt+2">
+                🎨 Highlight
+            </button>
+            <button class="btn" onclick="formatHTML()" title="Alt+3">
+                ✨ Format
+            </button>
+            <button class="btn btn-secondary" onclick="expandAll()" title="Alt+4">
+                ➕ Expand All
+            </button>
+            <button class="btn btn-secondary" onclick="collapseAll()" title="Alt+5">
+                ➖ Collapse All
+            </button>
+            <button class="btn btn-warning" onclick="loadSample()" title="Alt+6">
+                📝 Sample
+            </button>
+            <button class="btn btn-danger" onclick="clearEditor()" title="Alt+7">
+                🗑️ Clear
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="editor-panel">
+            <div class="panel-header">
+                <span>HTML Editor</span>
+                <span class="kbd">Ctrl+Enter to preview</span>
+            </div>
+            <div id="editor"></div>
+            <div class="status-bar">
+                Line: <span id="line">1</span>, Column: <span id="column">1</span> | 
+                Lines: <span id="lines">0</span>
+            </div>
+        </div>
+
+        <div class="preview-panel">
+            <div class="panel-header">
+                <span>Live Preview</span>
+                <label style="font-weight: normal; cursor: pointer;">
+                    <input type="checkbox" id="autoPreview" checked style="cursor: pointer;"> Auto-update
+                </label>
+            </div>
+            <iframe id="preview"></iframe>
+        </div>
+    </div>
+
+    <!-- Load libraries from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.0/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.11/beautify-html.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <script>
+        // Wait for Ace to load
+        function initEditor() {
+            // Initialize Ace Editor
+            const editor = ace.edit("editor");
+            editor.setTheme("ace/theme/monokai");
+            editor.session.setMode("ace/mode/html");
+            editor.setOptions({
+                fontSize: "14px",
+                showPrintMargin: false,
+                enableBasicAutocompletion: true,
+                enableLiveAutocompletion: true,
+                wrap: true,
+                foldStyle: "markbegin",
+                tabSize: 4,
+                useSoftTabs: true,
+                showFoldWidgets: true
+            });
+
+            // Set default HTML
+            const defaultHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Preview</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f8f9fa;
+        }
+        h1 { 
+            color: #2c3e50; 
+            margin-bottom: 20px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Welcome to HTML Online Viewer</h1>
+        <p>Start editing the HTML on the left to see live preview here!</p>
+        <ul>
+            <li>Edit HTML in real-time</li>
+            <li>See instant preview</li>
+            <li>Format your code</li>
+            <li>Expand/collapse code blocks</li>
+        </ul>
+    </div>
+</body>
+</html>`;
+
+            editor.setValue(defaultHTML, -1);
+
+            // Update status bar
+            editor.session.selection.on('changeCursor', function() {
+                const cursor = editor.getCursorPosition();
+                document.getElementById('line').textContent = cursor.row + 1;
+                document.getElementById('column').textContent = cursor.column + 1;
+                document.getElementById('lines').textContent = editor.session.getLength();
+            });
+
+            // Auto-preview functionality
+            let previewTimeout;
+            editor.session.on('change', function() {
+                if (document.getElementById('autoPreview').checked) {
+                    clearTimeout(previewTimeout);
+                    previewTimeout = setTimeout(updatePreview, 500);
+                }
+            });
+
+            // Make editor globally accessible
+            window.aceEditor = editor;
+
+            // Initial preview and stats
+            updatePreview();
+            document.getElementById('lines').textContent = editor.session.getLength();
+        }
+
+        // Update preview
+        function updatePreview() {
+            const html = window.aceEditor.getValue();
+            const preview = document.getElementById('preview');
+            const previewDoc = preview.contentDocument || preview.contentWindow.document;
+            previewDoc.open();
+            previewDoc.write(html);
+            previewDoc.close();
+        }
+
+        // Preview in new tab
+        function previewInTab() {
+            const html = window.aceEditor.getValue();
+            const newTab = window.open();
+            newTab.document.write(html);
+            newTab.document.close();
+        }
+
+        // Highlight in new tab
+        function highlightInTab() {
+            const html = window.aceEditor.getValue();
+            const escapedHtml = html
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+
+            const newTab = window.open();
+            newTab.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Highlighted Code</title>
+                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai.min.css">
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"><\/script>
+                    <style>
+                        body {
+                            margin: 0;
+                            padding: 20px;
+                            background: #272822;
+                        }
+                        pre {
+                            margin: 0;
+                            white-space: pre-wrap;
+                            word-wrap: break-word;
+                        }
+                        code {
+                            font-family: 'Courier New', monospace;
+                            font-size: 14px;
+                            line-height: 1.5;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <pre><code class="language-html">${escapedHtml}</code></pre>
+                    <script>hljs.highlightAll();<\/script>
+                </body>
+                </html>
+            `);
+            newTab.document.close();
+        }
+
+        // Format HTML
+        function formatHTML() {
+            const html = window.aceEditor.getValue();
+            const formatted = html_beautify(html, {
+                indent_size: 4,
+                indent_char: ' ',
+                max_preserve_newlines: 2,
+                preserve_newlines: true,
+                wrap_line_length: 0,
+                end_with_newline: true
+            });
+            window.aceEditor.setValue(formatted, -1);
+        }
+
+        // Expand all folds
+        function expandAll() {
+            const editor = window.aceEditor;
+            const session = editor.session;
+
+            // Get all fold ranges and unfold them
+            session.unfold(null, true);
+        }
+
+        // Collapse all folds
+        function collapseAll() {
+            const editor = window.aceEditor;
+            const session = editor.session;
+
+            // Get the total number of lines
+            const totalLines = session.getLength();
+
+            // Track which lines we've already folded
+            const foldedLines = new Set();
+
+            // Iterate through all lines and fold where possible
+            for (let row = 0; row < totalLines; row++) {
+                if (foldedLines.has(row)) continue;
+
+                // Try to create a fold at this row
+                const range = session.getFoldWidgetRange(row);
+
+                if (range) {
+                    // Add a fold at this position
+                    session.addFold("...", range);
+
+                    // Mark all lines in this fold as processed
+                    for (let i = range.start.row; i <= range.end.row; i++) {
+                        foldedLines.add(i);
+                    }
+
+                    // Skip to the end of the fold
+                    row = range.end.row;
+                }
+            }
+        }
+
+        // Load sample
+        function loadSample() {
+            const defaultHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Preview</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f8f9fa;
+        }
+        h1 { 
+            color: #2c3e50; 
+            margin-bottom: 20px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Welcome to HTML Online Viewer</h1>
+        <p>Start editing the HTML on the left to see live preview here!</p>
+        <ul>
+            <li>Edit HTML in real-time</li>
+            <li>See instant preview</li>
+            <li>Format your code</li>
+            <li>Expand/collapse code blocks</li>
+        </ul>
+    </div>
+</body>
+</html>`;
+            window.aceEditor.setValue(defaultHTML, -1);
+            updatePreview();
+        }
+
+        // Clear editor
+        function clearEditor() {
+            if (confirm('Are you sure you want to clear the editor?')) {
+                window.aceEditor.setValue('', -1);
+                updatePreview();
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.altKey) {
+                switch(e.key) {
+                    case '1': previewInTab(); e.preventDefault(); break;
+                    case '2': highlightInTab(); e.preventDefault(); break;
+                    case '3': formatHTML(); e.preventDefault(); break;
+                    case '4': expandAll(); e.preventDefault(); break;
+                    case '5': collapseAll(); e.preventDefault(); break;
+                    case '6': loadSample(); e.preventDefault(); break;
+                    case '7': clearEditor(); e.preventDefault(); break;
+                }
+            }
+
+            // Ctrl+Enter to preview
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                updatePreview();
+                e.preventDefault();
+            }
+        });
+
+        // Initialize editor when Ace is loaded
+        if (typeof ace !== 'undefined') {
+            initEditor();
+        } else {
+            window.addEventListener('load', function() {
+                setTimeout(initEditor, 100);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Guestbook</title>
+    <style>
+        canvas { border: 1px solid #ccc; }
+        button { padding: 8px 16px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Sign My Guestbook</h1>
+    
+    <canvas id="canvas" width="500" height="500"></canvas>
+    <br>
+    <button onclick="clearCanvas()">Clear</button>
+    <button onclick="saveEntry()">Save</button>
+    
+    <h2>Entries</h2>
+    <div id="entries"></div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+
+        canvas.addEventListener('mousedown', () => isDrawing = true);
+        canvas.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            ctx.fillRect(e.clientX - rect.left, e.clientY - rect.top, 3, 3);
+        });
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function saveEntry() {
+            const imageData = canvas.toDataURL();
+            const entries = JSON.parse(localStorage.getItem('guestbook') || '[]');
+            entries.push({
+                image: imageData,
+                date: new Date().toLocaleString()
+            });
+            localStorage.setItem('guestbook', JSON.stringify(entries));
+            clearCanvas();
+            displayEntries();
+        }
+
+        function displayEntries() {
+            const entries = JSON.parse(localStorage.getItem('guestbook') || '[]');
+            document.getElementById('entries').innerHTML = entries
+                .map(e => `<div><img src="${e.image}" width="200"><p>${e.date}</p></div>`)
+                .join('');
+        }
+
+        displayEntries();
+    </script>
+</body>
+</html>
