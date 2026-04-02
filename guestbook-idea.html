@@ -1,273 +1,271 @@
 <!DOCTYPE html>
-<html lang="en-US">
+<html lang="en" class="dark">
+
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>Sign Guestbook - Good Enough</title>
-  <meta name="color-scheme" content="light dark">
-  <meta name="csrf-param" content="authenticity_token" />
-<meta name="csrf-token" content="EWaHT0cfjbWZ8n-vwiyx1WNa_9AolsvW8a9_8A3Ob9nNGEXCeJgZHV4UVJ9dSjoaeTo4SpMm-DfRDZNmF7UwCA" />
-  
-    <link rel="icon" href="https://cdn.u.pika.page/Vw1ZipyEjyw7CABOT8z7W14RfZRbHJnyT3GlwqzA6No/fn:ge-avatar-xs/plain/s3://pika-production/vm179ttyxs3mz04nmavqz9phmfvf" type="image/png">
-    <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.u.pika.page/Vw1ZipyEjyw7CABOT8z7W14RfZRbHJnyT3GlwqzA6No/fn:ge-avatar-xs/plain/s3://pika-production/vm179ttyxs3mz04nmavqz9phmfvf">
-  <meta name="title" content="Sign Guestbook - Good Enough">
-<meta name="description" content="We used to have a little printer, but now we have this digital guestbook. You can leave us a little drawing, or a little note, if you’d like (would you...">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta property="og:site_name" content="Good Enough">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://goodenough.us/guestbook/entries/new">
-  <meta property="og:title" content="Sign Guestbook - Good Enough">
-  <meta property="og:image:alt" content="Sign Guestbook - Good Enough">
-  <meta property="og:description" content="We used to have a little printer, but now we have this digital guestbook. You can leave us a little drawing, or a little note, if you’d like (would you...">
-  <meta property="og:locale" content="en_US">
-      <meta property="og:image" content="https://goodenough.us/social_previews/guestbook.png">
-  <meta name="twitter:image" content="https://goodenough.us/social_previews/guestbook.png">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guestbook | tools.eliana.lol</title>
 
-
-  
-  <link rel="stylesheet" href="/assets/application-b52e211fca5a3cbe80fb54488585cb95f80e01b9df42c59da9a04e3eac23d9d9.css" data-turbo-track="reload" />
-    <script type="importmap" data-turbo-track="reload">{"imports":{"@hotwired/turbo-rails":"/assets/turbo.min-38d030897e3554a265d3a3b6bdf4fb7509b08197ba2b6e3761683c07e776c1bc.js","@hotwired/stimulus":"/assets/stimulus.min-dd364f16ec9504dfb72672295637a1c8838773b01c0b441bd41008124c407894.js","guestbook":"/assets/guestbook-b3a714ffbc28c8228e23e5b36aa0a6cbe33c0710b67fa757bf239c7a94d981c7.js","controllers/auto_expanding_textarea_controller":"/assets/controllers/auto_expanding_textarea_controller-b7d3acb914869f6301a6f3f560da2f315d6f530f91e4d6312ca7617e17e9418f.js","controllers/guestbook/canvas_to_image_controller":"/assets/controllers/guestbook/canvas_to_image_controller-ea19eae496583f45558aa9a15673e957e06599b5b0c4cbd0e5f91c830168679c.js","controllers/guestbook/entry_type_swapper_controller":"/assets/controllers/guestbook/entry_type_swapper_controller-1c41714e79bf0d0f8fc19e711f0546cc911a7447597fd27af196097f24ba9b88.js","controllers/guestbook/paint_controller":"/assets/controllers/guestbook/paint_controller-64a057bcb070b9e7bb1aefbfb1e59be5bb6e483a152caafcaf0b1397ef95372b.js","controllers/site_view/retarget_links_controller":"/assets/controllers/site_view/retarget_links_controller-01b5f07bb27c9d4951c44c8bdbc3241864f13cd0603cc610004f7ced86a29474.js"}}</script>
-<link rel="modulepreload" href="/assets/turbo.min-38d030897e3554a265d3a3b6bdf4fb7509b08197ba2b6e3761683c07e776c1bc.js">
-<link rel="modulepreload" href="/assets/stimulus.min-dd364f16ec9504dfb72672295637a1c8838773b01c0b441bd41008124c407894.js">
-<link rel="modulepreload" href="/assets/guestbook-b3a714ffbc28c8228e23e5b36aa0a6cbe33c0710b67fa757bf239c7a94d981c7.js">
-<link rel="modulepreload" href="/assets/controllers/auto_expanding_textarea_controller-b7d3acb914869f6301a6f3f560da2f315d6f530f91e4d6312ca7617e17e9418f.js">
-<link rel="modulepreload" href="/assets/controllers/guestbook/canvas_to_image_controller-ea19eae496583f45558aa9a15673e957e06599b5b0c4cbd0e5f91c830168679c.js">
-<link rel="modulepreload" href="/assets/controllers/guestbook/entry_type_swapper_controller-1c41714e79bf0d0f8fc19e711f0546cc911a7447597fd27af196097f24ba9b88.js">
-<link rel="modulepreload" href="/assets/controllers/guestbook/paint_controller-64a057bcb070b9e7bb1aefbfb1e59be5bb6e483a152caafcaf0b1397ef95372b.js">
-<link rel="modulepreload" href="/assets/controllers/site_view/retarget_links_controller-01b5f07bb27c9d4951c44c8bdbc3241864f13cd0603cc610004f7ced86a29474.js">
-<script type="module" nonce="true">import 'guestbook'</script>
-
-
-    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
-  <link rel="preload" as="style" href="https://fonts.bunny.net/css?family=ibm-plex-mono:400,400i,500,500i,600,600i,700,700i&display=swap">
-  <link rel="stylesheet" href="https://fonts.bunny.net/css?family=ibm-plex-mono:400,400i,500,500i,600,600i,700,700i&display=swap" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="https://fonts.bunny.net/css?family=ibm-plex-mono:400,400i,500,500i,600,600i,700,700i&display=swap"></noscript>
-
-
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="rgb(228, 233, 226)">
-    <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="rgb(25, 28, 26)">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+    <link rel="stylesheet" href="global.css">
 
     <style>
-      /* IMAGE BORDER */
-.site-post-78476 img[alt="Good Enough’s Letterbird form"],
-.site-post-75714 img[alt="Social preview for this post"] {
-  border: 1px solid var(--color-border) !important;
-}
-
-/* LAB BLOCKS */
-.site-page-1452 blockquote {
-  display: grid !important;
-  gap: var(--space-M) !important;
-  grid-template-columns: 4rem 1fr !important;
-  * {
-    margin: 0 !important;
-  }
-}
-@media (min-width: 500px) {
-  .site-page-1452 blockquote {
-    gap: var(--space-L) !important;
-    grid-template-columns: clamp(4rem, 16%, 6rem) 1fr !important;
-  }
-}
-
-/* FOOTER */
-.user-site-footer .trix-content ul {
-  list-style: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  li {
-    display: inline !important;
-    margin-right: calc(var(--space-XS) + 1ch) !important;
-  }
-  p {
-    display: inline-block !important;
-    margin-block: 0 !important;
-  }
-  + p { 
-    margin-top: 0 !important;
-  }
-}
-
-
-/* SOME FIX THAT SHOULD BE FOR ALL BLOGS */
-.trix-content blockquote + p:last-child:has(br) {
-  display: none !important;
-}
-    </style>
-      <style>
-        html > body.site-view > footer.pika-branding,
-        html > body.site-view > footer.pika-branding > a,
-        html > body.site-view > footer.pika-branding > a[href*="pika"] {
-          color: var(--color-txt) !important;
-          background: transparent !important;
-          border-radius: 0 !important;
-          box-shadow: none !important;
-          display: block !important;
-          filter: none !important;
-          font-size: 1rem !important;
-          line-height: var(--base-line-height) !important;
-          margin: 0 auto !important;
-          opacity: 1 !important;
-          transform: none !important;
-          visibility: visible !important;
-          width: min-content !important;
+        /* 2. Tool-Specific Styles (Cleaned up from the original) */
+        :root {
+            --gb-paper: #ffffff;
+            --gb-pen: #000000;
         }
-      </style>
 
-  <script src="https://plausible.io/js/pa-ICLElNzG_CNbhYKTO1ASX.js" async="async"></script><script>
-//<![CDATA[
-window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
-plausible.init()
+        .dark :root {
+            --gb-paper: #1e293b;
+            --gb-pen: #f8fafc;
+        }
 
-//]]>
-</script>
+        .guestbook-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        canvas {
+            border: 2px solid #334155;
+            background: var(--gb-paper);
+            cursor: crosshair;
+            touch-action: none;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 8px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(51, 65, 85, 0.1);
+            border-radius: 8px;
+        }
+
+        .tool-btn {
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .tool-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            background: rgba(51, 65, 85, 0.1);
+            border: 1px solid #334155;
+            border-radius: 6px;
+            margin-top: 5px;
+            color: inherit;
+        }
+    </style>
 </head>
 
-<body class="site-view site-new-guestbook-entry  color-theme-gameboy font-theme-monospace"
-      data-controller='image-zoom lazy-load'>
-  <div id="top"></div>
+<body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased min-h-screen flex flex-col">
 
-  <div id="flash"></div>
-
-    <header class="site-header">
-      <div>
-        <h2 class="m-0"><a href="https://goodenough.us/">Good Enough</a></h2>
-        <nav class="site-nav">
-            <a href="https://goodenough.us/lab">Lab</a>
-            <a href="https://goodenough.us/posts">Blog</a>
-            <a href="https://goodenough.us/guestbook">Guestbook</a>
-            <a href="https://goodenough.us/contact">Contact</a>
-        </nav>
-      </div>
-    </header>
-
-    <hr class="mt-L">
-
-  <main class="site-main">
-    
-
-<div class="guestbook-entry-form">
-  <h1>Sign Guestbook</h1>
-
-  <form data-controller="canvas-to-image entry-type-swapper" data-action="submit-&gt;canvas-to-image#convertCanvasToImage" data-turbo="false" action="/guestbook/entries" accept-charset="UTF-8" method="post"><input type="hidden" name="authenticity_token" value="-7yzd3cb6TRviN4Lnv_rw3gQe5XVYvm51Ju7NUvncT8bSCSdySU0Xb51ULYEkk-KH5064FtGkXQ6EHzpyA03Qg" />
-
-    <div>
-      <div class="field">
-        <fieldset class="radio-toggle guestbook-toggle">
-          <label>
-            <input type="radio" name="draw_or_write" id="draw_or_write_draw" value="draw" data-action="click-&gt;entry-type-swapper#draw" data-entry-type-swapper-target="drawButton" checked="checked" />
-            Draw a picture
-</label>          <label>
-            <input type="radio" name="draw_or_write" id="draw_or_write_write" value="write" data-action="click-&gt;entry-type-swapper#write" data-entry-type-swapper-target="writeButton" />
-            Type a message
-</label>        </fieldset>
-      </div>
-      <div class="field">
-        <div class="paper" id="paper" data-controller="paint" data-entry-type-swapper-target="drawingField">
-          <div class="content">
-            <div id="controls">
-              <div>
-                <button type="button" id="pencil" title="Pen tool" class="selected">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" viewBox="0 0 512 512" fill="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M36.4 360.9L13.4 439 1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1L73 498.6l78.1-23c12.4-3.6 23.7-9.9 33.4-18.4c1.4-1.2 2.7-2.5 4-3.8L492.7 149.3c21.9-21.9 24.6-55.6 8.2-80.5c-2.3-3.5-5.1-6.9-8.2-10L453.3 19.3c-25-25-65.5-25-90.5 0L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4zm46 13.5c1.7-5.6 4.5-10.8 8.4-15.2c.6-.6 1.1-1.2 1.7-1.8L321 129 383 191 154.6 419.5c-4.7 4.7-10.6 8.2-17 10.1l-23.4 6.9L59.4 452.6l16.1-54.8 6.9-23.4z"/></svg>
-                </button>
-                <button type="button" id="eraser" title="Eraser tool">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" viewBox="0 0 576 512" fill="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M97 319c-9.4 9.4-9.4 24.6 0 33.9l72 72c4.5 4.5 10.6 7 17 7H294.1c6.4 0 12.5-2.5 17-7l65-65L216 200 97 319zM285.1 63c28.1-28.1 73.7-28.1 101.8 0L513 189.1c28.1 28.1 28.1 73.7 0 101.8L371.9 432H520c13.3 0 24 10.7 24 24s-10.7 24-24 24H296v0c-.6 0-1.3 0-1.9 0H185.9c-19.1 0-37.4-7.6-50.9-21.1l-72-72c-28.1-28.1-28.1-73.7 0-101.8L285.1 63z"/></svg>
-                </button>
-              </div>
-              <div>
-                <button type="button" id="small" title="Small size" data-width="3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px">
-                    <circle cx="8" cy="8" r="3" stroke="none" fill="currentColor" />
-                  </svg>
-                </button>
-                <button type="button" id="medium" title="Medium size" data-width="9" class="selected">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px">
-                    <circle cx="8" cy="8" r="5" stroke="none" fill="currentColor" />
-                  </svg>
-                </button>
-                <button type="button" id="large" title="Large size" data-width="18">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px">
-                    <circle cx="8" cy="8" r="7" stroke="none" fill="currentColor" />
-                  </svg>
-                </button>
-              </div>
-              <div>
-                <button type="button" id="undo" title="Undo">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" viewBox="0 0 512 512" fill="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M48.5 224H40c-13.3 0-24-10.7-24-24V72c0-9.7 5.8-18.5 14.8-22.2s19.3-1.7 26.2 5.2L98.6 96.6c87.6-86.5 228.7-86.2 315.8 1c87.5 87.5 87.5 229.3 0 316.8s-229.3 87.5-316.8 0c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0c62.5 62.5 163.8 62.5 226.3 0s62.5-163.8 0-226.3c-62.2-62.2-162.7-62.5-225.3-1L185 183c6.9 6.9 8.9 17.2 5.2 26.2s-12.5 14.8-22.2 14.8H48.5z"/></svg>
-                </button>
-                <button type="button" id="redo" title="Redo">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" viewBox="0 0 512 512" fill="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M463.5 224H472c13.3 0 24-10.7 24-24V72c0-9.7-5.8-18.5-14.8-22.2s-19.3-1.7-26.2 5.2L413.4 96.6c-87.6-86.5-228.7-86.2-315.8 1c-87.5 87.5-87.5 229.3 0 316.8s229.3 87.5 316.8 0c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0c-62.5 62.5-163.8 62.5-226.3 0s-62.5-163.8 0-226.3c62.2-62.2 162.7-62.5 225.3-1L327 183c-6.9 6.9-8.9 17.2-5.2 26.2s12.5 14.8 22.2 14.8H463.5z"/></svg>
-                </button>
-              </div>
+    <nav class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800">
+        <div class="max-w-full mx-auto px-6 py-3 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                tools.eliana.lol
+            </a>
+            <div class="flex items-center gap-6">
+                <ul class="flex space-x-6 text-sm font-medium">
+                    <li><a href="index.html" class="hover:text-blue-400">home</a></li>
+                    <li><a href="guestbook.html" class="text-blue-400">guestbook</a></li>
+                </ul>
+                <button id="theme-toggle" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">🌙</button>
             </div>
-            <div class="artboard">
-              <canvas id="drawingCanvas" width="768" height="768"
-                    data-paint-target="canvas"
-                    data-canvas-to-image-target="canvas"
-                    data-entry-type-swapper-target="drawingCanvas">
-                <p>
-                  Unfortunately, your browser currently doesn’t support this drawing interface.
-                  We are sorry for the inconvenience.
-                </p>
-              </canvas>
+        </div>
+    </nav>
+
+    <main class="flex-grow p-6">
+        <div class="guestbook-container">
+            <h1 class="text-3xl font-bold mb-2">Sign the Guestbook</h1>
+            <p class="text-slate-500 mb-8 text-sm">Leave a little drawing or a note.</p>
+
+            <div class="flex gap-4 mb-6 p-1 bg-slate-100 dark:bg-slate-900 rounded-lg w-fit">
+                <button id="btn-draw" class="px-4 py-2 rounded-md text-sm font-bold bg-white dark:bg-slate-800 shadow-sm transition-all">Draw</button>
+                <button id="btn-write" class="px-4 py-2 rounded-md text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all">Write</button>
             </div>
-            <div id="mouseCircle"></div>
-          </div>
+
+            <form id="gb-form">
+                <div id="section-draw">
+                    <div class="toolbar items-center justify-between">
+                        <div class="flex gap-2">
+                            <button type="button" id="tool-pen" class="tool-btn active" title="Pen">✏️</button>
+                            <button type="button" id="tool-eraser" class="tool-btn" title="Eraser">🧽</button>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" id="tool-undo" class="tool-btn">↩️ Undo</button>
+                            <button type="button" id="tool-clear" class="tool-btn text-red-500">🗑️</button>
+                        </div>
+                    </div>
+                    <canvas id="drawingCanvas" width="500" height="500"></canvas>
+                </div>
+
+                <div id="section-write" class="hidden">
+                    <label class="text-sm font-bold">Your message</label>
+                    <textarea rows="8" placeholder="Type something nice..."></textarea>
+                </div>
+
+                <div class="mt-6 space-y-4">
+                    <div>
+                        <label class="text-sm font-bold">Your Name</label>
+                        <input type="text" required placeholder="Eliana">
+                    </div>
+                    <div>
+                        <label class="text-sm font-bold">Website (optional)</label>
+                        <input type="url" placeholder="https://eliana.lol">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg mt-4 transition-all">
+                        Sign Guestbook
+                    </button>
+                </div>
+            </form>
         </div>
+    </main>
 
-        <div data-entry-type-swapper-target="writingField" hidden>
-          <label class="form-label" for="guestbook_entry_writing">
-            Your words
-            <small>
-              Some <a target="_blank" href="https://ge-markdown.netlify.app/">formatting</a> is available, such as <strong>**bold**</strong> and <em>_italic_</em>.
-            </small>
-</label>          <textarea disabled="disabled" data-controller="auto-expanding-textarea" data-entry-type-swapper-target="writingInput" name="guestbook_entry[writing]" id="guestbook_entry_writing">
-</textarea>
-        </div>
-      </div>
-    </div>
+    <script>
+        // 1. Theme Logic
+        const toggle = document.getElementById('theme-toggle');
+        const updateThemeUI = (isDark) => {
+            document.documentElement.classList.toggle('dark', isDark);
+            toggle.textContent = isDark ? '☀️' : '🌙';
+            localStorage.theme = isDark ? 'dark' : 'light';
+        };
 
-    <div class="field">
-      <label class="form-label" for="guestbook_entry_name">Your name</label>
-      <input required="required" data-canvas-to-image-target="artistName" type="text" name="guestbook_entry[name]" id="guestbook_entry_name" />
-    </div>
+        const initTheme = () => {
+            const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            updateThemeUI(isDark);
+        };
+        initTheme();
 
-    <div class="field">
-      <label class="form-label" for="guestbook_entry_website">Your website (optional)</label>
-      <input placeholder="https://example.com" autocapitalize="none" inputmode="url" type="text" name="guestbook_entry[website]" id="guestbook_entry_website" />
-    </div>
+        toggle.addEventListener('click', () => {
+            const isDark = !document.documentElement.classList.contains('dark');
+            updateThemeUI(isDark);
+        });
 
-    <div class="field">
-      <label class="form-label" for="captcha">
-        Spam bot blocker
-        <small>
-          Please enter the word "guestbook" below, lovely human. We don't think that the 🤖spam bots🤖 will figure this out. Thank you!
-        </small>
-</label>
-      <input type="text" name="captcha" id="captcha" value="" placeholder="guestb..." pattern="[Gg][Uu][Ee][Ss][Tt][Bb][Oo][Oo][Kk]" required="required" autocapitalize="none" />
-    </div>
+        // 2. Section Swapper
+        const btnDraw = document.getElementById('btn-draw');
+        const btnWrite = document.getElementById('btn-write');
+        const secDraw = document.getElementById('section-draw');
+        const secWrite = document.getElementById('section-write');
 
-    <div class="field submit">
-      <button name="button" type="submit" class="button button-full">Sign Guestbook</button>
-      <a class="button button-S button-quiet button-full" data-action="click-&gt;trix-autosave#clearLocalStorage" href="/guestbook">Cancel</a>
-    </div>
-</form></div>
+        btnDraw.onclick = () => {
+            secDraw.classList.remove('hidden');
+            secWrite.classList.add('hidden');
+            btnDraw.classList.add('bg-white', 'dark:bg-slate-800');
+            btnWrite.classList.remove('bg-white', 'dark:bg-slate-800');
+        };
+        btnWrite.onclick = () => {
+            secWrite.classList.remove('hidden');
+            secDraw.classList.add('hidden');
+            btnWrite.classList.add('bg-white', 'dark:bg-slate-800');
+            btnDraw.classList.remove('bg-white', 'dark:bg-slate-800');
+        };
 
+        // 3. FIXED Drawing Logic
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        let painting = false;
+        let isEraser = false;
 
-      <hr>
+        // Helper to get correct coordinates
+        function getCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
 
-      <footer class="user-site-footer">
-        <div class="trix-content">
-  <ul><li><p><a href="https://bsky.app/profile/goodenough.us">Bluesky</a></p></li><li><p><a href="https://mastodon.world/@goodenough">Mastodon</a></p></li><li><p><a href="https://goodenoughnews.substack.com/">Newsletter</a></p></li><li><p><a href="https://policies.goodenough.us/">Policies</a></p></li><li><p><a href="https://status.goodenough.us/">Status</a></p></li></ul><p>© 2026 We Are Good Enough LLC</p>
-</div>
+        function startPosition(e) {
+            painting = true;
+            ctx.beginPath(); // Start a fresh path
+            const {
+                x,
+                y
+            } = getCoords(e);
+            ctx.moveTo(x, y);
+            e.preventDefault(); // Prevent scrolling while drawing
+        }
 
-      </footer>
-  </main>
+        function finishedPosition() {
+            painting = false;
+        }
 
-    <footer class="pika-branding">
-      <a href="https://pika.page/?utm_source=pika_blog&utm_medium=pika_footer_branding" target="_blank">PIKA</a>
-    </footer>
+        function draw(e) {
+            if (!painting) return;
 
-  <div class="safe-area-div"></div>
+            const {
+                x,
+                y
+            } = getCoords(e);
+            const isDark = document.documentElement.classList.contains('dark');
+
+            // Set Styles
+            ctx.lineWidth = isEraser ? 30 : 3;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+
+            if (isEraser) {
+                ctx.strokeStyle = isDark ? "#1e293b" : "#ffffff"; // Matches paper color
+            } else {
+                ctx.strokeStyle = isDark ? "#f8fafc" : "#000000"; // Matches pen color
+            }
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+
+        // Event Listeners
+        canvas.addEventListener('mousedown', startPosition);
+        window.addEventListener('mouseup', finishedPosition); // Window level for smoother release
+        canvas.addEventListener('mousemove', draw);
+
+        // Touch Support
+        canvas.addEventListener('touchstart', startPosition, {
+            passive: false
+        });
+        canvas.addEventListener('touchend', finishedPosition);
+        canvas.addEventListener('touchmove', draw, {
+            passive: false
+        });
+
+        // Tool Buttons
+        document.getElementById('tool-pen').onclick = function() {
+            isEraser = false;
+            this.classList.add('active');
+            document.getElementById('tool-eraser').classList.remove('active');
+        };
+        document.getElementById('tool-eraser').onclick = function() {
+            isEraser = true;
+            this.classList.add('active');
+            document.getElementById('tool-pen').classList.remove('active');
+        };
+        document.getElementById('tool-clear').onclick = () => {
+            if (confirm("Clear drawing?")) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        };
+    </script>
 </body>
+
 </html>

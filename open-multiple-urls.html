@@ -1,235 +1,115 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
+
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Open Multiple URLs - Bulk URL Opener</title>
-    <meta name="description" content="Open multiple URLs simultaneously. Paste your URLs and open them all at once in new tabs.">
+    <title>Open Multiple URLs | tools.eliana.lol</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+    <link rel="stylesheet" href="global.css">
 
     <style>
-        body {
-            font: 400 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            color: #424F49;
-            background: #f1f1f1;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        h1 {
-            font-size: 32px;
-            font-weight: 400;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .description {
-            color: #666;
-            margin-bottom: 30px;
-            line-height: 1.6;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #333;
-        }
-
         textarea {
-            width: 100%;
-            min-height: 300px;
-            padding: 15px;
-            font-family: "Lucida Console", Monaco, monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            border: 2px solid #ddd;
-            border-radius: 4px;
-            resize: vertical;
-            box-sizing: border-box;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         }
 
-        textarea:focus {
-            outline: none;
-            border-color: #2C51AF;
+        /* Custom status colors to match your existing logic */
+        .status-success {
+            @apply bg-green-500/10 border-green-500/50 text-green-600 dark:text-green-400;
         }
 
-        .button-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
+        .status-error {
+            @apply bg-red-500/10 border-red-500/50 text-red-600 dark:text-red-400;
         }
 
-        .btn {
-            padding: 12px 30px;
-            border: none;
-            border-radius: 4px;
-            font-size: 15px;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-        }
-
-        .btn-primary {
-            background-color: #2C51AF;
-            color: white;
-        }
-
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-        }
-
-        .btn-warning {
-            background-color: #d35400;
-            color: white;
-        }
-
-        #status {
-            padding: 15px;
-            border-radius: 4px;
-            margin-top: 15px;
-            display: none;
-        }
-
-        #status.show {
-            display: block;
-        }
-
-        #status.success {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-        }
-
-        #status.error {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
-
-        #status.info {
-            background-color: #d1ecf1;
-            border: 1px solid #bee5eb;
-            color: #0c5460;
-        }
-
-        .options {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-        }
-
-        .option-group {
-            margin-bottom: 15px;
-        }
-
-        .option-group:last-child {
-            margin-bottom: 0;
-        }
-
-        .option-group label {
-            font-weight: 400;
-            display: inline-block;
-            margin-left: 8px;
-        }
-
-        input[type="checkbox"],
-        input[type="radio"] {
-            margin-right: 5px;
-        }
-
-        .stats {
-            font-size: 14px;
-            color: #666;
-            margin-top: 10px;
-        }
-
-        footer {
-            text-align: center;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
-            color: #666;
-            font-size: 14px;
+        .status-info {
+            @apply bg-blue-500/10 border-blue-500/50 text-blue-600 dark:text-blue-400;
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>Open Multiple URLs</h1>
-        <p class="description">
-            This tool allows you to open multiple URLs at the same time. Simply paste your URLs below (one per line) 
-            and click the button to open them all in new tabs. Works with all major browsers.
+
+<body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased min-h-screen flex flex-col">
+
+    <nav class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800">
+        <div class="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                tools.eliana.lol
+            </a>
+            <div class="flex items-center gap-6">
+                <ul class="hidden md:flex space-x-6 text-sm font-medium">
+                    <li><a href="index.html" class="hover:text-blue-400 transition-colors">home</a></li>
+                    <li><a href="rss-page.html" class="hover:text-blue-400 transition-colors">rss</a></li>
+                    <li><a href="url-list-cleaner.html" class="hover:text-blue-400 transition-colors">url cleaner</a></li>
+                </ul>
+                <button id="theme-toggle" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">🌙</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-4xl mx-auto px-6 py-12 w-full">
+        <h1 class="text-4xl font-extrabold mb-4">Open Multiple URLs</h1>
+        <p class="text-slate-500 dark:text-slate-400 mb-8">
+            Paste your URLs below (one per line) to open them all at once in new tabs.
         </p>
 
-        <div class="options">
-            <div class="option-group">
-                <strong>Open as:</strong><br>
-                <input type="radio" id="tabs" name="openMode" value="tabs" checked>
-                <label for="tabs">New Tabs</label>
-
-                <input type="radio" id="windows" name="openMode" value="windows">
-                <label for="windows">New Windows</label>
+        <div class="grid md:grid-cols-2 gap-4 mb-8 bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <div class="space-y-3">
+                <div class="text-sm font-bold uppercase tracking-wider opacity-50">Opening Mode</div>
+                <div class="flex gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="openMode" value="tabs" checked class="accent-blue-500"> New Tabs
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="openMode" value="windows" class="accent-blue-500"> New Windows
+                    </label>
+                </div>
             </div>
 
-            <div class="option-group">
-                <input type="checkbox" id="addProtocol" checked>
-                <label for="addProtocol">Automatically add http:// to URLs without protocol</label>
-            </div>
-
-            <div class="option-group">
-                <input type="checkbox" id="removeEmpty" checked>
-                <label for="removeEmpty">Remove empty lines</label>
-            </div>
-
-            <div class="option-group">
-                <label for="delay">Delay between opens (ms): </label>
-                <input type="number" id="delay" value="100" min="0" max="5000" step="50" style="width: 100px;">
+            <div class="space-y-3 text-sm">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="addProtocol" checked class="accent-blue-500"> Add http:// if missing
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="removeEmpty" checked class="accent-blue-500"> Remove empty lines
+                </label>
+                <div class="flex items-center gap-2 pt-1">
+                    <span>Delay (ms):</span>
+                    <input type="number" id="delay" value="100" min="0" step="50" class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 w-20">
+                </div>
             </div>
         </div>
 
-        <div class="form-group">
-            <label for="urls">Enter URLs (one per line):</label>
-            <textarea id="urls" placeholder="https://example.com
-https://google.com
-https://github.com"></textarea>
-            <div class="stats" id="stats">0 URLs detected</div>
+        <div class="space-y-4">
+            <textarea id="urls" rows="12" placeholder="https://example.com&#10;https://google.com" class="w-full p-4 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl focus:border-blue-500 focus:ring-0 transition-all"></textarea>
+
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div id="stats" class="text-sm font-mono text-slate-500 italic">0 URLs detected</div>
+                <div class="flex gap-2">
+                    <button id="openAll" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded-xl transition">Open All</button>
+                    <button id="example" class="bg-slate-200 dark:bg-slate-800 hover:opacity-80 px-4 py-2 rounded-xl transition text-sm">Load Example</button>
+                    <button id="clear" class="text-red-500 hover:bg-red-500/10 px-4 py-2 rounded-xl transition text-sm">Clear</button>
+                </div>
+            </div>
         </div>
 
-        <div class="button-group">
-            <button class="btn btn-primary" id="openAll">Open All URLs</button>
-            <button class="btn btn-secondary" id="clear">Clear</button>
-            <button class="btn btn-warning" id="example">Load Example URLs</button>
+        <div id="status" class="mt-6 p-4 rounded-xl border hidden animate-pulse"></div>
+
+        <div class="mt-12 p-6 bg-yellow-500/5 border border-yellow-500/20 rounded-2xl text-sm text-yellow-600 dark:text-yellow-400">
+            <strong>💡 Browser Tip:</strong> Your browser might block these popups. Click the "Always allow" icon in your URL bar if they don't open.
         </div>
+    </main>
 
-        <div id="status"></div>
-
-        <footer>
-            <p>💡 Tip: Most browsers will ask for permission the first time you try to open multiple URLs. Make sure to allow popups for this site.</p>
-        </footer>
-    </div>
+    <footer class="border-t border-slate-200 dark:border-slate-800 py-12 text-center text-slate-500 text-xs">
+        &copy; 2026 eliana.lol
+    </footer>
 
     <script>
-        // Get DOM elements
         const urlsTextarea = document.getElementById('urls');
         const openAllBtn = document.getElementById('openAll');
         const clearBtn = document.getElementById('clear');
@@ -240,9 +120,6 @@ https://github.com"></textarea>
         const removeEmptyCheckbox = document.getElementById('removeEmpty');
         const delayInput = document.getElementById('delay');
 
-        // Update stats when textarea changes
-        urlsTextarea.addEventListener('input', updateStats);
-
         function updateStats() {
             const urls = extractUrls(urlsTextarea.value);
             statsDiv.textContent = `${urls.length} URL${urls.length !== 1 ? 's' : ''} detected`;
@@ -250,34 +127,20 @@ https://github.com"></textarea>
 
         function showStatus(message, type = 'info') {
             statusDiv.textContent = message;
-            statusDiv.className = `show ${type}`;
-
-            // Auto-hide after 5 seconds for success messages
-            if (type === 'success') {
-                setTimeout(() => {
-                    statusDiv.classList.remove('show');
-                }, 5000);
-            }
+            statusDiv.classList.remove('hidden', 'status-success', 'status-error', 'status-info');
+            statusDiv.classList.add(`status-${type}`);
+            if (type === 'success') setTimeout(() => statusDiv.classList.add('hidden'), 5000);
         }
 
         function extractUrls(text) {
             const addProtocol = addProtocolCheckbox.checked;
             const removeEmpty = removeEmptyCheckbox.checked;
-
-            // Split by newlines
             let lines = text.split(/\r?\n/);
-
-            // Process each line
             return lines
                 .map(line => line.trim())
-                .filter(line => {
-                    // Remove empty lines if checkbox is checked
-                    if (removeEmpty && line === '') return false;
-                    return true;
-                })
-                .filter(line => line !== '') // Always remove truly empty lines
+                .filter(line => (removeEmpty ? line !== '' : true))
+                .filter(line => line !== '')
                 .map(line => {
-                    // Add protocol if needed
                     if (addProtocol && line && !line.match(/^https?:\/\//i)) {
                         return 'http://' + line;
                     }
@@ -285,88 +148,58 @@ https://github.com"></textarea>
                 });
         }
 
-        function getOpenMode() {
-            const radios = document.getElementsByName('openMode');
-            for (const radio of radios) {
-                if (radio.checked) {
-                    return radio.value;
-                }
-            }
-            return 'tabs';
-        }
-
         function openUrls() {
-            const text = urlsTextarea.value.trim();
+            const urls = extractUrls(urlsTextarea.value.trim());
+            if (urls.length === 0) return showStatus('Please enter at least one URL', 'error');
 
-            if (!text) {
-                showStatus('Please enter at least one URL', 'error');
-                return;
-            }
+            const radios = document.getElementsByName('openMode');
+            let mode = 'tabs';
+            for (const r of radios)
+                if (r.checked) mode = r.value;
 
-            const urls = extractUrls(text);
-
-            if (urls.length === 0) {
-                showStatus('No valid URLs found', 'error');
-                return;
-            }
-
-            const mode = getOpenMode();
             const delay = parseInt(delayInput.value) || 100;
+            showStatus(`Opening ${urls.length} URLs...`, 'info');
 
-            showStatus(`Opening ${urls.length} URL${urls.length !== 1 ? 's' : ''}...`, 'info');
-
-            // Open URLs with staggered timing
             urls.forEach((url, index) => {
                 setTimeout(() => {
                     try {
-                        if (mode === 'windows') {
-                            window.open(url, '_blank', 'noopener,noreferrer');
-                        } else {
-                            window.open(url, '_blank');
-                        }
+                        const features = mode === 'windows' ? 'noopener,noreferrer' : '';
+                        window.open(url, '_blank', features);
                     } catch (e) {
-                        console.error(`Failed to open ${url}:`, e);
+                        console.error(e);
                     }
                 }, index * delay);
             });
 
-            // Show success message after all URLs have been opened
-            setTimeout(() => {
-                showStatus(`Successfully opened ${urls.length} URL${urls.length !== 1 ? 's' : ''}!`, 'success');
-            }, urls.length * delay + 500);
+            setTimeout(() => showStatus(`Successfully opened ${urls.length} items!`, 'success'), urls.length * delay + 500);
         }
 
-        function clearTextarea() {
+        urlsTextarea.addEventListener('input', updateStats);
+        openAllBtn.addEventListener('click', openUrls);
+        clearBtn.addEventListener('click', () => {
             urlsTextarea.value = '';
             updateStats();
-            statusDiv.classList.remove('show');
-        }
-
-        function loadExample() {
-            urlsTextarea.value = `https://www.google.com
-https://www.github.com
-https://www.stackoverflow.com
-https://www.wikipedia.org
-https://www.reddit.com`;
+            statusDiv.classList.add('hidden');
+        });
+        exampleBtn.addEventListener('click', () => {
+            urlsTextarea.value = "https://www.google.com\nhttps://www.github.com\nhttps://www.wikipedia.org";
             updateStats();
-            showStatus('Example URLs loaded', 'success');
-        }
-
-        // Event listeners
-        openAllBtn.addEventListener('click', openUrls);
-        clearBtn.addEventListener('click', clearTextarea);
-        exampleBtn.addEventListener('click', loadExample);
-
-        // Allow Ctrl+Enter to open URLs
-        urlsTextarea.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                openUrls();
-            }
         });
 
-        // Initialize stats
-        updateStats();
+        // Theme Toggle
+        const toggle = document.getElementById('theme-toggle');
+        const initTheme = () => {
+            const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            document.documentElement.classList.toggle('dark', isDark);
+            toggle.textContent = isDark ? '☀️' : '🌙';
+        };
+        initTheme();
+        toggle.addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.theme = isDark ? 'dark' : 'light';
+            toggle.textContent = isDark ? '☀️' : '🌙';
+        });
     </script>
 </body>
+
 </html>
