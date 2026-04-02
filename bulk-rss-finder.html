@@ -1,121 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Bulk Feed Finder | tools.eliana.lol</title>
-  <style>
-    html {
-      font-family: monospace;
-      max-width: 500px;
-      margin: 20px auto;
-      overflow-y: scroll;
-    }
-    body { line-height: 1.5; padding: 0 15px; }
-    p { white-space: pre-wrap; }
-    nav { text-align: center; margin-bottom: 2rem; }
-    a { text-decoration: none; color: #000; }
-    a:hover { background-color: #eaddca; }
-    
-    textarea {
-      width: 100%;
-      background: #f9f9f9;
-      border: 1px solid #ccc;
-      font-family: monospace;
-      padding: 10px;
-      box-sizing: border-box;
-    }
-
-    button {
-      font-family: monospace;
-      padding: 5px 10px;
-      margin: 10px 5px 10px 0;
-      cursor: pointer;
-      background: #eee;
-      border: 1px solid #999;
-    }
-
-    .feed-result {
-      border-left: 3px solid #000;
-      padding-left: 10px;
-      margin-top: 20px;
-    }
-
-    .puny { color: grey; font-size: 0.75rem; }
-
-    @media (prefers-color-scheme: dark) {
-      body { background-color: #1c1c1c; color: #d4d4d4; }
-      a, textarea { color: #d4d4d4; }
-      textarea { background: #2a2a2a; border-color: #444; }
-      button { background: #333; color: #d4d4d4; border-color: #555; }
-      a:hover { background-color: #3a3a3a; }
-      .feed-result { border-left-color: #d4d4d4; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Feed Finder | tools.eliana.lol</title>
+    <link rel="stylesheet" href="global.css">
+    <style>
+        /* Specific tweaks for this tool's results */
+        .feed-result {
+            border-left: 3px solid var(--text);
+            padding-left: 15px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .feed-item {
+            margin: 8px 0;
+            display: block;
+        }
+    </style>
 </head>
 <body>
 
-  <div id="nav-placeholder"></div>
+    <nav>
+      <div class="left">
+        <a href="index.html">home</a> | 
+        <a href="extra.html">extra</a> | 
+        <a href="credits.html">credits</a> |
+        <a href="changelog.html">logs</a>
+      </div>
+      <div class="right">
+        <button id="theme-toggle">[theme]</button> |
+        <a href="https://eliana.lol">site</a>
+      </div>
+    </nav>
 
-  <h1>Bulk Feed Finder</h1>
-  <p>Enter URLs (one per line) to find RSS/Atom feeds.</p>
+    <main>
+        <h1>Bulk Feed Finder</h1>
+        <p class="puny">Enter URLs (one per line) to sniff out RSS/Atom feeds.</p>
 
-  <textarea id="urlInput" rows="8" placeholder="j3s.sh&#10;eliana.lol"></textarea>
-  
-  <button id="findBtn">Find Feeds</button>
-  <button id="clearBtn">Clear</button>
-
-  <div id="results"></div>
-
-  <script type="module">
-    import { findRssFeeds } from 'https://esm.sh/rss-agent-discovery@0.1.6';
-
-    const resultsDiv = document.getElementById('results');
-    
-    document.getElementById('findBtn').onclick = async () => {
-      const urls = document.getElementById('urlInput').value.split('\n').filter(u => u.trim());
-      resultsDiv.innerHTML = '<p class="puny">Processing...</p>';
-      
-      for (let url of urls) {
-        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        <textarea id="urlInput" rows="8" placeholder="j3s.sh&#10;eliana.lol"></textarea>
         
-        const container = document.createElement('div');
-        container.className = 'feed-result';
-        container.innerHTML = `<strong>${url}</strong>`;
-        resultsDiv.appendChild(container);
+        <div class="tool-actions">
+            <button id="findBtn">Find Feeds</button>
+            <button id="clearBtn">Clear</button>
+        </div>
 
-        try {
-          const discovered = await findRssFeeds(url, {
-            fetcher: async (u) => {
-              const p = `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`;
-              const r = await fetch(p);
-              const d = await r.json();
-              return d.contents;
-            }
-          });
+        <div id="results"></div>
+    </main>
 
-          if (!discovered.length) {
-              container.innerHTML += `<div class="puny">No feeds found.</div>`;
-          } else {
-              discovered.forEach(f => {
-                  container.innerHTML += `
-                    <div style="margin: 5px 0;">
-                      <a href="${f.url}" style="font-size: 0.9rem;">> ${f.title || 'Feed'}</a>
-                      <span class="puny">(${f.type || 'XML'})</span>
-                    </div>`;
-              });
-          }
-        } catch (e) {
-          container.innerHTML += `<div class="puny">Error connecting to site.</div>`;
+    <script>
+        const html = document.documentElement;
+        const toggle = document.getElementById('theme-toggle');
+        const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        html.setAttribute('data-theme', saved);
+        if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+        if (toggle) {
+            toggle.onclick = () => {
+                const now = html.getAttribute('data-theme');
+                const next = now === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+                toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+            };
         }
-      }
-    };
+    </script>
 
-    document.getElementById('clearBtn').onclick = () => {
-      document.getElementById('urlInput').value = '';
-      resultsDiv.innerHTML = '';
-    };
-  </script>
+    <script type="module">
+        import { findRssFeeds } from 'https://esm.sh/rss-agent-discovery@0.1.6';
 
-  <script src="layout.js"></script>
+        const resultsDiv = document.getElementById('results');
+        
+        document.getElementById('findBtn').onclick = async () => {
+            const input = document.getElementById('urlInput').value.trim();
+            if (!input) return;
+
+            const urls = input.split('\n').filter(u => u.trim());
+            resultsDiv.innerHTML = '<p class="puny">Processing...</p>';
+            
+            for (let url of urls) {
+                if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+                
+                const container = document.createElement('div');
+                container.className = 'feed-result';
+                container.innerHTML = `<strong>${url}</strong>`;
+                resultsDiv.appendChild(container);
+
+                try {
+                    const discovered = await findRssFeeds(url, {
+                        fetcher: async (u) => {
+                            // Using AllOrigins to bypass CORS
+                            const p = `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`;
+                            const r = await fetch(p);
+                            const d = await r.json();
+                            return d.contents;
+                        }
+                    });
+
+                    if (!discovered.length) {
+                        container.innerHTML += `<div class="puny">No feeds found.</div>`;
+                    } else {
+                        discovered.forEach(f => {
+                            const link = document.createElement('a');
+                            link.href = f.url;
+                            link.className = 'feed-item';
+                            link.innerHTML = `> ${f.title || 'Feed'} <span class="puny">(${f.type || 'XML'})</span>`;
+                            container.appendChild(link);
+                        });
+                    }
+                } catch (e) {
+                    container.innerHTML += `<div class="puny">Error connecting to site.</div>`;
+                }
+            }
+            // Remove the "Processing" text once done
+            if (resultsDiv.firstChild && resultsDiv.firstChild.textContent === 'Processing...') {
+                resultsDiv.removeChild(resultsDiv.firstChild);
+            }
+        };
+
+        document.getElementById('clearBtn').onclick = () => {
+            document.getElementById('urlInput').value = '';
+            resultsDiv.innerHTML = '';
+        };
+    </script>
+
 </body>
 </html>

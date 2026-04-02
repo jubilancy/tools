@@ -1,92 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Changelog | tools.eliana.lol</title>
-  <link rel="stylesheet" href="global.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog | tools.eliana.lol</title>
+    <link rel="stylesheet" href="global.css">
+    <style>
+        .changelog-entry {
+            margin-bottom: 2rem;
+            border-left: 2px solid var(--puny);
+            padding-left: 1rem;
+        }
+        .changelog-entry h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1rem;
+            color: var(--accent);
+        }
+        #git-log ul { list-style: none; padding: 0; }
+        #git-log li { margin-bottom: 1.5rem; }
+        .commit-hash { border: none !important; font-weight: bold; color: var(--accent); }
+    </style>
 </head>
 <body>
 
-  <div id="nav-placeholder"></div>
+    <nav>
+      <div class="left">
+        <a href="index.html">home</a> | 
+        <a href="extra.html">extra</a> | 
+        <a href="credits.html">credits</a> |
+        <a href="changelog.html">logs</a>
+      </div>
+      <div class="right">
+        <button id="theme-toggle">[theme]</button> |
+        <a href="https://eliana.lol">site</a>
+      </div>
+    </nav>
 
-  <main>
-    <h1>Changelog</h1>
-    
-    <div class="changelog-marquee">
-      <strong>🌱 FUTURE IDEAS & BACKLOG</strong>
-      <ul style="margin-top: 0.5rem; font-size: 0.85rem;">
-        <li>- [ ] Add OPML export to Bulk Feed Finder</li>
-        <li>- [ ] Create a "JSON to Obsidian Table" converter</li>
-        <li>- [ ] Build a minimalist CSS-only guestbook</li>
-        <li>- [ ] Tool to strip tracking params from copied URLs</li>
-      </ul>
-    </div>
+    <main>
+        <h1>Changelog</h1>
+        
+        <div class="changelog-marquee">
+            <strong>🌱 FUTURE IDEAS & BACKLOG</strong>
+            <ul style="margin-top: 0.5rem; font-size: 0.85rem; list-style: none; padding: 0;">
+                <li>- [ ] Add OPML export to Bulk Feed Finder</li>
+                <li>- [ ] Create a "JSON to Obsidian Table" converter</li>
+                <li>- [ ] Build a minimalist CSS-only guestbook</li>
+                <li>- [ ] Tool to strip tracking params from URLs</li>
+            </ul>
+        </div>
 
-    <p class="puny">History of updates and fixes.</p>
+        <p class="puny">Manual history of major updates.</p>
 
-    <div class="changelog-entry">
-      <h4>2026-04-02</h4>
-      <p>- Implemented <code>layout.js</code> for shared header management.
-- Added <code>[theme]</code> toggle with localStorage persistence.
-- Refactored Bulk Feed Finder to use <code>rss-agent-discovery</code>.
-- Unified monospace CSS across all tool subpages.</p>
-    </div>
+        <div class="changelog-entry">
+            <h4>2026-04-02</h4>
+            <p>Switched to hardcoded navigation to eliminate fetch delays. Unified global.css for a character-rich monospace look. Refactored HTML Viewer and Bulk Feed Finder.</p>
+        </div>
 
-    <div class="changelog-entry">
-      <h4>2026-03-28</h4>
-      <p>- Initial launch of tools.eliana.lol.
-- Added basic "Remove Empty Lines" utility.
-- Set up global monospace styling.</p>
-    </div>
+        <div class="changelog-entry">
+            <h4>2026-03-28</h4>
+            <p>Initial launch of tools.eliana.lol. Monospace experiment begins.</p>
+        </div>
 
-  </main>
+        <div id="git-log" style="margin-top: 4rem;">
+            <span class="section-title">Latest Git Pushes</span>
+            <p class="puny">Fetching commits...</p>
+        </div>
+    </main>
 
-  <footer style="margin-top: 4rem; text-align: center;" class="puny">
-    © 2026 eliana.lol • <a href="credits.html">credits</a>
-  </footer>
-<div id="git-log">
-    <p class="puny">Fetching latest pushes from GitHub...</p>
-</div>
+    <footer style="margin-top: 4rem; text-align: center;" class="puny">
+        © 2026 eliana.lol • <a href="credits.html">credits</a>
+    </footer>
 
-<script>
-    async function fetchGitLog() {
-        const repo = "jubilancy/vore"; // Replace with your actual repo: "username/repo"
-        const container = document.getElementById('git-log');
-
-        try {
-            const response = await fetch(`https://api.github.com/repos/${repo}/commits?per_page=5`);
-            const commits = await response.json();
-
-            container.innerHTML = '<span class="section-title">Latest Git Pushes</span>';
-            
-            const list = document.createElement('ul');
-            list.style.marginTop = "1rem";
-
-            commits.forEach(commit => {
-                const date = new Date(commit.commit.author.date).toLocaleString('en-US', {
-                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                });
-                const hash = commit.sha.substring(0, 7);
-                const message = commit.commit.message.split('\n')[0];
-
-                const li = document.createElement('li');
-                li.style.marginBottom = "1rem";
-                li.style.fontSize = "0.85rem";
-                li.innerHTML = `
-                    <div class="puny">${date} | <a href="${commit.html_url}" style="border:none; font-weight:bold;">#${hash}</a></div>
-                    <div style="margin-top:2px;">- ${message}</div>
-                `;
-                list.appendChild(li);
-            });
-
-            container.appendChild(list);
-        } catch (err) {
-            container.innerHTML = '<p class="puny">Could not load git log.</p>';
+    <script>
+        // 1. Theme Logic
+        const html = document.documentElement;
+        const toggle = document.getElementById('theme-toggle');
+        const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        html.setAttribute('data-theme', saved);
+        if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+        if (toggle) {
+            toggle.onclick = () => {
+                const now = html.getAttribute('data-theme');
+                const next = now === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+                toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+            };
         }
-    }
 
-    fetchGitLog();
-</script>
-  <script src="layout.js"></script>
+        // 2. Git Log Logic (Updated to jubilancy/tools)
+        async function fetchGitLog() {
+            const repo = "jubilancy/tools"; 
+            const container = document.getElementById('git-log');
+
+            try {
+                const response = await fetch(`https://api.github.com/repos/${repo}/commits?per_page=5`);
+                const commits = await response.json();
+
+                container.innerHTML = '<span class="section-title">Latest Git Pushes</span>';
+                const list = document.createElement('ul');
+                list.style.marginTop = "1rem";
+
+                commits.forEach(commit => {
+                    const date = new Date(commit.commit.author.date).toLocaleString('en-US', {
+                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    });
+                    const hash = commit.sha.substring(0, 7);
+                    const message = commit.commit.message.split('\n')[0];
+
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <div class="puny">${date} | <a href="${commit.html_url}" class="commit-hash">#${hash}</a></div>
+                        <div style="margin-top:2px;">- ${message}</div>
+                    `;
+                    list.appendChild(li);
+                });
+                container.appendChild(list);
+            } catch (err) {
+                container.innerHTML = '<p class="puny">Could not load git log.</p>';
+            }
+        }
+        fetchGitLog();
+    </script>
 </body>
 </html>

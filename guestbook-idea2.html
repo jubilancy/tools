@@ -1,95 +1,112 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
-
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guestbook | tools.eliana.lol</title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class'
-        }
-    </script>
     <link rel="stylesheet" href="global.css">
-
     <style>
-        /* 2. Custom Tool Styles */
-        body {
-            transition: background-color 0.3s, color 0.3s;
-        }
-
+        /* Specific Tool UI */
+        .guestbook-ui { max-width: 600px; margin: 0 auto; }
+        
         canvas {
-            border: 2px solid #334155;
-            border-radius: 8px;
+            border: 2px solid var(--puny);
+            background: var(--bg);
             cursor: crosshair;
-            background: white;
-            /* Always white paper for drawing */
             touch-action: none;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            display: block;
+            margin-top: 15px;
         }
 
-        .dark canvas {
-            background: #1e293b;
-            /* Slate-800 paper in dark mode */
-            border-color: #475569;
+        .canvas-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
         }
 
         .entry-card {
-            border: 1px solid #e2e8f0;
-            padding: 1rem;
-            border-radius: 0.75rem;
-            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid var(--puny);
+            padding: 10px;
+            background: var(--bg);
         }
 
-        .dark .entry-card {
-            border-color: #334155;
-            background: rgba(30, 41, 59, 0.5);
+        .entry-card img {
+            width: 100%;
+            border: 1px solid var(--puny);
+            background: white; /* Keep canvas exports readable */
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .past-entries {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 600px) {
+            .past-entries { grid-template-columns: 1fr; }
         }
     </style>
 </head>
+<body>
 
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased min-h-screen">
-
-    <nav class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800">
-        <div class="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
-            <a href="index.html" class="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-                tools.eliana.lol
-            </a>
-            <div class="flex items-center gap-6">
-                <ul class="hidden md:flex space-x-6 text-sm font-medium">
-                    <li><a href="index.html" class="hover:text-blue-500 transition-colors">home</a></li>
-                    <li><a href="rss-page.html" class="hover:text-blue-500 transition-colors">rss</a></li>
-                    <li><a href="guestbook.html" class="text-blue-500">guestbook</a></li>
-                </ul>
-                <button id="theme-toggle" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:ring-2 ring-blue-500 transition-all">🌙</button>
-            </div>
-        </div>
+    <nav>
+      <div class="left">
+        <a href="index.html">home</a> | 
+        <a href="extra.html">extra</a> | 
+        <a href="credits.html">credits</a> |
+        <a href="changelog.html">logs</a>
+      </div>
+      <div class="right">
+        <button id="theme-toggle">[theme]</button> |
+        <a href="https://eliana.lol">site</a>
+      </div>
     </nav>
 
-    <main class="max-w-4xl mx-auto px-6 py-12">
-        <h1 class="text-4xl font-extrabold mb-2">Sign My Guestbook</h1>
-        <p class="text-slate-500 dark:text-slate-400 mb-8">Leave a little sketch below.</p>
+    <main class="guestbook-ui">
+        <h1>Sign My Guestbook</h1>
+        <p class="puny">Leave a little sketch. It'll stay here (in your browser) for next time.</p>
 
-        <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800">
-            <canvas id="canvas" width="500" height="500" class="w-full max-w-[500px] mx-auto block"></canvas>
+        <canvas id="canvas" width="500" height="500"></canvas>
 
-            <div class="flex gap-3 mt-6 justify-center">
-                <button onclick="clearCanvas()" class="px-6 py-2 rounded-full border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition">Clear</button>
-                <button onclick="saveEntry()" class="px-6 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-500/30 transition">Save Entry</button>
-            </div>
+        <div class="canvas-controls">
+            <button onclick="clearCanvas()">🗑️ Clear</button>
+            <button onclick="saveEntry()" style="border-color: var(--accent); font-weight: bold;">✨ Save Entry</button>
         </div>
 
-        <h2 class="text-2xl font-bold mt-16 mb-6">Past Entries</h2>
-        <div id="entries" class="grid sm:grid-cols-2 gap-6"></div>
+        <h2 class="section-title">Past Entries</h2>
+        <div id="entries" class="past-entries"></div>
     </main>
+
+    <script>
+        const html = document.documentElement;
+        const toggle = document.getElementById('theme-toggle');
+        const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        
+        html.setAttribute('data-theme', saved);
+        if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+        if (toggle) {
+            toggle.onclick = () => {
+                const now = html.getAttribute('data-theme');
+                const next = now === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+                toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+            };
+        }
+    </script>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         let isDrawing = false;
 
-        // Smooth Drawing Logic
         function getCoords(e) {
             const rect = canvas.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -103,102 +120,58 @@
         function startDrawing(e) {
             isDrawing = true;
             ctx.beginPath();
-            const {
-                x,
-                y
-            } = getCoords(e);
+            const { x, y } = getCoords(e);
             ctx.moveTo(x, y);
-            e.preventDefault();
-        }
-
-        function stopDrawing() {
-            isDrawing = false;
+            if (e.touches) e.preventDefault();
         }
 
         function draw(e) {
             if (!isDrawing) return;
-            const {
-                x,
-                y
-            } = getCoords(e);
-
-            const isDark = document.documentElement.classList.contains('dark');
+            const { x, y } = getCoords(e);
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            
             ctx.lineWidth = 3;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.strokeStyle = isDark ? '#f8fafc' : '#0f172a'; // Ink matches theme
+            ctx.strokeStyle = isDark ? '#d4d4d4' : '#000000'; 
 
             ctx.lineTo(x, y);
             ctx.stroke();
         }
 
         canvas.addEventListener('mousedown', startDrawing);
-        window.addEventListener('mouseup', stopDrawing);
+        window.addEventListener('mouseup', () => isDrawing = false);
         canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('touchstart', startDrawing, { passive: false });
+        canvas.addEventListener('touchend', () => isDrawing = false);
+        canvas.addEventListener('touchmove', draw, { passive: false });
 
-        // Touch support for mobile
-        canvas.addEventListener('touchstart', startDrawing, {
-            passive: false
-        });
-        canvas.addEventListener('touchend', stopDrawing);
-        canvas.addEventListener('touchmove', draw, {
-            passive: false
-        });
-
-        function clearCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
+        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
         function saveEntry() {
             const imageData = canvas.toDataURL();
-            const entries = JSON.parse(localStorage.getItem('guestbook') || '[]');
-            entries.unshift({ // Add to top of list
+            const entries = JSON.parse(localStorage.getItem('guestbook_v2') || '[]');
+            entries.unshift({
                 image: imageData,
-                date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })
+                date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
             });
-            localStorage.setItem('guestbook', JSON.stringify(entries));
+            localStorage.setItem('guestbook_v2', JSON.stringify(entries));
             clearCanvas();
             displayEntries();
         }
 
         function displayEntries() {
-            const entries = JSON.parse(localStorage.getItem('guestbook') || '[]');
+            const entries = JSON.parse(localStorage.getItem('guestbook_v2') || '[]');
             document.getElementById('entries').innerHTML = entries
                 .map(e => `
                     <div class="entry-card">
-                        <img src="${e.image}" class="w-full rounded-lg mb-3 bg-white dark:bg-slate-800">
-                        <p class="text-xs font-mono text-slate-400">${e.date}</p>
+                        <img src="${e.image}">
+                        <p class="puny">${e.date}</p>
                     </div>
-                `)
-                .join('');
-        }
-
-        // THEME TOGGLE LOGIC
-        const themeBtn = document.getElementById('theme-toggle');
-
-        function updateTheme(isDark) {
-            document.documentElement.classList.toggle('dark', isDark);
-            themeBtn.textContent = isDark ? '☀️' : '🌙';
-            localStorage.theme = isDark ? 'dark' : 'light';
-        }
-
-        themeBtn.addEventListener('click', () => {
-            const isDark = !document.documentElement.classList.contains('dark');
-            updateTheme(isDark);
-        });
-
-        // Initialize theme on load
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            updateTheme(true);
-        } else {
-            updateTheme(false);
+                `).join('');
         }
 
         displayEntries();
     </script>
 </body>
-
 </html>

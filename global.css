@@ -1,11 +1,13 @@
 /* 1. LAYOUT & MONOSPACE */
 html {
   font-family: monospace;
-  max-width: 500px;
-  margin: 20px auto;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 20px;
   overflow-y: scroll;
 }
 
+/* Variables for Theme Toggle */
 :root {
   --bg: #ffffff;
   --text: #000000;
@@ -15,7 +17,6 @@ html {
   --highlight: #ffff99;
 }
 
-/* 2. THEME OVERRIDES */
 html[data-theme='dark'] {
   --bg: #1c1c1c;
   --text: #d4d4d4;
@@ -41,19 +42,67 @@ body {
   background-color: var(--bg);
   color: var(--text);
   line-height: 1.5;
-  padding: 0 15px;
+  margin: 0;
+  padding: 20px 0;
 }
 
-/* 3. LINKS & NAV (with your float logic) */
-a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--text); }
-a:hover { background-color: var(--hover); }
+main {
+  width: 100%;
+}
 
-nav { text-align: center; margin-bottom: 2rem; border-bottom: 1px solid var(--puny); padding-bottom: 1rem; }
-nav .left { float: left; }
-nav .right { float: right; }
-nav a { border-bottom: 1px dotted var(--text); }
+/* 2. NAVIGATION (Fixed Flexbox) */
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--puny);
+  margin-bottom: 2rem;
+  font-size: 0.9rem;
+  min-height: 1.5rem; /* Prevents layout jump during JS injection */
+}
 
-/* 4. THE "CHARACTER" ELEMENTS */
+nav .left {
+  display: flex;
+  gap: 15px;
+}
+
+nav .right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 3. LINKS & THEME TOGGLE */
+a { 
+  color: var(--text); 
+  text-decoration: none; 
+  border-bottom: 1px dotted var(--text); 
+}
+
+a:hover { 
+  background-color: var(--hover); 
+}
+
+nav a {
+  border-bottom: 1px dotted var(--text);
+}
+
+#theme-toggle {
+    background: none;
+    border: none;
+    color: inherit;
+    font-family: monospace;
+    cursor: pointer;
+    padding: 0;
+    border-bottom: 1px dotted var(--text);
+}
+
+#theme-toggle:hover {
+  background-color: var(--hover);
+}
+
+/* 4. CHARACTER ELEMENTS */
 .changelog-marquee {
   font-size: 0.8rem;
   margin: 1rem 0;
@@ -62,37 +111,7 @@ nav a { border-bottom: 1px dotted var(--text); }
   padding: 0.5rem;
 }
 
-.changelog-marquee a {
-  color: var(--accent);
-  font-weight: bold;
-  border: none;
-}
-
 .puny { color: var(--puny); font-size: 0.75rem; }
-
-/* 5. TOOL UI (Inputs & Buttons) */
-textarea, input {
-  width: 100%;
-  background: var(--bg);
-  color: var(--text);
-  border: 1px solid var(--puny);
-  font-family: monospace;
-  padding: 10px;
-  box-sizing: border-box;
-  margin-top: 5px;
-}
-
-button {
-  font-family: monospace;
-  padding: 5px 10px;
-  margin: 10px 5px 10px 0;
-  cursor: pointer;
-  background: var(--bg);
-  color: var(--text);
-  border: 1px solid var(--text); /* Stronger border for buttons */
-}
-
-button:hover { background-color: var(--hover); }
 
 h1 { font-size: 1.2rem; text-transform: uppercase; margin-top: 2rem; }
 
@@ -106,10 +125,32 @@ h1 { font-size: 1.2rem; text-transform: uppercase; margin-top: 2rem; }
   padding-bottom: 5px;
 }
 
-#git-log a {
-  color: var(--accent); /* Uses your orange/highlight color for hashes */
+/* 5. TOOL UI */
+textarea, input {
+  width: 100%;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--puny);
+  font-family: monospace;
+  padding: 10px;
+  box-sizing: border-box;
 }
 
+button {
+  font-family: monospace;
+  padding: 5px 10px;
+  margin: 10px 5px 10px 0;
+  cursor: pointer;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--text);
+}
+
+button:hover { 
+  background-color: var(--hover); 
+}
+
+/* 6. GRID FOR INDEX */
 .tool-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -132,5 +173,5 @@ h1 { font-size: 1.2rem; text-transform: uppercase; margin-top: 2rem; }
 .tool-grid a {
   font-weight: bold;
   font-size: 1.1rem;
-  border: none; /* remove the dotted line for headers */
+  border: none;
 }
