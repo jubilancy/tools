@@ -4,38 +4,33 @@ async function loadLayout() {
         try {
             const resp = await fetch('header.html');
             placeholder.innerHTML = await resp.text();
-            initTheme(); // Initialize theme after header is loaded
+            setupTheme();
         } catch (err) {
             console.error("Layout failed:", err);
         }
     }
 }
 
-function initTheme() {
-    const toggle = document.getElementById('theme-toggle');
+function setupTheme() {
     const html = document.documentElement;
-
-    // 1. Check for saved preference, otherwise use system
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-        html.setAttribute('data-theme', savedTheme);
-        updateToggleText(toggle, savedTheme);
-    }
+    const toggle = document.getElementById('theme-toggle');
+    
+    // Set initial state
+    const saved = localStorage.getItem('theme');
+    const current = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    
+    html.setAttribute('data-theme', current);
+    if (toggle) toggle.innerText = current === 'dark' ? '[light]' : '[dark]';
 
     if (toggle) {
-        toggle.addEventListener('click', () => {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateToggleText(toggle, newTheme);
-        });
+        toggle.onclick = () => {
+            const now = html.getAttribute('data-theme');
+            const next = now === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+        };
     }
-}
-
-function updateToggleText(btn, theme) {
-    if (btn) btn.innerText = theme === 'dark' ? '[light]' : '[dark]';
 }
 
 document.addEventListener('DOMContentLoaded', loadLayout);
