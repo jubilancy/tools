@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>CSS Scrubber | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css">
+</head>
+<body>
+
+  <div id="nav-placeholder"></div>
+
+  <main>
+    <h1>HTML Scrubber</h1>
+    <p class="puny">Paste HTML below to strip all CSS and styling, keeping only the structure.</p>
+
+    <textarea id="input" rows="12" placeholder="<html><head><style>body { color: red; }</style></head>..."></textarea>
+    
+    <button id="scrubBtn">Scrub CSS</button>
+    <button id="copyBtn">Copy Result</button>
+    <button id="clearBtn">Clear</button>
+
+    <div class="changelog-marquee" id="status" style="display:none; margin-top:1rem;">
+      <strong>✨ Scrubbed!</strong> All styles and external links removed.
+    </div>
+
+    <textarea id="output" rows="12" readonly placeholder="Clean HTML will appear here..."></textarea>
+  </main>
+
+  <script>
+    const input = document.getElementById('input');
+    const output = document.getElementById('output');
+    const status = document.getElementById('status');
+
+    document.getElementById('scrubBtn').onclick = () => {
+      let html = input.value;
+
+      // 1. Remove <style>...</style> blocks
+      html = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+
+      // 2. Remove <link rel="stylesheet" ...> tags
+      html = html.replace(/<link[^>]+rel=["']stylesheet["'][^>]*>/gi, '');
+
+      // 3. Remove inline style="..." attributes
+      html = html.replace(/\sstyle=(['"])(.*?)\1/gi, '');
+
+      // 4. Clean up extra whitespace/empty lines left behind
+      html = html.split('\n').filter(line => line.trim() !== '').join('\n');
+
+      output.value = html;
+      status.style.display = 'block';
+      setTimeout(() => { status.style.display = 'none'; }, 3000);
+    };
+
+    document.getElementById('copyBtn').onclick = () => {
+      output.select();
+      document.execCommand('copy');
+      const original = document.getElementById('copyBtn').innerText;
+      document.getElementById('copyBtn').innerText = 'Copied!';
+      setTimeout(() => { document.getElementById('copyBtn').innerText = original; }, 1500);
+    };
+
+    document.getElementById('clearBtn').onclick = () => {
+      input.value = '';
+      output.value = '';
+    };
+  </script>
+
+  <script src="layout.js"></script>
+</body>
+</html>
