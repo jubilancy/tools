@@ -1,143 +1,121 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bulk Feed Finder | tools.eliana.lol</title>
+  <meta charset="utf-8">
+  <title>Bulk Feed Finder | tools.eliana.lol</title>
+  <style>
+    html {
+      font-family: monospace;
+      max-width: 500px;
+      margin: 20px auto;
+      overflow-y: scroll;
+    }
+    body { line-height: 1.5; padding: 0 15px; }
+    p { white-space: pre-wrap; }
+    nav { text-align: center; margin-bottom: 2rem; }
+    a { text-decoration: none; color: #000; }
+    a:hover { background-color: #eaddca; }
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>tailwind.config = { darkMode: 'class' }</script>
-    <link rel="stylesheet" href="global.css">
+    textarea {
+      width: 100%;
+      background: #f9f9f9;
+      border: 1px solid #ccc;
+      font-family: monospace;
+      padding: 10px;
+      box-sizing: border-box;
+    }
 
-    <style>
-        .feed-item { @apply p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 mb-2 flex justify-between items-center; }
-        .url-input { @apply w-full p-4 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl focus:border-blue-500 focus:ring-0 transition-all font-mono text-sm; }
-    </style>
+    button {
+      font-family: monospace;
+      padding: 5px 10px;
+      margin: 10px 5px 10px 0;
+      cursor: pointer;
+      background: #eee;
+      border: 1px solid #999;
+    }
+
+    .feed-result {
+      border-left: 3px solid #000;
+      padding-left: 10px;
+      margin-top: 20px;
+    }
+
+    .puny { color: grey; font-size: 0.75rem; }
+
+    @media (prefers-color-scheme: dark) {
+      body { background-color: #1c1c1c; color: #d4d4d4; }
+      a, textarea { color: #d4d4d4; }
+      textarea { background: #2a2a2a; border-color: #444; }
+      button { background: #333; color: #d4d4d4; border-color: #555; }
+      a:hover { background-color: #3a3a3a; }
+      .feed-result { border-left-color: #d4d4d4; }
+    }
+  </style>
 </head>
-<body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased min-h-screen flex flex-col">
+<body>
 
-    <nav class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800">
-        <div class="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
-            <a href="index.html" class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                tools.eliana.lol
-            </a>
-            <div class="flex items-center gap-6">
-                <ul class="hidden md:flex space-x-6 text-sm font-medium">
-                    <li><a href="index.html" class="hover:text-blue-400 transition-colors">home</a></li>
-                    <li><a href="rss-page.html" class="hover:text-blue-400 transition-colors">rss</a></li>
-                    <li><a href="url-list-cleaner.html" class="hover:text-blue-400 transition-colors">url cleaner</a></li>
-                </ul>
-                <button id="theme-toggle" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">🌙</button>
-            </div>
-        </div>
-    </nav>
+  <div id="nav-placeholder"></div>
 
-    <main class="flex-grow max-w-4xl mx-auto px-6 py-12 w-full">
-        <h1 class="text-4xl font-extrabold mb-4">Bulk Feed Finder</h1>
-        <p class="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
-            Powered by <code>rss-agent-discovery</code>. We'll check HTML tags and brute-force common paths like <code>/rss</code> and <code>/feed.xml</code>.
-        </p>
+  <h1>Bulk Feed Finder</h1>
+  <p>Enter URLs (one per line) to find RSS/Atom feeds.</p>
 
-        <div class="space-y-6">
-            <textarea id="urlInput" rows="8" placeholder="theverge.com&#10;j3s.sh&#10;eliana.lol" class="url-input"></textarea>
-            
-            <div class="flex gap-3">
-                <button id="findFeeds" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-xl transition shadow-lg shadow-blue-500/20 active:scale-95">
-                    Start Bulk Discovery
-                </button>
-                <button id="clearBtn" class="text-slate-500 hover:text-red-500 px-4 py-3 rounded-xl transition text-sm font-bold">
-                    Clear
-                </button>
-            </div>
+  <textarea id="urlInput" rows="8" placeholder="j3s.sh&#10;eliana.lol"></textarea>
+  
+  <button id="findBtn">Find Feeds</button>
+  <button id="clearBtn">Clear</button>
 
-            <div id="results" class="space-y-8 mt-10"></div>
-        </div>
-    </main>
+  <div id="results"></div>
 
-    <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-12 text-center text-slate-500 text-xs">
-        &copy; 2026 eliana.lol
-    </footer>
+  <script type="module">
+    import { findRssFeeds } from 'https://esm.sh/rss-agent-discovery@0.1.6';
 
-    <script type="module">
-        // Importing the logic directly from NPM via ESM.sh
-        import { findRssFeeds } from 'https://esm.sh/rss-agent-discovery@0.1.6';
+    const resultsDiv = document.getElementById('results');
+    
+    document.getElementById('findBtn').onclick = async () => {
+      const urls = document.getElementById('urlInput').value.split('\n').filter(u => u.trim());
+      resultsDiv.innerHTML = '<p class="puny">Processing...</p>';
+      
+      for (let url of urls) {
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        
+        const container = document.createElement('div');
+        container.className = 'feed-result';
+        container.innerHTML = `<strong>${url}</strong>`;
+        resultsDiv.appendChild(container);
 
-        const urlInput = document.getElementById('urlInput');
-        const resultsDiv = document.getElementById('results');
-        const findBtn = document.getElementById('findFeeds');
-
-        // Note: The NPM package expects to be able to fetch. 
-        // In the browser, we still need a proxy to avoid CORS errors.
-        async function discoveryWrapper(targetUrl) {
-            let cleanUrl = targetUrl.trim();
-            if (!/^https?:\/\//i.test(cleanUrl)) cleanUrl = 'https://' + cleanUrl;
-
-            const container = document.createElement('div');
-            container.innerHTML = `<h3 class="text-lg font-bold mb-3 text-blue-500 font-mono underline">${cleanUrl}</h3><div class="loading opacity-50 text-sm">Searching...</div>`;
-            resultsDiv.appendChild(container);
-
-            try {
-                // We use the proxy to get the HTML, then pass it to the package logic
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(cleanUrl)}`;
-                const response = await fetch(proxyUrl);
-                const data = await response.json();
-                
-                // The package can accept a URL or a raw HTML string. 
-                // Using findRssFeeds from the package:
-                const discovered = await findRssFeeds(cleanUrl, {
-                    fetcher: async (u) => {
-                        // We override the internal fetcher to use our CORS proxy
-                        const p = `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`;
-                        const r = await fetch(p);
-                        const d = await r.json();
-                        return d.contents;
-                    }
-                });
-
-                container.querySelector('.loading').remove();
-
-                if (!discovered || discovered.length === 0) {
-                    container.innerHTML += `<p class="text-sm text-red-500 italic">No feeds found.</p>`;
-                } else {
-                    discovered.forEach(feed => {
-                        const item = document.createElement('div');
-                        item.className = 'feed-item';
-                        item.innerHTML = `
-                            <div>
-                                <span class="text-[10px] font-bold bg-blue-500 text-white px-1 rounded mr-2 uppercase">${feed.type || 'XML'}</span>
-                                <span class="text-sm font-medium">${feed.title || 'Feed'}</span>
-                                <div class="text-[10px] text-slate-500 font-mono mt-1">${feed.url}</div>
-                            </div>
-                            <button onclick="navigator.clipboard.writeText('${feed.url}'); this.innerText='Copied!';" class="text-xs text-blue-500 hover:underline">Copy</button>
-                        `;
-                        container.appendChild(item);
-                    });
-                }
-            } catch (err) {
-                container.innerHTML += `<p class="text-sm text-red-500 italic">Error: Site blocked or invalid.</p>`;
+        try {
+          const discovered = await findRssFeeds(url, {
+            fetcher: async (u) => {
+              const p = `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`;
+              const r = await fetch(p);
+              const d = await r.json();
+              return d.contents;
             }
+          });
+
+          if (!discovered.length) {
+              container.innerHTML += `<div class="puny">No feeds found.</div>`;
+          } else {
+              discovered.forEach(f => {
+                  container.innerHTML += `
+                    <div style="margin: 5px 0;">
+                      <a href="${f.url}" style="font-size: 0.9rem;">> ${f.title || 'Feed'}</a>
+                      <span class="puny">(${f.type || 'XML'})</span>
+                    </div>`;
+              });
+          }
+        } catch (e) {
+          container.innerHTML += `<div class="puny">Error connecting to site.</div>`;
         }
+      }
+    };
 
-        findBtn.onclick = async () => {
-            const urls = urlInput.value.split('\n').filter(u => u.trim() !== '');
-            resultsDiv.innerHTML = '';
-            for (const url of urls) {
-                await discoveryWrapper(url);
-            }
-        };
+    document.getElementById('clearBtn').onclick = () => {
+      document.getElementById('urlInput').value = '';
+      resultsDiv.innerHTML = '';
+    };
+  </script>
 
-        document.getElementById('clearBtn').onclick = () => {
-            urlInput.value = '';
-            resultsDiv.innerHTML = '';
-        };
-
-        // Standard Theme Toggle
-        const toggle = document.getElementById('theme-toggle');
-        toggle.addEventListener('click', () => {
-            const isDark = document.documentElement.classList.toggle('dark');
-            localStorage.theme = isDark ? 'dark' : 'light';
-            toggle.textContent = isDark ? '☀️' : '🌙';
-        });
-    </script>
+  <script src="layout.js"></script>
 </body>
 </html>
