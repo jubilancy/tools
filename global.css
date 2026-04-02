@@ -1,4 +1,4 @@
-/* RESET & BASE */
+/* 1. LAYOUT & MONOSPACE */
 html {
   font-family: monospace;
   max-width: 500px;
@@ -11,14 +11,18 @@ html {
   --text: #000000;
   --hover: #eaddca;
   --puny: grey;
+  --accent: #ff6600;
+  --highlight: #ffff99;
 }
 
-/* THEME OVERRIDES */
+/* 2. THEME OVERRIDES */
 html[data-theme='dark'] {
   --bg: #1c1c1c;
   --text: #d4d4d4;
   --hover: #3a3a3a;
   --puny: #a0a0a0;
+  --accent: #ff9900;
+  --highlight: #444;
 }
 
 /* System fallback */
@@ -28,6 +32,8 @@ html[data-theme='dark'] {
     --text: #d4d4d4;
     --hover: #3a3a3a;
     --puny: #a0a0a0;
+    --accent: #ff9900;
+    --highlight: #444;
   }
 }
 
@@ -38,17 +44,34 @@ body {
   padding: 0 15px;
 }
 
-a { color: var(--text); text-decoration: none; }
+/* 3. LINKS & NAV (with your float logic) */
+a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--text); }
 a:hover { background-color: var(--hover); }
 
-/* NAVIGATION */
-nav { text-align: center; margin-bottom: 2rem; }
+nav { text-align: center; margin-bottom: 2rem; border-bottom: 1px solid var(--puny); padding-bottom: 1rem; }
 nav .left { float: left; }
 nav .right { float: right; }
 nav a { border-bottom: 1px dotted var(--text); }
 
-/* SHARED TOOL UI */
-textarea, input[type="text"], input[type="number"] {
+/* 4. THE "CHARACTER" ELEMENTS */
+.changelog-marquee {
+  font-size: 0.8rem;
+  margin: 1rem 0;
+  background-color: var(--highlight);
+  border: 1px dashed var(--accent);
+  padding: 0.5rem;
+}
+
+.changelog-marquee a {
+  color: var(--accent);
+  font-weight: bold;
+  border: none;
+}
+
+.puny { color: var(--puny); font-size: 0.75rem; }
+
+/* 5. TOOL UI (Inputs & Buttons) */
+textarea, input {
   width: 100%;
   background: var(--bg);
   color: var(--text);
@@ -56,17 +79,33 @@ textarea, input[type="text"], input[type="number"] {
   font-family: monospace;
   padding: 10px;
   box-sizing: border-box;
-  margin-bottom: 10px;
+  margin-top: 5px;
 }
 
 button {
   font-family: monospace;
   padding: 5px 10px;
+  margin: 10px 5px 10px 0;
   cursor: pointer;
   background: var(--bg);
   color: var(--text);
-  border: 1px solid var(--puny);
+  border: 1px solid var(--text); /* Stronger border for buttons */
 }
 
 button:hover { background-color: var(--hover); }
-.puny { color: var(--puny); font-size: 0.75rem; }
+
+h1 { font-size: 1.2rem; text-transform: uppercase; margin-top: 2rem; }
+
+.section-title {
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  display: block;
+  border-bottom: 1px solid var(--puny);
+  margin-top: 2rem;
+  padding-bottom: 5px;
+}
+
+#git-log a {
+  color: var(--accent); /* Uses your orange/highlight color for hashes */
+}
