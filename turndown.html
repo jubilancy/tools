@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turndown | HTML to Markdown</title>
+    <style>
+        /* 1. LAYOUT & MONOSPACE (User Style) */
+        html {
+            font-family: monospace;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+            overflow-y: scroll;
+        }
+
+        /* Variables for Theme Toggle */
+        :root {
+            --bg: #ffffff;
+            --text: #000000;
+            --hover: #eaddca;
+            --puny: grey;
+            --accent: #ff6600;
+            --highlight: #ffff99;
+        }
+
+        html[data-theme='dark'] {
+            --bg: #1c1c1c;
+            --text: #d4d4d4;
+            --hover: #3a3a3a;
+            --puny: #a0a0a0;
+            --accent: #ff9900;
+            --highlight: #444;
+        }
+
+        /* System fallback */
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme='light']) {
+                --bg: #1c1c1c;
+                --text: #d4d4d4;
+                --hover: #3a3a3a;
+                --puny: #a0a0a0;
+                --accent: #ff9900;
+                --highlight: #444;
+            }
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px 0;
+        }
+
+        /* 2. NAVIGATION */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--puny);
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+            min-height: 1.5rem;
+        }
+
+        nav .left {
+            display: flex;
+            gap: 15px;
+        }
+
+        nav .right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* 3. LINKS & THEME TOGGLE */
+        a {
+            color: var(--text);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--text);
+        }
+
+        a:hover {
+            background-color: var(--hover);
+        }
+
+        #theme-toggle {
+            background: none;
+            border: none;
+            color: inherit;
+            font-family: monospace;
+            cursor: pointer;
+            padding: 0;
+            border-bottom: 1px dotted var(--text);
+        }
+
+        /* 4. CHARACTER ELEMENTS */
+        h1 {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            margin-top: 2rem;
+        }
+
+        .section-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            display: block;
+            border-bottom: 1px solid var(--puny);
+            margin-top: 2rem;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+
+        .puny {
+            color: var(--puny);
+            font-size: 0.75rem;
+            margin-top: 5px;
+        }
+
+        /* 5. TOOL UI EXTENSIONS */
+        .io-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .io-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        textarea {
+            width: 100%;
+            height: 350px;
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--puny);
+            font-family: monospace;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 1rem;
+            padding: 15px;
+            border: 1px dashed var(--puny);
+        }
+
+        .option-item {
+            display: flex;
+            flex-direction: column;
+            font-size: 0.8rem;
+        }
+
+        select {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--puny);
+            font-family: monospace;
+            padding: 2px;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <div class="left">
+            <a href="/">home</a>
+            <a href="/tools">tools</a>
+        </div>
+        <div class="right">
+            <button id="theme-toggle">toggle_theme</button>
+        </div>
+    </nav>
+
+    <main>
+        <h1>Turndown Converter</h1>
+        <p class="puny">Convert HTML to CommonMark-compliant Markdown. GFM enabled.</p>
+
+        <div class="io-container">
+            <div>
+                <span class="section-title">HTML Input</span>
+                <textarea id="html-in" placeholder="Paste HTML here..."><h1>Demo</h1><p>Check the <strong>options</strong> below.</p></textarea>
+            </div>
+            <div>
+                <span class="section-title">Markdown Output</span>
+                <textarea id="md-out" readonly></textarea>
+            </div>
+        </div>
+
+        <span class="section-title">Configuration</span>
+        <div class="options-grid" id="settings">
+            <div class="option-item">
+                <label>Heading style</label>
+                <select name="headingStyle">
+                    <option value="setext">setext</option>
+                    <option value="atx" selected>atx</option>
+                </select>
+            </div>
+            <div class="option-item">
+                <label>Horizontal rule</label>
+                <select name="hr">
+                    <option value="* * *">* * *</option>
+                    <option value="---">---</option>
+                    <option value="___">___</option>
+                </select>
+            </div>
+            <div class="option-item">
+                <label>Bullet</label>
+                <select name="bulletListMarker">
+                    <option value="*">*</option>
+                    <option value="-">-</option>
+                    <option value="+">+</option>
+                </select>
+            </div>
+            <div class="option-item">
+                <label>Code block style</label>
+                <select name="codeBlockStyle">
+                    <option value="indented">indented</option>
+                    <option value="fenced" selected>fenced</option>
+                </select>
+            </div>
+            <div class="option-item">
+                <label>Fence</label>
+                <select name="fence">
+                    <option value="```">```</option>
+                    <option value="~~~">~~~</option>
+                </select>
+            </div>
+            <div class="option-item">
+                <label>Em delimiter</label>
+                <select name="emDelimiter">
+                    <option value="_">_</option>
+                    <option value="*">*</option>
+                </select>
+            </div>
+            <div class="option-item">
+                <label>Strong delimiter</label>
+                <select name="strongDelimiter">
+                    <option value="**">**</option>
+                    <option value="__">__</option>
+                </select>
+            </div>
+            <div class="option-item">
+                <label>Link style</label>
+                <select name="linkStyle">
+                    <option value="inlined" selected>inlined</option>
+                    <option value="referenced">referenced</option>
+                </select>
+            </div>
+            <div class="option-item">
+                <label>Link reference style</label>
+                <select name="linkReferenceStyle">
+                    <option value="full">full</option>
+                    <option value="collapsed">collapsed</option>
+                    <option value="shortcut">shortcut</option>
+                </select>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
+    <script src="https://unpkg.com/turndown-plugin-gfm/dist/turndown-plugin-gfm.js"></script>
+
+    <script>
+        /* Theme Toggle Logic */
+        const html = document.documentElement;
+        const themeToggle = document.getElementById('theme-toggle');
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+        });
+
+        /* Converter Logic */
+        const input = document.getElementById('html-in');
+        const output = document.getElementById('md-out');
+        const settingsContainer = document.getElementById('settings');
+
+        function process() {
+            const options = {};
+            settingsContainer.querySelectorAll('select').forEach(s => options[s.name] = s.value);
+
+            const service = new TurndownService(options);
+            service.use(turndownPluginGfm.gfm); // Enables tables, tasks, etc.
+
+            try {
+                output.value = service.turndown(input.value);
+            } catch (e) {
+                output.value = "Parsing Error...";
+            }
+        }
+
+        input.addEventListener('input', process);
+        settingsContainer.addEventListener('change', process);
+        process(); // Init
+    </script>
+
+</body>
+
+</html>
