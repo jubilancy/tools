@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>markdown-it demo</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" crossorigin="anonymous">
+  <!-- highlight.js CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" crossorigin="anonymous">
+
+  <!-- jQuery — cdnjs confirmed -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js" crossorigin="anonymous"></script>
+  <!-- lodash — cdnjs confirmed -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" crossorigin="anonymous"></script>
+  <!-- Bootstrap JS — cdnjs confirmed -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" crossorigin="anonymous"></script>
+  <!-- highlight.js — cdnjs confirmed -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" crossorigin="anonymous"></script>
+
+  <!-- markdown-it: jsdelivr is the official recommended CDN per markdown-it docs -->
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js" crossorigin="anonymous"></script>
+
+  <!-- markdown-it plugins via jsdelivr npm — exact pinned versions -->
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it-abbr@1.0.4/dist/markdown-it-abbr.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it-container@3.0.0/dist/markdown-it-container.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it-deflist@2.1.0/dist/markdown-it-deflist.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it-emoji@2.0.2/dist/markdown-it-emoji.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it-footnote@3.0.3/dist/markdown-it-footnote.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it-ins@3.0.1/dist/markdown-it-ins.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it-mark@3.0.1/dist/markdown-it-mark.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it-sub@1.0.0/dist/markdown-it-sub.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it-sup@1.0.0/dist/markdown-it-sup.min.js" crossorigin="anonymous"></script>
+
+  <!-- twemoji — cdnjs confirmed -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/twemoji.min.js" crossorigin="anonymous"></script>
+
+  <!-- mdurl: inlined — no reliable UMD CDN build exists for this package -->
+  <script>
+    const mdurl = (function () {
+      const CACHE = {}
+      function getCache(exclude) {
+        if (CACHE[exclude]) return CACHE[exclude]
+        const c = CACHE[exclude] = []
+        for (let i = 0; i < 128; i++) {
+          const ch = String.fromCharCode(i)
+          c.push(/^[A-Za-z0-9\-_.!~*'()]$/.test(ch) ? ch : encodeURIComponent(ch))
+        }
+        for (let i = 0; i < exclude.length; i++) c[exclude.charCodeAt(i)] = exclude[i]
+        return c
+      }
+      function encode(str, exclude, keepEncoded) {
+        if (typeof exclude !== 'string') { keepEncoded = exclude; exclude = ";/?:@&=+$,-_.!~*'()#" }
+        if (keepEncoded === undefined) keepEncoded = false
+        const c = getCache(exclude)
+        let out = ''
+        for (let i = 0; i < str.length; i++) {
+          const code = str.charCodeAt(i)
+          if (keepEncoded && code === 0x25 && i + 2 < str.length && /^[0-9a-f]{2}$/i.test(str.slice(i+1,i+3))) {
+            out += str.slice(i, i+3); i += 2; continue
+          }
+          if (code < 128) { out += c[code]; continue }
+          if (code >= 0xD800 && code <= 0xDBFF && i + 1 < str.length) {
+            const next = str.charCodeAt(i + 1)
+            if (next >= 0xDC00 && next <= 0xDFFF) { out += encodeURIComponent(str[i] + str[i+1]); i++; continue }
+          }
+          out += (code >= 0xD800 && code <= 0xDFFF) ? '%EF%BF%BD' : encodeURIComponent(str[i])
+        }
+        return out
+      }
+      function decode(str) {
+        try { return decodeURIComponent(str) } catch (_) { return str }
+      }
+      decode.componentChars = "-_.!~*'()"
+      return { encode, decode }
+    }())
+  </script>
+
+  <style>
+    html, body, .full-height { height: 100%; }
+
+    body {
+      overflow-x: hidden;
+      padding-bottom: 160px;
+      background-color: #fbfbfb;
+    }
+
+    /* hack to align emojis to line height */
+    .emoji { height: 1.2em; }
+
+    .demo-options { margin-bottom: 30px; }
+
+    .opt__strict .not-strict { opacity: 0.3; }
+
+    .checkbox { margin-right: 10px; }
+
+    .source {
+      width: 100%;
+      font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+      font-size: 13px;
+      padding: 2px;
+    }
+
+    .result-html {
+      padding: 2px 10px;
+      overflow: auto;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .result-html img { max-width: 35%; }
+
+    .result-src, .result-debug { display: none; }
+
+    .result-src-content, .result-debug-content { white-space: pre; }
+
+    .result-as-html .result-html { display: block; }
+    .result-as-html .result-src,
+    .result-as-html .result-debug { display: none; }
+
+    .result-as-src .result-src { display: block; }
+    .result-as-src .result-html,
+    .result-as-src .result-debug { display: none; }
+
+    .result-as-debug .result-debug { display: block; }
+    .result-as-debug .result-html,
+    .result-as-debug .result-src { display: none; }
+
+    .demo-control {
+      position: absolute;
+      right: 15px;
+      top: -17px;
+      border-radius: 6px 6px 0 0;
+      font-size: 12px;
+      background-color: #ddd;
+    }
+
+    .demo-control a { padding: 0 20px; }
+    .demo-control a:first-child { padding-left: 30px; }
+    .demo-control a:last-child { padding-right: 30px; }
+
+    /* twbs fix */
+    .hljs { padding: 9.5px; }
+    .hljs code { white-space: pre; }
+
+    .footnotes {
+      -moz-column-count: 2;
+      column-count: 2;
+    }
+
+    .footnotes-list { padding-left: 2em; }
+
+    /* custom container */
+    .warning {
+      background-color: #ff8;
+      padding: 20px;
+      border-radius: 6px;
+    }
+
+    .gh-ribbon {
+      display: block;
+      position: absolute;
+      right: -60px;
+      top: 44px;
+      transform: rotate(45deg);
+      width: 230px;
+      z-index: 10000;
+      white-space: nowrap;
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background-color: #686868;
+      box-shadow: 0 0 2px rgba(102, 102, 102, 0.4);
+      padding: 1px 0;
+    }
+
+    .gh-ribbon a {
+      text-decoration: none !important;
+      border: 1px solid #ccc;
+      color: #fff;
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      outline: medium none;
+      padding: 4px 50px 2px;
+      text-align: center;
+    }
+
+    /* Override default Bootstrap responsiveness for inline form */
+    .form-inline .radio,
+    .form-inline .checkbox {
+      display: inline-block;
+      margin-bottom: 0;
+      margin-top: 0;
+    }
+
+    .form-inline .form-group {
+      display: inline-block;
+      margin-bottom: 0;
+      vertical-align: middle;
+    }
+
+    .form-inline .form-control {
+      display: inline-block;
+      vertical-align: middle;
+      width: auto;
+    }
+
+    /* Fix: columns must be position:relative so .demo-control (absolute) anchors to them */
+    .col-xs-6.full-height {
+      position: relative;
+      padding-top: 20px; /* room for the .demo-control tab sitting at top:-17px */
+    }
+
+    /* Ensure textarea and result panel fill remaining column height */
+    .source,
+    .result-html,
+    .result-src,
+    .result-debug {
+      height: calc(100% - 4px);
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>markdown-it <small>demo</small></h1>
+    <div class="form-inline demo-options">
+      <div class="checkbox not-strict">
+        <label class="_tip" title="enable html tags in source text">
+          <input id="html" type="checkbox"> html
+        </label>
+      </div>
+      <div class="checkbox not-strict">
+        <label class="_tip" title="produce xhtml output (add / to single tags (&lt;br /&gt; instead of &lt;br&gt;)">
+          <input id="xhtmlOut" type="checkbox"> xhtmlOut
+        </label>
+      </div>
+      <div class="checkbox not-strict">
+        <label class="_tip" title="newlines in paragraphs are rendered as &lt;br&gt;">
+          <input id="breaks" type="checkbox"> breaks
+        </label>
+      </div>
+      <div class="checkbox not-strict">
+        <label class="_tip" title="autoconvert link-like texts to links">
+          <input id="linkify" type="checkbox"> linkify
+        </label>
+      </div>
+      <div class="checkbox not-strict">
+        <label class="_tip" title="do typographic replacements, (c) → © and so on">
+          <input id="typographer" type="checkbox"> typographer
+        </label>
+      </div>
+      <div class="checkbox not-strict">
+        <label class="_tip" title="enable output highlight for fenced blocks">
+          <input id="_highlight" type="checkbox"> highlight
+        </label>
+      </div>
+      <div class="form-group not-strict">
+        <input class="form-control _tip" id="langPrefix" type="text" placeholder="language prefix"
+          title="css class language prefix for fenced code blocks">
+      </div>
+      <div class="checkbox">
+        <label class="_tip" title="force strict CommonMark mode - output will be equal to reference parser">
+          <input id="_strict" type="checkbox"> CommonMark strict
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="container full-height">
+    <div class="row full-height">
+      <div class="col-xs-6 full-height">
+        <div class="demo-control">
+          <a class="source-clear" href="#">clear</a>
+          <a id="permalink" href="./" title="Share this snippet as link"><strong>permalink</strong></a>
+        </div>
+        <textarea class="source full-height"># Hello, markdown-it!
+
+This is a **live demo**. Edit this text on the left and see the result on the right.
+
+---
+
+## Features
+
+- *italic* and **bold**
+- ~~strikethrough~~ (needs plugin)
+- `inline code`
+- [links](https://github.com/markdown-it/markdown-it)
+
+## Code block
+
+```js
+var md = markdownit();
+var result = md.render('# Hello!');
+console.log(result);
+```
+
+## Emoji :tada:
+
+Emoji support via twemoji: :smile: :rocket: :+1:
+
+## Footnote
+
+Here is a footnote reference,[^1] and another.[^longnote]
+
+[^1]: Here is the footnote.
+[^longnote]: Here's one with multiple blocks.
+
+## Custom container
+
+::: warning
+This is a **warning** custom container block.
+:::
+
+## Tables
+
+| Feature     | Supported |
+|-------------|-----------|
+| Tables      | ✅        |
+| Code blocks | ✅        |
+| Footnotes   | ✅        |
+</textarea>
+      </div>
+      <section class="col-xs-6 full-height">
+        <div class="demo-control">
+          <a href="#" data-result-as="html">html</a>
+          <a href="#" data-result-as="src">source</a>
+          <a href="#" data-result-as="debug">debug</a>
+        </div>
+        <div class="result-html full-height"></div>
+        <pre class="hljs result-src full-height"><code class="result-src-content full-height"></code></pre>
+        <pre class="hljs result-debug full-height"><code class="result-debug-content full-height"></code></pre>
+      </section>
+    </div>
+  </div>
+
+  <div class="gh-ribbon">
+    <a href="https://github.com/markdown-it/markdown-it" target="_blank">Fork me on GitHub</a>
+  </div>
+
+  <script>
+    /* eslint-env browser */
+    /* global $, _, markdownit, hljs, twemoji, mdurl */
+
+    // Guard: verify all critical globals loaded before proceeding
+    var _missingLibs = []
+    if (typeof $ === 'undefined')          _missingLibs.push('jQuery')
+    if (typeof _ === 'undefined')          _missingLibs.push('lodash')
+    if (typeof markdownit === 'undefined') _missingLibs.push('markdown-it')
+    if (typeof hljs === 'undefined')       _missingLibs.push('highlight.js')
+    if (_missingLibs.length > 0) {
+      document.addEventListener('DOMContentLoaded', function () {
+        document.body.innerHTML = '<div style="padding:40px;font-family:monospace;color:red">' +
+          '<h2>Failed to load required scripts:</h2><ul>' +
+          _missingLibs.map(function(l){ return '<li>' + l + '</li>' }).join('') +
+          '</ul><p>Check your internet connection and reload.</p></div>'
+      })
+      throw new Error('Missing required libraries: ' + _missingLibs.join(', '))
+    }
+
+    let mdHtml, mdSrc, permalink, scrollMap
+
+    const defaults = {
+      html:         false,
+      xhtmlOut:     false,
+      breaks:       false,
+      langPrefix:   'language-',
+      linkify:      true,
+      typographer:  true,
+      _highlight:   true,
+      _strict:      false,
+      _view:        'html'   // 'html' | 'src' | 'debug'
+    }
+
+    defaults.highlight = function (str, lang) {
+      const esc = mdHtml.utils.escapeHtml
+      try {
+        if (!defaults._highlight) throw new Error('highlighting disabled')
+        if (lang && lang !== 'auto' && hljs.getLanguage(lang)) {
+          return '<pre class="hljs language-' + esc(lang.toLowerCase()) + '"><code>' +
+            hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
+            '</code></pre>'
+        } else if (lang === 'auto') {
+          const result = hljs.highlightAuto(str)
+          console.log('highlight language: ' + result.language + ', relevance: ' + result.relevance)
+          return '<pre class="hljs language-' + esc(result.language) + '"><code>' +
+            result.value +
+            '</code></pre>'
+        }
+      } catch (__) { /**/ }
+      return '<pre><code class="hljs">' + esc(str) + '</code></pre>'
+    }
+
+    function setOptionClass(name, val) {
+      if (val) { $('body').addClass('opt_' + name) }
+      else      { $('body').removeClass('opt_' + name) }
+    }
+
+    function setResultView(val) {
+      $('body').removeClass('result-as-html result-as-src result-as-debug')
+      $('body').addClass('result-as-' + val)
+      defaults._view = val
+    }
+
+    function mdInit() {
+      // markdown-it-emoji v2 UMD exposes { full, light } — we want .full
+      const emojiPlugin = window.markdownitEmoji
+        ? (window.markdownitEmoji.full || window.markdownitEmoji)
+        : null
+
+      function usePlugin(md, plugin, opt) {
+        if (typeof plugin === 'function') {
+          try { opt !== undefined ? md.use(plugin, opt) : md.use(plugin) } catch(e) { console.warn('Plugin failed:', e) }
+        }
+        return md
+      }
+
+      if (defaults._strict) {
+        mdHtml = window.markdownit('commonmark')
+        mdSrc  = window.markdownit('commonmark')
+      } else {
+        mdHtml = window.markdownit(defaults)
+        usePlugin(mdHtml, window.markdownitAbbr)
+        usePlugin(mdHtml, window.markdownitContainer, 'warning')
+        usePlugin(mdHtml, window.markdownitDeflist)
+        usePlugin(mdHtml, emojiPlugin)
+        usePlugin(mdHtml, window.markdownitFootnote)
+        usePlugin(mdHtml, window.markdownitIns)
+        usePlugin(mdHtml, window.markdownitMark)
+        usePlugin(mdHtml, window.markdownitSub)
+        usePlugin(mdHtml, window.markdownitSup)
+
+        mdSrc = window.markdownit(defaults)
+        usePlugin(mdSrc, window.markdownitAbbr)
+        usePlugin(mdSrc, window.markdownitContainer, 'warning')
+        usePlugin(mdSrc, window.markdownitDeflist)
+        usePlugin(mdSrc, emojiPlugin)
+        usePlugin(mdSrc, window.markdownitFootnote)
+        usePlugin(mdSrc, window.markdownitIns)
+        usePlugin(mdSrc, window.markdownitMark)
+        usePlugin(mdSrc, window.markdownitSub)
+        usePlugin(mdSrc, window.markdownitSup)
+      }
+
+      // Prettier table output
+      mdHtml.renderer.rules.table_open = function () {
+        return '<table class="table table-striped">\n'
+      }
+
+      // Replace emoji codes with twemoji images (only if both plugin and twemoji loaded)
+      if (window.twemoji && mdHtml.renderer.rules.emoji) {
+        mdHtml.renderer.rules.emoji = function (token, idx) {
+          return window.twemoji.parse(token[idx].content)
+        }
+      }
+
+      // Inject line numbers for sync scroll
+      function injectLineNumbers(tokens, idx, options, env, slf) {
+        if (tokens[idx].map && tokens[idx].level === 0) {
+          const line = tokens[idx].map[0]
+          tokens[idx].attrJoin('class', 'line')
+          tokens[idx].attrSet('data-line', String(line))
+        }
+        return slf.renderToken(tokens, idx, options, env, slf)
+      }
+      mdHtml.renderer.rules.paragraph_open = mdHtml.renderer.rules.heading_open = injectLineNumbers
+    }
+
+    function setHighlightedContent(selector, content, lang) {
+      if (window.hljs) {
+        $(selector).html(window.hljs.highlight(content, { language: lang }).value)
+      } else {
+        $(selector).text(content)
+      }
+    }
+
+    function updateResult() {
+      const source = $('.source').val()
+
+      if (defaults._view === 'src') {
+        setHighlightedContent('.result-src-content', mdSrc.render(source), 'html')
+      } else if (defaults._view === 'debug') {
+        setHighlightedContent(
+          '.result-debug-content',
+          JSON.stringify(mdSrc.parse(source, { references: {} }), null, 2),
+          'json'
+        )
+      } else {
+        $('.result-html').html(mdHtml.render(source))
+      }
+
+      scrollMap = null   // reset scroll cache on content update
+
+      try {
+        if (source) {
+          permalink.href = '#md3=' + mdurl.encode(JSON.stringify({
+            source,
+            defaults: _.omit(defaults, 'highlight')
+          }), '-_.!~', false)
+        } else {
+          permalink.href = ''
+        }
+      } catch (__) {
+        permalink.href = ''
+      }
+    }
+
+    function buildScrollMap() {
+      const textarea      = $('.source')
+      const sourceLikeDiv = $('<div />').css({
+        position:    'absolute',
+        visibility:  'hidden',
+        height:      'auto',
+        width:       textarea[0].clientWidth,
+        'font-size':    textarea.css('font-size'),
+        'font-family':  textarea.css('font-family'),
+        'line-height':  textarea.css('line-height'),
+        'white-space':  textarea.css('white-space')
+      }).appendTo('body')
+
+      const offset       = $('.result-html').scrollTop() - $('.result-html').offset().top
+      const _scrollMap   = []
+      const nonEmptyList = []
+      const lineHeightMap = []
+
+      let acc = 0
+      textarea.val().split('\n').forEach(function (str) {
+        lineHeightMap.push(acc)
+        if (str.length === 0) { acc++; return }
+        sourceLikeDiv.text(str)
+        const h  = parseFloat(sourceLikeDiv.css('height'))
+        const lh = parseFloat(sourceLikeDiv.css('line-height'))
+        acc += Math.round(h / lh)
+      })
+      sourceLikeDiv.remove()
+      lineHeightMap.push(acc)
+      const linesCount = acc
+
+      for (let i = 0; i < linesCount; i++) _scrollMap.push(-1)
+
+      nonEmptyList.push(0)
+      _scrollMap[0] = 0
+
+      $('.line').each(function (n, el) {
+        const $el = $(el)
+        let t = $el.data('line')
+        if (t === '') return
+        t = lineHeightMap[t]
+        if (t !== 0) nonEmptyList.push(t)
+        _scrollMap[t] = Math.round($el.offset().top + offset)
+      })
+
+      nonEmptyList.push(linesCount)
+      _scrollMap[linesCount] = $('.result-html')[0].scrollHeight
+
+      let pos = 0
+      for (let i = 1; i < linesCount; i++) {
+        if (_scrollMap[i] !== -1) { pos++; continue }
+        const a = nonEmptyList[pos]
+        const b = nonEmptyList[pos + 1]
+        _scrollMap[i] = Math.round((_scrollMap[b] * (i - a) + _scrollMap[a] * (b - i)) / (b - a))
+      }
+
+      return _scrollMap
+    }
+
+    const syncResultScroll = _.debounce(function () {
+      const textarea   = $('.source')
+      const lineHeight = parseFloat(textarea.css('line-height'))
+      const lineNo     = Math.floor(textarea.scrollTop() / lineHeight)
+      if (!scrollMap) scrollMap = buildScrollMap()
+      const posTo = scrollMap[lineNo]
+      $('.result-html').stop(true).animate({ scrollTop: posTo }, 100, 'linear')
+    }, 50, { maxWait: 50 })
+
+    const syncSrcScroll = _.debounce(function () {
+      const resultHtml = $('.result-html')
+      const scrollTop  = resultHtml.scrollTop()
+      const textarea   = $('.source')
+      const lineHeight = parseFloat(textarea.css('line-height'))
+      if (!scrollMap) scrollMap = buildScrollMap()
+
+      const lines = Object.keys(scrollMap)
+      if (lines.length < 1) return
+
+      let line = lines[0]
+      for (let i = 1; i < lines.length; i++) {
+        if (scrollMap[lines[i]] < scrollTop) { line = lines[i]; continue }
+        break
+      }
+      textarea.stop(true).animate({ scrollTop: lineHeight * line }, 100, 'linear')
+    }, 50, { maxWait: 50 })
+
+    function loadPermalink() {
+      if (!location.hash) return
+      let cfg
+      try {
+        if      (/^#md3=/.test(location.hash)) {
+          cfg = JSON.parse(mdurl.decode(location.hash.slice(5), mdurl.decode.componentChars))
+        } else if (/^#md64=/.test(location.hash)) {
+          cfg = JSON.parse(window.atob(location.hash.slice(6)))
+        } else if (/^#md=/.test(location.hash))  {
+          cfg = JSON.parse(decodeURIComponent(location.hash.slice(4)))
+        } else { return }
+
+        if (_.isString(cfg.source)) $('.source').val(cfg.source)
+      } catch (__) { return }
+
+      const opts = _.isObject(cfg.defaults) ? cfg.defaults : {}
+      _.forOwn(opts, function (val, key) {
+        if (!_.has(defaults, key)) return
+        if (key === '_src') { defaults._view = val ? 'src' : 'html'; return }
+        if ((_.isBoolean(defaults[key]) && _.isBoolean(val)) ||
+            (_.isString(defaults[key])  && _.isString(val))) {
+          defaults[key] = val
+        }
+      })
+      if (['html', 'src', 'debug'].indexOf(defaults._view) === -1) defaults._view = 'html'
+    }
+
+    // ── Init on DOM ready ───────────────────────────────────────────────────
+    $(function () {
+      // Highlight any static code samples
+      if (window.hljs) {
+        $('pre.code-sample code').each(function (i, block) { window.hljs.highlightElement(block) })
+      }
+
+      loadPermalink()
+
+      // Activate Bootstrap tooltips
+      $('._tip').tooltip({ container: 'body' })
+
+      // Bind option controls to defaults
+      _.forOwn(defaults, function (val, key) {
+        if (key === 'highlight') return
+        const el  = document.getElementById(key)
+        if (!el) return
+        const $el = $(el)
+
+        if (_.isBoolean(val)) {
+          $el.prop('checked', val)
+          $el.on('change', function () {
+            const value = Boolean($el.prop('checked'))
+            setOptionClass(key, value)
+            defaults[key] = value
+            mdInit()
+            updateResult()
+          })
+          setOptionClass(key, val)
+        } else {
+          $el.val(val)
+          $el.on('change update keyup', function () {
+            defaults[key] = String($el.val())
+            mdInit()
+            updateResult()
+          })
+        }
+      })
+
+      setResultView(defaults._view)
+      mdInit()
+      permalink = document.getElementById('permalink')
+
+      // Source textarea listeners
+      $('.source').on('keyup paste cut mouseup', _.debounce(updateResult, 300, { maxWait: 500 }))
+
+      $('.source').on('touchstart mouseover', function () {
+        $('.result-html').off('scroll')
+        $('.source').on('scroll', syncResultScroll)
+      })
+
+      $('.result-html').on('touchstart mouseover', function () {
+        $('.source').off('scroll')
+        $('.result-html').on('scroll', syncSrcScroll)
+      })
+
+      $('.source-clear').on('click', function (event) {
+        $('.source').val('')
+        updateResult()
+        event.preventDefault()
+      })
+
+      $(document).on('click', '[data-result-as]', function (event) {
+        const view = $(this).data('resultAs')
+        if (view) {
+          setResultView(view)
+          updateResult()
+          event.preventDefault()
+        }
+      })
+
+      $(window).on('resize', function () { scrollMap = null })
+
+      updateResult()
+    })
+  </script>
+</body>
+</html>
