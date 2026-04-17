@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bulk Hyperlink Generator | tools.eliana.lol</title>
+    <link rel="stylesheet" href="global.css">
+    <style>
+        .tool-layout { display: flex; flex-direction: column; gap: 20px; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+        label { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 5px; }
+        .opts { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; font-size: 0.75rem; color: var(--puny); }
+        .stats { display: flex; gap: 2rem; padding: 15px; background: var(--hover); border: 1px solid var(--puny); border-radius: 6px; margin-top: 1rem; }
+        .stat-val { font-size: 1.4rem; font-weight: bold; color: var(--accent); display: block; }
+        .stat-lbl { font-size: 0.65rem; color: var(--puny); display: block; text-transform: uppercase; }
+        @media(max-width:520px){ .row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="left"><a href="index.html">home</a> | <a href="extra.html">extra</a> | <a href="credits.html">credits</a> | <a href="changelog.html">logs</a></div>
+        <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+    </nav>
+    <main>
+        <h1>Bulk Hyperlink Generator</h1>
+        <p class="puny">Paste URLs and anchor texts to generate HTML, Markdown, or BBCode.</p>
+        <div class="tool-layout">
+            <div class="action-bar">
+                <label>Format:</label>
+                <select id="format" style="background: var(--hover); color: var(--text); border: 1px solid var(--puny); font-family: monospace; padding: 5px;">
+                    <option value="html">HTML</option>
+                    <option value="markdown">Markdown</option>
+                    <option value="plain">Plain URL</option>
+                    <option value="bbcode">BBCode</option>
+                </select>
+                <div class="opts">
+                    <label><input type="checkbox" id="newTab"> new tab</label>
+                    <label><input type="checkbox" id="nofollow"> nofollow</label>
+                    <label><input type="checkbox" id="perLine" checked> one per line</label>
+                </div>
+            </div>
+            <div class="row">
+                <div><label>URLs</label><textarea id="urls" rows="8"></textarea></div>
+                <div><label>Anchor texts (Optional)</label><textarea id="anchors" rows="8"></textarea></div>
+            </div>
+            <div class="action-bar">
+                <button onclick="generate()" style="border-color: var(--accent); font-weight: bold;">✨ Generate</button>
+                <button onclick="loadSample()">Sample</button>
+                <button onclick="clearAll()" style="color: var(--accent); border-style: dashed;">Clear</button>
+            </div>
+            <div class="stats" id="stats" style="display:none;">
+                <div><span class="stat-val" id="stat-count">0</span><span class="stat-lbl">links</span></div>
+                <div><span class="stat-val" id="stat-format">—</span><span class="stat-lbl">format</span></div>
+            </div>
+            <div><label>Output</label><textarea id="output" rows="8" readonly style="background: var(--hover); color: var(--accent);"></textarea></div>
+        </div>
+    </main>
+    <script>
+        const html = document.documentElement; const toggle = document.getElementById('theme-toggle');
+        const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        html.setAttribute('data-theme', saved); if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+        if (toggle) { toggle.onclick = () => { const now = html.getAttribute('data-theme'); const next = now === 'dark' ? 'light' : 'dark'; html.setAttribute('data-theme', next); localStorage.setItem('theme', next); toggle.innerText = next === 'dark' ? '[light]' : '[dark]'; }; }
+        function generate() {
+            const urls = document.getElementById('urls').value.split('\n').map(l => l.trim());
+            const anchors = document.getElementById('anchors').value.split('\n').map(l => l.trim());
+            const format = document.getElementById('format').value;
+            const newTab = document.getElementById('newTab').checked;
+            const nofollow = document.getElementById('nofollow').checked;
+            const perLine = document.getElementById('perLine').checked;
+            const results = [];
+            for (let i = 0; i < urls.length; i++) {
+                const url = urls[i]; if (!url) continue;
+                const anchor = (anchors[i] && anchors[i].length > 0) ? anchors[i] : url;
+                let link = '';
+                if (format === 'html') {
+                    let attrs = `href="${url}"`;
+                    if (newTab) attrs += ' target="_blank" rel="noopener' + (nofollow ? ' nofollow' : '') + '"';
+                    else if (nofollow) attrs += ' rel="nofollow"';
+                    link = `<a ${attrs}>${anchor}</a>`;
+                } else if (format === 'markdown') { link = `[${anchor}](${url})`; }
+                else if (format === 'plain') { link = url; }
+                else if (format === 'bbcode') { link = `[url=${url}]${anchor}[/url]`; }
+                results.push(link);
+            }
+            document.getElementById('output').value = results.join(perLine ? '\n' : ' ');
+            document.getElementById('stat-count').textContent = results.length;
+            document.getElementById('stat-format').textContent = format.toUpperCase();
+            document.getElementById('stats').style.display = results.length ? 'flex' : 'none';
+        }
+        function clearAll() { ['urls','anchors','output'].forEach(id => document.getElementById(id).value = ''); document.getElementById('stats').style.display = 'none'; }
+        function loadSample() { document.getElementById('urls').value = 'https://eliana.lol'; document.getElementById('anchors').value = 'My Site'; generate(); }
+    </script>
+</body>
+</html>

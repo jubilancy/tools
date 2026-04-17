@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Widget Generator | tools.eliana.lol</title>
+    <link rel="stylesheet" href="global.css">
+    <style>
+        .preview-box { border: 1px solid var(--puny); border-radius: 6px; background: var(--hover); padding: 20px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="left"><a href="index.html">home</a> | <a href="extra.html">extra</a> | <a href="credits.html">credits</a> | <a href="changelog.html">logs</a></div>
+        <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+    </nav>
+    <main>
+        <h1>RSS Widget Generator</h1>
+        <input type="url" id="feedUrl" placeholder="Feed URL..." style="width: 100%; padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--puny);">
+        <button onclick="genWidget()" style="border-color: var(--accent); margin-top: 10px;">Generate</button>
+        <div class="preview-box" id="preview">Preview will appear here...</div>
+        <textarea id="codeOut" rows="5" style="margin-top: 10px; font-size: 0.7rem;"></textarea>
+    </main>
+    <script>
+        function genWidget() {
+            const url = document.getElementById('feedUrl').value;
+            const code = `<div id="rss-widget" data-url="${url}"></div><script src="widget.js"><\/script>`;
+            document.getElementById('codeOut').value = code;
+            document.getElementById('preview').innerHTML = `<p class="puny">Widget code generated for ${url}</p>`;
+        }
+    </script>
+</body>
+</html>

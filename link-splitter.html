@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Link Splitter | tools.eliana.lol</title>
+    <link rel="stylesheet" href="global.css">
+    <style>
+        .output-group { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        label { font-size: 0.7rem; color: var(--puny); text-transform: uppercase; font-weight: bold; }
+        @media(max-width:600px){ .output-group { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="left"><a href="index.html">home</a> | <a href="extra.html">extra</a> | <a href="credits.html">credits</a> | <a href="changelog.html">logs</a></div>
+        <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+    </nav>
+    <main>
+        <h1>Link Splitter</h1>
+        <p class="puny">Extract titles and URLs from Markdown or HTML links.</p>
+        <textarea id="inputBox" rows="8" placeholder="[Title](URL)"></textarea>
+        <div style="margin: 10px 0;">
+            <button onclick="splitLinks()" style="border-color: var(--accent);">Split</button>
+            <button onclick="clearAll()" style="color: var(--accent); border-style: dashed;">Clear</button>
+        </div>
+        <div class="output-group">
+            <div><label>URLs</label><textarea id="urlBox" rows="10" readonly style="background: var(--hover);"></textarea></div>
+            <div><label>Titles</label><textarea id="titleBox" rows="10" readonly style="background: var(--hover);"></textarea></div>
+        </div>
+    </main>
+    <script>
+        function splitLinks() {
+            const input = document.getElementById('inputBox').value;
+            const mdRe = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/gi;
+            let m, urls=[], titles=[];
+            while((m = mdRe.exec(input)) !== null) { titles.push(m[1]); urls.push(m[2]); }
+            document.getElementById('urlBox').value = urls.join('\n');
+            document.getElementById('titleBox').value = titles.join('\n');
+        }
+        function clearAll() { document.getElementById('inputBox').value = ''; document.getElementById('urlBox').value = ''; document.getElementById('titleBox').value = ''; }
+    </script>
+</body>
+</html>

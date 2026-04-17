@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>CSV to JSON Table | tools.eliana.lol</title>
+    <link rel="stylesheet" href="global.css">
+    <style>
+        .table-container { background: var(--hover); border-radius: 8px; overflow-x: auto; margin-top: 20px; border: 1px solid var(--puny); }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background: var(--accent); color: var(--bg); padding: 12px; font-size: 0.75rem; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid var(--puny); color: var(--text); font-size: 0.85rem; }
+        tr:hover { background: var(--highlight); }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="left"><a href="index.html">home</a> | <a href="extra.html">extra</a> | <a href="credits.html">credits</a> | <a href="changelog.html">logs</a></div>
+        <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+    </nav>
+    <main>
+        <h1>CSV Visualizer</h1>
+        <p class="puny">Automatic table generation from JSON/CSV fragments.</p>
+        <div class="table-container">
+            <table><thead><tr id="table-header"></tr></thead><tbody id="table-body"></tbody></table>
+        </div>
+    </main>
+    <script id="raw-data" type="application/json">
+        [{"ID":"1","Name":"Alice","Role":"Admin"},{"ID":"2","Name":"Bob","Role":"Editor"}]
+    </script>
+    <script>
+        const html = document.documentElement; const toggle = document.getElementById('theme-toggle');
+        const saved = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-theme', saved);
+        try {
+            const data = JSON.parse(document.getElementById('raw-data').textContent);
+            if (data.length > 0) {
+                const headerRow = document.getElementById('table-header');
+                const tableBody = document.getElementById('table-body');
+                const columns = Object.keys(data[0]);
+                columns.forEach(col => { const th = document.createElement('th'); th.textContent = col; headerRow.appendChild(th); });
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    columns.forEach(col => { const td = document.createElement('td'); td.textContent = row[col] || ""; tr.appendChild(td); });
+                    tableBody.appendChild(tr);
+                });
+            }
+        } catch (e) { console.error(e); }
+    </script>
+</body>
+</html>

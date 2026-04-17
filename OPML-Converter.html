@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>OPML Converter | tools.eliana.lol</title>
+    <link rel="stylesheet" href="global.css">
+    <style>
+        .feed-row { display: grid; grid-template-columns: 1fr auto; padding: 10px; background: var(--hover); border-bottom: 1px solid var(--puny); font-size: 0.8rem; }
+        .feed-url { color: var(--puny); font-size: 0.7rem; }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="left"><a href="index.html">home</a> | <a href="extra.html">extra</a> | <a href="credits.html">credits</a> | <a href="changelog.html">logs</a></div>
+        <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+    </nav>
+    <main>
+        <h1>OPML to List</h1>
+        <input type="file" id="fileInput" style="margin: 20px 0;">
+        <div id="output"></div>
+    </main>
+    <script>
+        document.getElementById('fileInput').onchange = (e) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const doc = new DOMParser().parseFromString(event.target.result, 'text/xml');
+                const out = document.getElementById('output'); out.innerHTML = '';
+                doc.querySelectorAll('outline[xmlUrl]').forEach(el => {
+                    out.innerHTML += `<div class="feed-row"><div>${el.getAttribute('title')}</div><div class="feed-url">${el.getAttribute('xmlUrl')}</div></div>`;
+                });
+            };
+            reader.readAsText(e.target.files[0]);
+        };
+    </script>
+</body>
+</html>
