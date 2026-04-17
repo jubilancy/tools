@@ -1,27 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>toolbox | tools.eliana.lol</title>
-    <link rel="stylesheet" href="global.css" />
-    <link rel="icon" type="image/x-icon" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>simple online toolbox | tools.eliana.lol</title>
+    <link rel="stylesheet" href="global.css">
+    <link rel="icon" type="image/x-icon" href="favicon.svg">
 </head>
-
 <body>
 
     <nav>
-        <div class="left">
-            <a href="index.html">home</a> |
-            <a href="extra.html">extra</a> |
-            <a href="credits.html">credits</a> |
-            <a href="changelog.html">logs</a>
-        </div>
-        <div class="right">
-            <button id="theme-toggle">[theme]</button> |
-            <a href="https://eliana.lol">site</a>
-        </div>
+      <div class="left">
+        <a href="index.html">home</a> | 
+        <a href="extra.html">extra</a> | 
+        <a href="credits.html">credits</a> |
+        <a href="changelog.html">logs</a>
+      </div>
+      <div class="right">
+        <button id="theme-toggle">[theme]</button> |
+        <a href="https://eliana.lol">site</a>
+      </div>
     </nav>
 
     <main>
@@ -29,82 +27,91 @@
         <p class="puny">A collection of single-purpose utilities for the small web.</p>
 
         <div class="changelog-marquee">
-            <strong>NEW:</strong> Filenames have been scrubbed and unified.
+            <strong>LATEST:</strong> Moved experimental markdown parsers to the <code>/demo/</code> directory.
         </div>
 
+        <h2 class="section-title">Book & Reading Tools</h2>
+        <ul class="tool-grid">
+            <li>
+                <a href="batch-isbn-finder.html">Batch ISBN Finder</a>
+                <div class="puny">Fetch ISBN-10/13 codes from book titles.</div>
+            </li>
+            <li>
+                <a href="book-list-cleaner.html">Book List Cleaner</a>
+                <div class="puny">Scrub messy lists into clean titles.</div>
+            </li>
+            <li>
+                <a href="OPML-Converter.html">OPML Converter</a>
+                <div class="puny">Inspect and export RSS subscription files.</div>
+            </li>
+        </ul>
+
+        <h2 class="section-title">RSS & Feed Utilities</h2>
         <ul class="tool-grid">
             <li>
                 <a href="bulk-rss-finder.html">Bulk RSS Finder</a>
-                <div class="puny">Sniff RSS/Atom feeds from a list of URLs.</div>
+                <div class="puny">Sniff feed links from website lists.</div>
             </li>
             <li>
-                <a href="url-cleaner.html">URL List Cleaner</a>
-                <div class="puny">Deduplicate, trim, and scrub large link lists.</div>
-            </li>
-            <li>
-                <a href="bulk-url.html">Bulk URL Opener</a>
-                <div class="puny">Open a list of links in multiple tabs at once.</div>
-            </li>
-            <li>
-                <a href="code-editor.html">HTML Code Editor</a>
-                <div class="puny">Live preview and scratchpad for web snippets.</div>
-            </li>
-            <li>
-                <a href="code-cleaner.html">CSS Scrubber</a>
-                <div class="puny">Strip styles and CSS from HTML to see the structure.</div>
-            </li>
-            <li>
-                <a href="paste-markdown.html">Paste to Markdown</a>
-                <div class="puny">Convert formatted web content into clean Markdown.</div>
-            </li>
-            <li>
-                <a href="clean-text.html">Text Cleaner</a>
-                <div class="puny">Remove empty lines and whitespace from text blocks.</div>
-            </li>
-            <li>
-                <a href="Batch-ISBN-Fetcher.html">ISBN Fetcher</a>
-                <div class="puny">Retrieve ISBN-10/13 codes from book titles in bulk.</div>
-            </li>
-            <li>
-                <a href="book-list-cleaner-tool.html">Book List Cleaner</a>
-                <div class="puny">Scrub messy book lists into one-per-line titles.</div>
-            </li>
-            <li>
-                <a href="CSV-to-JSON-Table.html">CSV to JSON</a>
-                <div class="puny">Convert CSV data into JSON or standard HTML tables.</div>
-            </li>
-            <li>
-                <a href="HTML-Hex-color-visualiser.html">Hex Visualizer</a>
-                <div class="puny">Preview and verify HTML hex colors instantly.</div>
-            </li>
-            <li>
-                <a href="rss-reader.html">Simple RSS Reader</a>
-                <div class="puny">A lightweight browser-based feed viewer.</div>
+                <a href="rss-reader.html">RSS Reader</a>
+                <div class="puny">Browser-based viewer for RSS/Atom feeds.</div>
             </li>
             <li>
                 <a href="rss-to-markdown.html">RSS to Markdown</a>
-                <div class="puny">Turn feed entries into clean markdown notes.</div>
+                <div class="puny">Convert feed entries into markdown notes.</div>
+            </li>
+            <li>
+                <a href="widget-generator.html">Widget Generator</a>
+                <div class="puny">Create embeddable RSS widgets.</div>
+            </li>
+        </ul>
+
+        <h2 class="section-title">Markdown Demos (/demo/)</h2>
+        <ul class="tool-grid">
+            <li>
+                <a href="demo/claude-markdown-it.html">Claude Markdown-it</a>
+                <div class="puny">Markdown-it parser optimized for Claude.</div>
+            </li>
+            <li>
+                <a href="demo/jinja-markdown-it.html">Jinja Markdown-it</a>
+                <div class="puny">Markdown-it parser with Jinja support.</div>
+            </li>
+            <li>
+                <a href="demo/markdown-it.html">Markdown-it</a>
+                <div class="puny">Standard markdown-it live editor.</div>
+            </li>
+            <li>
+                <a href="demo/Convert%20URL%20to%20MarkDown.html">URL to Markdown</a>
+                <div class="puny">Convert web content directly to markdown.</div>
+            </li>
+        </ul>
+
+        <h2 class="section-title">Development & Code</h2>
+        <ul class="tool-grid">
+            <li>
+                <a href="code-editor.html">HTML Editor</a>
+                <div class="puny">Live scratchpad for web snippets.</div>
+            </li>
+            <li>
+                <a href="Hex-Visualizer.html">Hex Visualizer</a>
+                <div class="puny">Preview HTML hex color codes.</div>
+            </li>
+            <li>
+                <a href="CSV%20to%20JSON%20Table.html">CSV to JSON</a>
+                <div class="puny">Convert CSV data to JSON tables.</div>
             </li>
             <li>
                 <a href="toc-generator.html">ToC Generator</a>
-                <div class="puny">Online markdown table of contents generator.</div>
+                <div class="puny">Generate Markdown Tables of Contents.</div>
             </li>
-            <li>
-                <a href="omdb_lookup.html">OMDb Lookup</a>
-                <div class="puny">Search movie metadata and posters via API.</div>
-            </li>
-            <li>
-                <a href="guestbook-idea2.html">Guestbook</a>
-                <div class="puny">A shared canvas for digital garden visitors.</div>
-            </li>
-            <li>
-                <a href="extra.html">Extra Tools</a>
-                <div class="puny">Experimental scripts and niche utilities.</div>
-            </li>
-            <li>
-                <a href="changelog.html">Changelog</a>
-                <div class="puny">The history of pushes and tool updates.</div>
-            </li>
+        </ul>
+
+        <h2 class="section-title">Site Meta</h2>
+        <ul class="tool-grid">
+            <li><a href="guestbook-idea2.html">Guestbook v2</a></li>
+            <li><a href="credits.html">Credits</a></li>
+            <li><a href="changelog.html">Changelog</a></li>
+            <li><a href="extra.html">Experimental / Extra</a></li>
         </ul>
     </main>
 
@@ -116,7 +123,7 @@
         const html = document.documentElement;
         const toggle = document.getElementById('theme-toggle');
         const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-
+        
         html.setAttribute('data-theme', saved);
         if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
 
@@ -131,5 +138,4 @@
         }
     </script>
 </body>
-
 </html>
