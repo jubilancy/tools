@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Book List Cleaner | tools.eliana.lol</title>
+    <link rel="stylesheet" href="global.css">
+    <style>
+        .tool-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Rules Grid & Interaction */
+        .rules-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: .5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .rule {
+            display: flex;
+            align-items: flex-start;
+            gap: .5rem;
+            background: var(--hover);
+            border: 1px solid var(--puny);
+            border-radius: 4px;
+            padding: .55rem .75rem;
+            font-size: .68rem;
+            cursor: pointer;
+        }
+
+        .rule:hover {
+            border-color: var(--accent);
+        }
+
+        .rule-name {
+            color: var(--text);
+            font-size: .72rem;
+            display: block;
+            margin-bottom: .1rem;
+            font-weight: bold;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: var(--puny);
+            margin-bottom: 5px;
+        }
+
+        .action-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        /* Stats Dashboard */
+        .stats {
+            display: flex;
+            gap: 2rem;
+            padding: .85rem 1.25rem;
+            background: var(--hover);
+            border: 1px solid var(--puny);
+            border-radius: 6px;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-val {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--accent);
+            display: block;
+        }
+
+        .stat-lbl {
+            font-size: .65rem;
+            color: var(--puny);
+            display: block;
+            text-transform: uppercase;
+        }
+
+        .out-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: .4rem;
+        }
+
+        .toast {
+            font-size: .7rem;
+            color: var(--accent);
+            opacity: 0;
+            transition: opacity .2s;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        @media(max-width:580px) {
+            .grid, .rules-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <div class="left">
+            <a href="index.html">home</a> |
+            <a href="extra.html">extra</a> |
+            <a href="credits.html">credits</a> |
+            <a href="changelog.html">logs</a>
+        </div>
+        <div class="right">
+            <button id="theme-toggle">[theme]</button> |
+            <a href="https://eliana.lol">site</a>
+        </div>
+    </nav>
+
+    <main>
+        <h1>Book List Cleaner</h1>
+        <p class="puny">Paste a messy list — numbering, bullets, stray HTML, or JSON. Each entry becomes one clean title per line.</p>
+
+        <div class="tool-layout">
+            <div>
+                <label>Cleaning rules</label>
+                <div class="rules-grid" id="rulesGrid"></div>
+            </div>
+
+            <div class="action-bar">
+                <button onclick="clean()" style="border-color: var(--accent); font-weight: bold;">✨ Clean List</button>
+                <button onclick="loadSample()">Load Sample</button>
+                <button onclick="clearAll()" style="color: var(--accent); border-style: dashed;">Clear All</button>
+            </div>
+
+            <div class="grid">
+                <div class="col">
+                    <label>Raw input</label>
+                    <textarea id="input" rows="12" placeholder="Paste messy text here..."></textarea>
+                </div>
+                <div class="col">
+                    <div class="out-header">
+                        <label style="margin-bottom:0;">Cleaned output</label>
+                        <div style="display:flex;align-items:center;">
+                            <button onclick="copyOut()" style="padding:2px 8px; font-size: 0.65rem;">Copy</button>
+                            <span class="toast" id="toast">Copied!</span>
+                        </div>
+                    </div>
+                    <textarea id="output" rows="12" readonly placeholder="Cleaned titles will appear here..." style="background: var(--hover);"></textarea>
+                </div>
+            </div>
+
+            <div class="stats" id="stats" style="display:none;">
+                <div><span class="stat-val" id="s-in">0</span><span class="stat-lbl">raw lines</span></div>
+                <div><span class="stat-val" id="s-out">0</span><span class="stat-lbl">clean titles</span></div>
+                <div><span class="stat-val" id="s-dup">0</span><span class="stat-lbl">duplicates removed</span></div>
+                <div><span class="stat-val" id="s-skip">0</span><span class="stat-lbl">junk skipped</span></div>
+            </div>
+        </div>
+    </main>
+
+    <footer style="margin-top: 4rem; text-align: center;" class="puny">
+        © 2026 eliana.lol • <a href="credits.html">credits</a>
+    </footer>
+
+    <script>
+        const html = document.documentElement;
+        const toggle = document.getElementById('theme-toggle');
+        const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        html.setAttribute('data-theme', saved);
+        if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+        if (toggle) {
+            toggle.onclick = () => {
+                const now = html.getAttribute('data-theme');
+                const next = now === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+                toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+            };
+        }
+    </script>
+
+    <script>
+        const RULES = [
+            { id: 'stripHtml', name: 'Strip HTML tags', desc: 'Removes tags like <b> or <i>', default: true },
+            { id: 'stripJson', name: 'Strip JSON syntax', desc: 'Removes [ ] { } and quotes', default: true },
+            { id: 'stripNums', name: 'Remove numbering', desc: '1. / 1) / #1 at start', default: true },
+            { id: 'stripBullets', name: 'Remove bullets', desc: '• - * > at start', default: true },
+            { id: 'stripIsbn', name: 'Strip ISBN codes', desc: 'Removes 10/13-digit codes', default: true },
+            { id: 'stripUrls', name: 'Strip URLs', desc: 'Removes http links', default: true },
+            { id: 'fixQuotes', name: 'Fix smart quotes', desc: 'Normalises curly quotes', default: true },
+            { id: 'dedupe', name: 'Remove duplicates', desc: 'Case-insensitive filter', default: true }
+        ];
+
+        const rg = document.getElementById('rulesGrid');
+        RULES.forEach(r => {
+            rg.innerHTML += `<label class="rule"><input type="checkbox" id="r_${r.id}" ${r.default?'checked':''}><span class="rule-info"><span class="rule-name">${r.name}</span>${r.desc}</span></label>`;
+        });
+
+        function on(id) { return document.getElementById('r_' + id).checked; }
+
+        function cleanLine(raw) {
+            let s = raw;
+            if (on('fixQuotes')) s = s.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+            if (on('stripHtml')) s = s.replace(/<[^>]+>/g, ' ');
+            if (on('stripUrls')) s = s.replace(/https?:\/\/[^\s]+/gi, ' ');
+            if (on('stripJson')) s = s.replace(/[\[\]{}"]/g, ' ');
+            if (on('stripIsbn')) s = s.replace(/(?:ISBN[- ]?)?(?=\d)[\d\-]{9,17}[\dX]/gi, ' ');
+            if (on('stripNums')) s = s.replace(/^\s*(?:\(?\d+\)?[\.\)\-\:]?\s+|#\d+\s+)/, '');
+            if (on('stripBullets')) s = s.replace(/^\s*[•·\-–—\*>»]+\s*/, '');
+            return s.replace(/\s{2,}/g, ' ').trim();
+        }
+
+        function clean() {
+            const raw = document.getElementById('input').value;
+            const lines = raw.split(/\r?\n/);
+            const seen = new Set();
+            const results = [];
+            let dups = 0, skipped = 0;
+
+            lines.forEach(line => {
+                const cleaned = cleanLine(line);
+                if (cleaned.length < 2) { skipped++; return; }
+                const key = cleaned.toLowerCase();
+                if (on('dedupe') && seen.has(key)) { dups++; return; }
+                seen.add(key);
+                results.push(cleaned);
+            });
+
+            document.getElementById('output').value = results.join('\n');
+            document.getElementById('s-in').textContent = lines.length;
+            document.getElementById('s-out').textContent = results.length;
+            document.getElementById('s-dup').textContent = dups;
+            document.getElementById('s-skip').textContent = skipped;
+            document.getElementById('stats').style.display = 'flex';
+        }
+
+        function clearAll() {
+            document.getElementById('input').value = '';
+            document.getElementById('output').value = '';
+            document.getElementById('stats').style.display = 'none';
+        }
+
+        function copyOut() {
+            const v = document.getElementById('output').value;
+            if (!v) return;
+            navigator.clipboard.writeText(v).then(() => {
+                const t = document.getElementById('toast');
+                t.classList.add('show');
+                setTimeout(() => t.classList.remove('show'), 1500);
+            });
+        }
+
+        function loadSample() {
+            document.getElementById('input').value = `1. <b>The Great Gatsby</b>\n• Dune — Frank Herbert\n[{"title": "Moby Dick"}]\nISBN 978-0-06-112008-4\n1. The Great Gatsby`;
+            clean();
+        }
+    </script>
+</body>
+</html>
