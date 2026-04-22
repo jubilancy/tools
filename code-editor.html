@@ -1,32 +1,54 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HTML Viewer | tools.eliana.lol</title>
-    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="global.css" />
+    <link rel="icon" type="image/x-icon" href="favicon.svg" />
     <style>
-        /* Specific Tool UI */
-        .editor-container { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-        #editor { height: 350px; border: 1px solid var(--puny); }
-        iframe#preview { 
-            width: 100%; 
-            height: 350px; 
-            background: white; 
-            border: 1px solid var(--puny); 
-            margin-top: 10px; 
-        }
-        .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-        .stats { display: flex; justify-content: space-between; margin-top: 5px; }
-        .kbd { font-size: 0.7rem; color: var(--puny); border: 1px solid var(--puny); padding: 1px 3px; border-radius: 3px; }
+      /* Specific Tool UI */
+      .editor-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      #editor {
+        height: 350px;
+        border: 1px solid var(--puny);
+      }
+      iframe#preview {
+        width: 100%;
+        height: 350px;
+        background: white;
+        border: 1px solid var(--puny);
+        margin-top: 10px;
+      }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .stats {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 5px;
+      }
+      .kbd {
+        font-size: 0.7rem;
+        color: var(--puny);
+        border: 1px solid var(--puny);
+        padding: 1px 3px;
+        border-radius: 3px;
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <nav>
       <div class="left">
-        <a href="index.html">home</a> | 
-        <a href="extra.html">extra</a> | 
+        <a href="index.html">home</a> | <a href="extra.html">extra</a> |
         <a href="credits.html">credits</a> |
         <a href="changelog.html">logs</a>
       </div>
@@ -37,123 +59,140 @@
     </nav>
 
     <main>
-        <h1>HTML Viewer</h1>
-        <p class="puny">Live editor & previewer. <span class="kbd">Ctrl+Enter</span> to manual refresh.</p>
+      <h1>HTML Viewer</h1>
+      <p class="puny">
+        Live editor & previewer. <span class="kbd">Ctrl+Enter</span> to manual
+        refresh.
+      </p>
 
-        <div class="toolbar">
-            <button onclick="formatHTML()">✨ Format</button>
-            <button onclick="previewInTab()">📄 New Tab</button>
-            <button onclick="loadSample()">📝 Sample</button>
-            <button onclick="clearEditor()" style="border-color: var(--accent);">🗑️ Clear</button>
+      <div class="toolbar">
+        <button onclick="formatHTML()">✨ Format</button>
+        <button onclick="previewInTab()">📄 New Tab</button>
+        <button onclick="loadSample()">📝 Sample</button>
+        <button onclick="clearEditor()" style="border-color: var(--accent)">
+          🗑️ Clear
+        </button>
+      </div>
+
+      <div class="editor-container">
+        <div id="editor"></div>
+
+        <div class="stats puny">
+          <span
+            >Line: <span id="line">1</span>, Col:
+            <span id="column">1</span></span
+          >
+          <label style="cursor: pointer"
+            ><input type="checkbox" id="autoPreview" checked />
+            Auto-update</label
+          >
         </div>
 
-        <div class="editor-container">
-            <div id="editor"></div>
-            
-            <div class="stats puny">
-                <span>Line: <span id="line">1</span>, Col: <span id="column">1</span></span>
-                <label style="cursor:pointer;"><input type="checkbox" id="autoPreview" checked> Auto-update</label>
-            </div>
-
-            <iframe id="preview"></iframe>
-        </div>
+        <iframe id="preview"></iframe>
+      </div>
     </main>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.0/ace.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.11/beautify-html.min.js"></script>
 
     <script>
-        const html = document.documentElement;
-        const toggle = document.getElementById('theme-toggle');
-        const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        html.setAttribute('data-theme', saved);
-        if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+      const html = document.documentElement;
+      const toggle = document.getElementById('theme-toggle');
+      const saved =
+        localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light');
+      html.setAttribute('data-theme', saved);
+      if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
 
-        if (toggle) {
-            toggle.onclick = () => {
-                const now = html.getAttribute('data-theme');
-                const next = now === 'dark' ? 'light' : 'dark';
-                html.setAttribute('data-theme', next);
-                localStorage.setItem('theme', next);
-                toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
-            };
-        }
+      if (toggle) {
+        toggle.onclick = () => {
+          const now = html.getAttribute('data-theme');
+          const next = now === 'dark' ? 'light' : 'dark';
+          html.setAttribute('data-theme', next);
+          localStorage.setItem('theme', next);
+          toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+        };
+      }
     </script>
 
     <script>
-        function initEditor() {
-            const editor = ace.edit("editor");
-            editor.setTheme("ace/theme/monokai");
-            editor.session.setMode("ace/mode/html");
-            editor.setOptions({
-                fontSize: "14px",
-                showPrintMargin: false,
-                wrap: true,
-                tabSize: 2
-            });
-
-            const defaultHTML = `<!DOCTYPE html>\n<html>\n<body>\n  <h1>Hello World</h1>\n  <p>Ready to edit.</p>\n</body>\n</html>`;
-            editor.setValue(defaultHTML, -1);
-            window.aceEditor = editor;
-
-            editor.session.selection.on('changeCursor', () => {
-                const cursor = editor.getCursorPosition();
-                document.getElementById('line').textContent = cursor.row + 1;
-                document.getElementById('column').textContent = cursor.column + 1;
-            });
-
-            let previewTimeout;
-            editor.session.on('change', () => {
-                if (document.getElementById('autoPreview').checked) {
-                    clearTimeout(previewTimeout);
-                    previewTimeout = setTimeout(updatePreview, 500);
-                }
-            });
-
-            updatePreview();
-        }
-
-        function updatePreview() {
-            const code = window.aceEditor.getValue();
-            const preview = document.getElementById('preview');
-            const doc = preview.contentDocument || preview.contentWindow.document;
-            doc.open(); doc.write(code); doc.close();
-        }
-
-        function formatHTML() {
-            const htmlCode = window.aceEditor.getValue();
-            const formatted = html_beautify(htmlCode, { indent_size: 2 });
-            window.aceEditor.setValue(formatted, -1);
-        }
-
-        function previewInTab() {
-            const code = window.aceEditor.getValue();
-            const newTab = window.open();
-            newTab.document.write(code);
-            newTab.document.close();
-        }
-
-        function clearEditor() {
-            if(confirm('Wipe the editor?')) {
-                window.aceEditor.setValue('', -1);
-                updatePreview();
-            }
-        }
-
-        function loadSample() {
-            const sample = "<h1>Monospace Test</h1><p>The layout is working.</p>";
-            window.aceEditor.setValue(sample, -1);
-            updatePreview();
-        }
-
-        if (typeof ace !== 'undefined') initEditor();
-
-        // Keyboard Shortcut (Ctrl/Cmd + Enter)
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                updatePreview();
-            }
+      function initEditor() {
+        const editor = ace.edit('editor');
+        editor.setTheme('ace/theme/monokai');
+        editor.session.setMode('ace/mode/html');
+        editor.setOptions({
+          fontSize: '14px',
+          showPrintMargin: false,
+          wrap: true,
+          tabSize: 2,
         });
+
+        const defaultHTML = `<!DOCTYPE html>\n<html>\n<body>\n  <h1>Hello World</h1>\n  <p>Ready to edit.</p>\n</body>\n</html>`;
+        editor.setValue(defaultHTML, -1);
+        window.aceEditor = editor;
+
+        editor.session.selection.on('changeCursor', () => {
+          const cursor = editor.getCursorPosition();
+          document.getElementById('line').textContent = cursor.row + 1;
+          document.getElementById('column').textContent = cursor.column + 1;
+        });
+
+        let previewTimeout;
+        editor.session.on('change', () => {
+          if (document.getElementById('autoPreview').checked) {
+            clearTimeout(previewTimeout);
+            previewTimeout = setTimeout(updatePreview, 500);
+          }
+        });
+
+        updatePreview();
+      }
+
+      function updatePreview() {
+        const code = window.aceEditor.getValue();
+        const preview = document.getElementById('preview');
+        const doc = preview.contentDocument || preview.contentWindow.document;
+        doc.open();
+        doc.write(code);
+        doc.close();
+      }
+
+      function formatHTML() {
+        const htmlCode = window.aceEditor.getValue();
+        const formatted = html_beautify(htmlCode, { indent_size: 2 });
+        window.aceEditor.setValue(formatted, -1);
+      }
+
+      function previewInTab() {
+        const code = window.aceEditor.getValue();
+        const newTab = window.open();
+        newTab.document.write(code);
+        newTab.document.close();
+      }
+
+      function clearEditor() {
+        if (confirm('Wipe the editor?')) {
+          window.aceEditor.setValue('', -1);
+          updatePreview();
+        }
+      }
+
+      function loadSample() {
+        const sample = '<h1>Monospace Test</h1><p>The layout is working.</p>';
+        window.aceEditor.setValue(sample, -1);
+        updatePreview();
+      }
+
+      if (typeof ace !== 'undefined') initEditor();
+
+      // Keyboard Shortcut (Ctrl/Cmd + Enter)
+      document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          updatePreview();
+        }
+      });
     </script>
-</body>
+  </body>
 </html>

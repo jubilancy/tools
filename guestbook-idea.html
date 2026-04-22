@@ -1,56 +1,72 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Guestbook | tools.eliana.lol</title>
-    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="global.css" />
+    <link rel="icon" type="image/x-icon" href="favicon.svg" />
     <style>
-        /* Specific Guestbook UI */
-        .guestbook-container { max-width: 600px; margin: 0 auto; }
-        
-        canvas {
-            border: 2px solid var(--puny);
-            background: var(--bg);
-            cursor: crosshair;
-            touch-action: none;
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            display: block;
-            margin-top: 10px;
-        }
+      /* Specific Guestbook UI */
+      .guestbook-container {
+        max-width: 600px;
+        margin: 0 auto;
+      }
 
-        .toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            padding: 5px 10px;
-            border: 1px dashed var(--puny);
-            background: var(--hover);
-        }
+      canvas {
+        border: 2px solid var(--puny);
+        background: var(--bg);
+        cursor: crosshair;
+        touch-action: none;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        display: block;
+        margin-top: 10px;
+      }
 
-        .tool-group { display: flex; gap: 8px; }
-        
-        .active-tool {
-            background-color: var(--text) !important;
-            color: var(--bg) !important;
-        }
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 5px 10px;
+        border: 1px dashed var(--puny);
+        background: var(--hover);
+      }
 
-        .hidden { display: none; }
-        
-        .mode-selector { margin-bottom: 20px; }
-        .mode-selector button { margin-right: 5px; }
+      .tool-group {
+        display: flex;
+        gap: 8px;
+      }
 
-        label { display: block; font-weight: bold; margin-top: 15px; font-size: 0.9rem; }
+      .active-tool {
+        background-color: var(--text) !important;
+        color: var(--bg) !important;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .mode-selector {
+        margin-bottom: 20px;
+      }
+      .mode-selector button {
+        margin-right: 5px;
+      }
+
+      label {
+        display: block;
+        font-weight: bold;
+        margin-top: 15px;
+        font-size: 0.9rem;
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <nav>
       <div class="left">
-        <a href="index.html">home</a> | 
-        <a href="extra.html">extra</a> | 
+        <a href="index.html">home</a> | <a href="extra.html">extra</a> |
         <a href="credits.html">credits</a> |
         <a href="changelog.html">logs</a>
       </div>
@@ -61,155 +77,191 @@
     </nav>
 
     <main>
-        <div class="guestbook-container">
-            <h1>Sign the Guestbook</h1>
-            <p class="puny">Leave a little drawing or a quick note for the garden.</p>
+      <div class="guestbook-container">
+        <h1>Sign the Guestbook</h1>
+        <p class="puny">
+          Leave a little drawing or a quick note for the garden.
+        </p>
 
-            <div class="mode-selector">
-                <button id="btn-draw" class="active-tool">Draw</button>
-                <button id="btn-write">Write</button>
-            </div>
-
-            <form id="gb-form">
-                <div id="section-draw">
-                    <div class="toolbar">
-                        <div class="tool-group">
-                            <button type="button" id="tool-pen" class="active-tool" title="Pen">✏️ Pen</button>
-                            <button type="button" id="tool-eraser" title="Eraser">🧽 Eraser</button>
-                        </div>
-                        <div class="tool-group">
-                            <button type="button" id="tool-clear" style="border-color: var(--accent);">🗑️ Clear</button>
-                        </div>
-                    </div>
-                    <canvas id="drawingCanvas" width="500" height="500"></canvas>
-                </div>
-
-                <div id="section-write" class="hidden">
-                    <label>Your message</label>
-                    <textarea id="message-text" rows="8" placeholder="Type something nice..."></textarea>
-                </div>
-
-                <div style="margin-top: 20px;">
-                    <label>Your Name</label>
-                    <input type="text" id="name" required placeholder="Eliana">
-                    
-                    <label>Website (optional)</label>
-                    <input type="url" id="website" placeholder="https://eliana.lol">
-                    
-                    <button type="submit" style="width: 100%; margin-top: 20px; font-weight: bold; padding: 15px;">
-                        Sign Guestbook
-                    </button>
-                </div>
-            </form>
+        <div class="mode-selector">
+          <button id="btn-draw" class="active-tool">Draw</button>
+          <button id="btn-write">Write</button>
         </div>
+
+        <form id="gb-form">
+          <div id="section-draw">
+            <div class="toolbar">
+              <div class="tool-group">
+                <button
+                  type="button"
+                  id="tool-pen"
+                  class="active-tool"
+                  title="Pen"
+                >
+                  ✏️ Pen
+                </button>
+                <button type="button" id="tool-eraser" title="Eraser">
+                  🧽 Eraser
+                </button>
+              </div>
+              <div class="tool-group">
+                <button
+                  type="button"
+                  id="tool-clear"
+                  style="border-color: var(--accent)"
+                >
+                  🗑️ Clear
+                </button>
+              </div>
+            </div>
+            <canvas id="drawingCanvas" width="500" height="500"></canvas>
+          </div>
+
+          <div id="section-write" class="hidden">
+            <label>Your message</label>
+            <textarea
+              id="message-text"
+              rows="8"
+              placeholder="Type something nice..."
+            ></textarea>
+          </div>
+
+          <div style="margin-top: 20px">
+            <label>Your Name</label>
+            <input type="text" id="name" required placeholder="Eliana" />
+
+            <label>Website (optional)</label>
+            <input type="url" id="website" placeholder="https://eliana.lol" />
+
+            <button
+              type="submit"
+              style="
+                width: 100%;
+                margin-top: 20px;
+                font-weight: bold;
+                padding: 15px;
+              "
+            >
+              Sign Guestbook
+            </button>
+          </div>
+        </form>
+      </div>
     </main>
 
     <script>
-        const html = document.documentElement;
-        const toggle = document.getElementById('theme-toggle');
-        const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        
-        html.setAttribute('data-theme', saved);
-        if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+      const html = document.documentElement;
+      const toggle = document.getElementById('theme-toggle');
+      const saved =
+        localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light');
 
-        if (toggle) {
-            toggle.onclick = () => {
-                const now = html.getAttribute('data-theme');
-                const next = now === 'dark' ? 'light' : 'dark';
-                html.setAttribute('data-theme', next);
-                localStorage.setItem('theme', next);
-                toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
-                // Trigger canvas color refresh if user is currently drawing
-                syncCanvasColors();
-            };
-        }
+      html.setAttribute('data-theme', saved);
+      if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
 
-        // Section Swapper Logic
-        const btnDraw = document.getElementById('btn-draw');
-        const btnWrite = document.getElementById('btn-write');
-        const secDraw = document.getElementById('section-draw');
-        const secWrite = document.getElementById('section-write');
-
-        btnDraw.onclick = (e) => {
-            e.preventDefault();
-            secDraw.classList.remove('hidden');
-            secWrite.classList.add('hidden');
-            btnDraw.classList.add('active-tool');
-            btnWrite.classList.remove('active-tool');
+      if (toggle) {
+        toggle.onclick = () => {
+          const now = html.getAttribute('data-theme');
+          const next = now === 'dark' ? 'light' : 'dark';
+          html.setAttribute('data-theme', next);
+          localStorage.setItem('theme', next);
+          toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+          // Trigger canvas color refresh if user is currently drawing
+          syncCanvasColors();
         };
-        btnWrite.onclick = (e) => {
-            e.preventDefault();
-            secWrite.classList.remove('hidden');
-            secDraw.classList.add('hidden');
-            btnWrite.classList.add('active-tool');
-            btnDraw.classList.remove('active-tool');
-        };
+      }
 
-        // CANVAS DRAWING LOGIC
-        const canvas = document.getElementById('drawingCanvas');
-        const ctx = canvas.getContext('2d');
-        let painting = false;
-        let isEraser = false;
+      // Section Swapper Logic
+      const btnDraw = document.getElementById('btn-draw');
+      const btnWrite = document.getElementById('btn-write');
+      const secDraw = document.getElementById('section-draw');
+      const secWrite = document.getElementById('section-write');
 
-        function getCoords(e) {
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: clientX - rect.left, y: clientY - rect.top };
+      btnDraw.onclick = (e) => {
+        e.preventDefault();
+        secDraw.classList.remove('hidden');
+        secWrite.classList.add('hidden');
+        btnDraw.classList.add('active-tool');
+        btnWrite.classList.remove('active-tool');
+      };
+      btnWrite.onclick = (e) => {
+        e.preventDefault();
+        secWrite.classList.remove('hidden');
+        secDraw.classList.add('hidden');
+        btnWrite.classList.add('active-tool');
+        btnDraw.classList.remove('active-tool');
+      };
+
+      // CANVAS DRAWING LOGIC
+      const canvas = document.getElementById('drawingCanvas');
+      const ctx = canvas.getContext('2d');
+      let painting = false;
+      let isEraser = false;
+
+      function getCoords(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+      }
+
+      function syncCanvasColors() {
+        const isDark = html.getAttribute('data-theme') === 'dark';
+        ctx.lineWidth = isEraser ? 30 : 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        if (isEraser) {
+          ctx.strokeStyle = isDark ? '#1c1c1c' : '#ffffff'; // Eraser matches --bg
+        } else {
+          ctx.strokeStyle = isDark ? '#d4d4d4' : '#000000'; // Pen matches --text
         }
+      }
 
-        function syncCanvasColors() {
-            const isDark = html.getAttribute('data-theme') === 'dark';
-            ctx.lineWidth = isEraser ? 30 : 3;
-            ctx.lineCap = "round";
-            ctx.lineJoin = "round";
-            
-            if (isEraser) {
-                ctx.strokeStyle = isDark ? "#1c1c1c" : "#ffffff"; // Eraser matches --bg
-            } else {
-                ctx.strokeStyle = isDark ? "#d4d4d4" : "#000000"; // Pen matches --text
-            }
-        }
+      function startPosition(e) {
+        painting = true;
+        ctx.beginPath();
+        const { x, y } = getCoords(e);
+        ctx.moveTo(x, y);
+        if (e.touches) e.preventDefault();
+      }
 
-        function startPosition(e) {
-            painting = true;
-            ctx.beginPath();
-            const { x, y } = getCoords(e);
-            ctx.moveTo(x, y);
-            if (e.touches) e.preventDefault();
-        }
+      function finishedPosition() {
+        painting = false;
+      }
 
-        function finishedPosition() { painting = false; }
+      function draw(e) {
+        if (!painting) return;
+        const { x, y } = getCoords(e);
+        syncCanvasColors();
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
 
-        function draw(e) {
-            if (!painting) return;
-            const { x, y } = getCoords(e);
-            syncCanvasColors();
-            ctx.lineTo(x, y);
-            ctx.stroke();
-        }
+      canvas.addEventListener('mousedown', startPosition);
+      window.addEventListener('mouseup', finishedPosition);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('touchstart', startPosition, { passive: false });
+      canvas.addEventListener('touchend', finishedPosition);
+      canvas.addEventListener('touchmove', draw, { passive: false });
 
-        canvas.addEventListener('mousedown', startPosition);
-        window.addEventListener('mouseup', finishedPosition);
-        canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('touchstart', startPosition, { passive: false });
-        canvas.addEventListener('touchend', finishedPosition);
-        canvas.addEventListener('touchmove', draw, { passive: false });
-
-        // Tool Buttons
-        document.getElementById('tool-pen').onclick = function() {
-            isEraser = false;
-            this.classList.add('active-tool');
-            document.getElementById('tool-eraser').classList.remove('active-tool');
-        };
-        document.getElementById('tool-eraser').onclick = function() {
-            isEraser = true;
-            this.classList.add('active-tool');
-            document.getElementById('tool-pen').classList.remove('active-tool');
-        };
-        document.getElementById('tool-clear').onclick = () => {
-            if (confirm("Wipe the canvas?")) ctx.clearRect(0, 0, canvas.width, canvas.height);
-        };
+      // Tool Buttons
+      document.getElementById('tool-pen').onclick = function () {
+        isEraser = false;
+        this.classList.add('active-tool');
+        document.getElementById('tool-eraser').classList.remove('active-tool');
+      };
+      document.getElementById('tool-eraser').onclick = function () {
+        isEraser = true;
+        this.classList.add('active-tool');
+        document.getElementById('tool-pen').classList.remove('active-tool');
+      };
+      document.getElementById('tool-clear').onclick = () => {
+        if (confirm('Wipe the canvas?'))
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+      };
     </script>
-</body>
+  </body>
 </html>

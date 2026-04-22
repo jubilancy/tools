@@ -1,37 +1,77 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="utf-8">
+  <head>
+    <meta charset="utf-8" />
     <title>RSS Reader | tools.eliana.lol</title>
-    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="global.css" />
+    <link rel="icon" type="image/x-icon" href="favicon.svg" />
     <style>
-        .article { background: var(--hover); padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid var(--puny); }
-        .article-title { font-weight: bold; font-size: 1rem; margin-bottom: 5px; }
-        .article-excerpt { font-size: 0.8rem; color: var(--text); opacity: 0.8; }
+      .article {
+        background: var(--hover);
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+        border: 1px solid var(--puny);
+      }
+      .article-title {
+        font-weight: bold;
+        font-size: 1rem;
+        margin-bottom: 5px;
+      }
+      .article-excerpt {
+        font-size: 0.8rem;
+        color: var(--text);
+        opacity: 0.8;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <nav>
-        <div class="left"><a href="index.html">home</a> | <a href="extra.html">extra</a> | <a href="credits.html">credits</a> | <a href="changelog.html">logs</a></div>
-        <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+      <div class="left">
+        <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+        <a href="credits.html">credits</a> | <a href="changelog.html">logs</a>
+      </div>
+      <div class="right">
+        <button id="theme-toggle">[theme]</button> |
+        <a href="https://eliana.lol">site</a>
+      </div>
     </nav>
     <main>
-        <h1>RSS Reader</h1>
-        <input type="url" id="feedUrl" placeholder="Feed URL..." style="width: 100%; padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--puny);">
-        <button onclick="fetchFeed()" style="border-color: var(--accent); margin-top: 10px;">Load</button>
-        <div id="output" style="margin-top: 20px;"></div>
+      <h1>RSS Reader</h1>
+      <input
+        type="url"
+        id="feedUrl"
+        placeholder="Feed URL..."
+        style="
+          width: 100%;
+          padding: 10px;
+          background: var(--bg);
+          color: var(--text);
+          border: 1px solid var(--puny);
+        "
+      />
+      <button
+        onclick="fetchFeed()"
+        style="border-color: var(--accent); margin-top: 10px"
+      >
+        Load
+      </button>
+      <div id="output" style="margin-top: 20px"></div>
     </main>
     <script>
-        async function fetchFeed() {
-            const url = document.getElementById('feedUrl').value;
-            const res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(url)}`);
-            const text = await res.text();
-            const doc = new DOMParser().parseFromString(text, "text/xml");
-            const out = document.getElementById('output'); out.innerHTML = '';
-            doc.querySelectorAll('item').forEach(item => {
-                out.innerHTML += `<div class="article"><div class="article-title">${item.querySelector('title').textContent}</div><div class="article-excerpt">${item.querySelector('description').textContent.substring(0,100)}...</div></div>`;
-            });
-        }
+      async function fetchFeed() {
+        const url = document.getElementById('feedUrl').value;
+        const res = await fetch(
+          `https://corsproxy.io/?url=${encodeURIComponent(url)}`
+        );
+        const text = await res.text();
+        const doc = new DOMParser().parseFromString(text, 'text/xml');
+        const out = document.getElementById('output');
+        out.innerHTML = '';
+        doc.querySelectorAll('item').forEach((item) => {
+          out.innerHTML += `<div class="article"><div class="article-title">${item.querySelector('title').textContent}</div><div class="article-excerpt">${item.querySelector('description').textContent.substring(0, 100)}...</div></div>`;
+        });
+      }
     </script>
-</body>
+  </body>
 </html>
