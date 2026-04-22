@@ -2,94 +2,315 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Link Splitter | tools.eliana.lol</title>
     <link rel="stylesheet" href="global.css" />
     <link rel="icon" type="image/x-icon" href="favicon.svg" />
     <style>
-      .output-group {
+      .tool-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        margin-top: 20px;
+        gap: 1.5rem;
+        align-items: end;
       }
+
+      .col {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
       label {
+        display: block;
         font-size: 0.7rem;
-        color: var(--puny);
         text-transform: uppercase;
         font-weight: bold;
+        color: var(--puny);
+        margin-bottom: 5px;
       }
-      @media (max-width: 600px) {
-        .output-group {
+
+      .count {
+        font-weight: normal;
+        opacity: 0.7;
+        margin-left: 4px;
+      }
+
+      textarea {
+        width: 100%;
+        height: 350px;
+        resize: vertical;
+        box-sizing: border-box;
+      }
+
+      #inputBox {
+        height: 180px;
+      }
+
+      .action-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 10px 0;
+      }
+
+      .out-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 24px;
+        margin-bottom: 5px;
+      }
+
+      .toast {
+        font-size: 0.7rem;
+        color: var(--accent);
+        opacity: 0;
+        transition: opacity 0.2s;
+        pointer-events: none;
+      }
+
+      .toast.show {
+        opacity: 1;
+      }
+
+      @media (max-width: 580px) {
+        .grid {
           grid-template-columns: 1fr;
+        }
+
+        textarea {
+          height: 250px;
         }
       }
     </style>
   </head>
+
   <body>
     <nav>
       <div class="left">
         <a href="index.html">home</a> | <a href="extra.html">extra</a> |
-        <a href="credits.html">credits</a> | <a href="changelog.html">logs</a>
+        <a href="credits.html">credits</a> |
+        <a href="changelog.html">logs</a>
       </div>
       <div class="right">
         <button id="theme-toggle">[theme]</button> |
         <a href="https://eliana.lol">site</a>
       </div>
     </nav>
+
     <main>
       <h1>Link Splitter</h1>
-      <p class="puny">Extract titles and URLs from Markdown or HTML links.</p>
-      <textarea id="inputBox" rows="8" placeholder="[Title](URL)"></textarea>
-      <div style="margin: 10px 0">
-        <button onclick="splitLinks()" style="border-color: var(--accent)">
-          Split
-        </button>
-        <button
-          onclick="clearAll()"
-          style="color: var(--accent); border-style: dashed"
-        >
-          Clear
-        </button>
-      </div>
-      <div class="output-group">
+      <p class="puny">
+        Extract titles and URLs from Markdown or HTML links. Supports bullets
+        and numbered lists.
+      </p>
+
+      <div class="tool-layout">
         <div>
-          <label>URLs</label
-          ><textarea
-            id="urlBox"
-            rows="10"
-            readonly
-            style="background: var(--hover)"
+          <label>Raw Input</label>
+          <textarea
+            id="inputBox"
+            placeholder="Paste [Title](URL) or <a href='...'>Title</a> here..."
           ></textarea>
         </div>
-        <div>
-          <label>Titles</label
-          ><textarea
-            id="titleBox"
-            rows="10"
-            readonly
-            style="background: var(--hover)"
-          ></textarea>
+
+        <div class="action-bar">
+          <button
+            id="splitBtn"
+            style="border-color: var(--accent); font-weight: bold"
+          >
+            ✨ Split Links
+          </button>
+          <button id="exportBtn">Export CSV</button>
+          <button
+            id="clearBtn"
+            style="color: var(--accent); border-style: dashed"
+          >
+            Clear All
+          </button>
+          <span class="toast" id="toast"></span>
+        </div>
+
+        <div class="grid" id="outputs" style="display: none">
+          <div class="col">
+            <div class="out-header">
+              <label>URLs <span class="count" id="urlCount"></span></label>
+              <button
+                onclick="copyText('urlBox', this)"
+                style="padding: 2px 8px; font-size: 0.65rem"
+              >
+                Copy
+              </button>
+            </div>
+            <textarea
+              id="urlBox"
+              readonly
+              style="background: var(--hover)"
+            ></textarea>
+          </div>
+          <div class="col">
+            <div class="out-header">
+              <label>Titles <span class="count" id="titleCount"></span></label>
+              <button
+                onclick="copyText('titleBox', this)"
+                style="padding: 2px 8px; font-size: 0.65rem"
+              >
+                Copy
+              </button>
+            </div>
+            <textarea
+              id="titleBox"
+              readonly
+              style="background: var(--hover)"
+            ></textarea>
+          </div>
         </div>
       </div>
     </main>
+
+    <footer style="margin-top: 4rem; text-align: center" class="puny">
+      © 2026 eliana.lol • <a href="credits.html">credits</a>
+    </footer>
+
     <script>
-      function splitLinks() {
-        const input = document.getElementById('inputBox').value;
-        const mdRe = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/gi;
-        let m,
-          urls = [],
-          titles = [];
-        while ((m = mdRe.exec(input)) !== null) {
-          titles.push(m[1]);
-          urls.push(m[2]);
+      const html = document.documentElement;
+      const toggle = document.getElementById('theme-toggle');
+      const saved =
+        localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light');
+      html.setAttribute('data-theme', saved);
+      if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+      if (toggle) {
+        toggle.onclick = () => {
+          const now = html.getAttribute('data-theme');
+          const next = now === 'dark' ? 'light' : 'dark';
+          html.setAttribute('data-theme', next);
+          localStorage.setItem('theme', next);
+          toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+        };
+      }
+
+      let parsedLinks = [];
+
+      function parseLinks(text) {
+        const results = [];
+        text = text
+          .replace(/<li[^>]*>/gi, '\n')
+          .replace(/<\/li>/gi, '')
+          .split('\n')
+          .map((line) => line.replace(/^\s*(?:[-*+]|\d+\.)\s+/, ''))
+          .join('\n');
+
+        const candidates = [];
+        const mdRe = /\[([^\]]+)\]\(\s*(https?:\/\/[^\s)"'>]+)[^)]*\)/gi;
+        let m;
+        while ((m = mdRe.exec(text)) !== null) {
+          // Removes leading/trailing square brackets from the extracted title
+          const title = m[1].trim().replace(/^[\[\]]+|[\[\]]+$/g, '');
+          candidates.push({
+            index: m.index,
+            title: title,
+            url: m[2].trim(),
+          });
         }
+
+        const htmlRe =
+          /<a\s[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+        while ((m = htmlRe.exec(text)) !== null) {
+          // Removes HTML tags and leading/trailing square brackets from the title
+          const title = m[2]
+            .replace(/<[^>]+>/g, '')
+            .trim()
+            .replace(/^[\[\]]+|[\[\]]+$/g, '');
+          candidates.push({
+            index: m.index,
+            url: m[1].trim(),
+            title: title,
+          });
+        }
+
+        candidates.sort((a, b) => a.index - b.index);
+        const seen = new Set();
+        for (const c of candidates) {
+          if (!seen.has(c.index)) {
+            seen.add(c.index);
+            results.push({
+              title: c.title,
+              url: c.url,
+            });
+          }
+        }
+        return results;
+      }
+
+      document.getElementById('splitBtn').addEventListener('click', () => {
+        const input = document.getElementById('inputBox').value;
+        parsedLinks = parseLinks(input);
+        const urls = parsedLinks.map((p) => p.url);
+        const titles = parsedLinks.map((p) => p.title);
+        const n = parsedLinks.length;
+
         document.getElementById('urlBox').value = urls.join('\n');
         document.getElementById('titleBox').value = titles.join('\n');
-      }
-      function clearAll() {
+        document.getElementById('urlCount').textContent = n ? `(${n})` : '';
+        document.getElementById('titleCount').textContent = n ? `(${n})` : '';
+        document.getElementById('outputs').style.display = n ? 'grid' : 'none';
+        if (!n) showToast('No links found.');
+      });
+
+      document.getElementById('clearBtn').addEventListener('click', () => {
         document.getElementById('inputBox').value = '';
+        document.getElementById('outputs').style.display = 'none';
         document.getElementById('urlBox').value = '';
         document.getElementById('titleBox').value = '';
+        parsedLinks = [];
+      });
+
+      function copyText(elementId, btn) {
+        const text = document.getElementById(elementId).value.trim();
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => {
+          const original = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(() => (btn.textContent = original), 1500);
+        });
+      }
+
+      document.getElementById('exportBtn').addEventListener('click', () => {
+        if (!parsedLinks.length) {
+          showToast('Split some links first!');
+          return;
+        }
+        const escape = (v) => '"' + v.replace(/"/g, '""') + '"';
+        const rows = [
+          ['Title', 'URL'],
+          ...parsedLinks.map((p) => [p.title, p.url]),
+        ];
+        const csv = rows.map((r) => r.map(escape).join(',')).join('\r\n');
+        const blob = new Blob([csv], {
+          type: 'text/csv;charset=utf-8;',
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'links.csv';
+        a.click();
+        showToast('CSV Exported');
+      });
+
+      function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2000);
       }
     </script>
   </body>
