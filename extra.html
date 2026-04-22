@@ -1,17 +1,16 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Extra Tools | tools.eliana.lol</title>
-    <link rel="stylesheet" href="global.css">
-</head>
-<body>
-
+    <link rel="stylesheet" href="global.css" />
+    <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  </head>
+  <body>
     <nav>
       <div class="left">
-        <a href="index.html">home</a> | 
-        <a href="extra.html">extra</a> | 
+        <a href="index.html">home</a> | <a href="extra.html">extra</a> |
         <a href="credits.html">credits</a> |
         <a href="changelog.html">logs</a>
       </div>
@@ -22,41 +21,47 @@
     </nav>
 
     <main>
-        <h1>Extra Tools</h1>
-        <p class="puny">Experimental utilities and "Small Web" scripts.</p>
-        
-        <ul class="tool-grid">
-            <li>
-                <a href="bulk-feed-finder.html">Bulk Feed Finder</a>
-                <div class="puny">Sniff out RSS/Atom feeds from a list of URLs.</div>
-            </li>
-            <li>
-                <a href="paste-to-markdown_webtool.html">Paste to Markdown</a>
-                <div class="puny">Quickly convert formatted web text to clean Markdown.</div>
-            </li>
-            <li>
-                <a href="html-viewer.html">HTML Online Viewer</a>
-                <div class="puny">Live preview and code editor for quick tests.</div>
-            </li>
-        </ul>
+      <h1>Extra Tools</h1>
+      <p class="puny">Experimental utilities and "Small Web" scripts.</p>
+
+      <ul class="tool-grid">
+        <li>
+          <a href="bulk-feed-finder.html">Bulk Feed Finder</a>
+          <div class="puny">Sniff out RSS/Atom feeds from a list of URLs.</div>
+        </li>
+        <li>
+          <a href="paste-to-markdown_webtool.html">Paste to Markdown</a>
+          <div class="puny">
+            Quickly convert formatted web text to clean Markdown.
+          </div>
+        </li>
+        <li>
+          <a href="html-viewer.html">HTML Online Viewer</a>
+          <div class="puny">Live preview and code editor for quick tests.</div>
+        </li>
+      </ul>
     </main>
 
     <script>
-        const html = document.documentElement;
-        const toggle = document.getElementById('theme-toggle');
-        const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        html.setAttribute('data-theme', saved);
-        if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+      const html = document.documentElement;
+      const toggle = document.getElementById('theme-toggle');
+      const saved =
+        localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light');
+      html.setAttribute('data-theme', saved);
+      if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
 
-        if (toggle) {
-            toggle.onclick = () => {
-                const now = html.getAttribute('data-theme');
-                const next = now === 'dark' ? 'light' : 'dark';
-                html.setAttribute('data-theme', next);
-                localStorage.setItem('theme', next);
-                toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
-            };
-        }
+      if (toggle) {
+        toggle.onclick = () => {
+          const now = html.getAttribute('data-theme');
+          const next = now === 'dark' ? 'light' : 'dark';
+          html.setAttribute('data-theme', next);
+          localStorage.setItem('theme', next);
+          toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+        };
+      }
     </script>
-</body>
+  </body>
 </html>

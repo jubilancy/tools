@@ -1,33 +1,62 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="utf-8">
+  <head>
+    <meta charset="utf-8" />
     <title>RSS to Markdown | tools.eliana.lol</title>
-    <link rel="stylesheet" href="global.css">
-</head>
-<body>
+    <link rel="stylesheet" href="global.css" />
+    <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  </head>
+  <body>
     <nav>
-        <div class="left"><a href="index.html">home</a> | <a href="extra.html">extra</a> | <a href="credits.html">credits</a> | <a href="changelog.html">logs</a></div>
-        <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+      <div class="left">
+        <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+        <a href="credits.html">credits</a> | <a href="changelog.html">logs</a>
+      </div>
+      <div class="right">
+        <button id="theme-toggle">[theme]</button> |
+        <a href="https://eliana.lol">site</a>
+      </div>
     </nav>
     <main>
-        <h1>RSS → Markdown</h1>
-        <input type="url" id="feedUrl" placeholder="Feed URL..." style="width: 100%; padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--puny);">
-        <button onclick="toMD()" style="border-color: var(--accent); margin-top: 10px;">Convert</button>
-        <textarea id="mdOut" rows="15" style="margin-top: 20px; background: var(--hover); color: var(--accent);"></textarea>
+      <h1>RSS → Markdown</h1>
+      <input
+        type="url"
+        id="feedUrl"
+        placeholder="Feed URL..."
+        style="
+          width: 100%;
+          padding: 10px;
+          background: var(--bg);
+          color: var(--text);
+          border: 1px solid var(--puny);
+        "
+      />
+      <button
+        onclick="toMD()"
+        style="border-color: var(--accent); margin-top: 10px"
+      >
+        Convert
+      </button>
+      <textarea
+        id="mdOut"
+        rows="15"
+        style="margin-top: 20px; background: var(--hover); color: var(--accent)"
+      ></textarea>
     </main>
     <script>
-        async function toMD() {
-            const url = document.getElementById('feedUrl').value;
-            const res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(url)}`);
-            const text = await res.text();
-            const doc = new DOMParser().parseFromString(text, "text/xml");
-            let md = "";
-            doc.querySelectorAll('item').forEach(i => {
-                md += `- [${i.querySelector('title').textContent}](${i.querySelector('link').textContent})\n`;
-            });
-            document.getElementById('mdOut').value = md;
-        }
+      async function toMD() {
+        const url = document.getElementById('feedUrl').value;
+        const res = await fetch(
+          `https://corsproxy.io/?url=${encodeURIComponent(url)}`
+        );
+        const text = await res.text();
+        const doc = new DOMParser().parseFromString(text, 'text/xml');
+        let md = '';
+        doc.querySelectorAll('item').forEach((i) => {
+          md += `- [${i.querySelector('title').textContent}](${i.querySelector('link').textContent})\n`;
+        });
+        document.getElementById('mdOut').value = md;
+      }
     </script>
-</body>
+  </body>
 </html>
