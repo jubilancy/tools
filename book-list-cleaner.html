@@ -13,42 +13,58 @@
         gap: 20px;
       }
 
-      /* Rules Grid & Interaction */
-      .rules-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+      /* Options Bar */
+      .rules-bar {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
         gap: 0.5rem;
+        padding-bottom: 8px;
         margin-bottom: 1.25rem;
+        -webkit-overflow-scrolling: touch;
       }
 
       .rule {
         display: flex;
-        align-items: flex-start;
-        gap: 0.5rem;
+        align-items: center;
+        gap: 0.4rem;
         background: var(--hover);
         border: 1px solid var(--puny);
         border-radius: 4px;
-        padding: 0.55rem 0.75rem;
-        font-size: 0.68rem;
+        padding: 0.3rem 0.6rem;
+        font-size: 0.65rem;
         cursor: pointer;
+        white-space: nowrap;
+        transition: border-color 0.2s;
       }
 
       .rule:hover {
         border-color: var(--accent);
       }
 
+      .rule input[type='checkbox'] {
+        margin: 0;
+        width: 12px;
+        height: 12px;
+      }
+
       .rule-name {
         color: var(--text);
-        font-size: 0.72rem;
-        display: block;
-        margin-bottom: 0.1rem;
         font-weight: bold;
+        text-transform: uppercase;
       }
 
       .grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 1rem;
+        gap: 1.5rem;
+        align-items: end; /* Aligns bottoms of the containers */
+      }
+
+      .col {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
       }
 
       label {
@@ -58,6 +74,13 @@
         font-weight: bold;
         color: var(--puny);
         margin-bottom: 5px;
+      }
+
+      textarea {
+        width: 100%;
+        height: 350px; /* Force identical height */
+        resize: vertical;
+        box-sizing: border-box;
       }
 
       .action-bar {
@@ -97,7 +120,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.4rem;
+        height: 24px; /* Fixed height to prevent shifting */
+        margin-bottom: 5px;
       }
 
       .toast {
@@ -112,9 +136,11 @@
       }
 
       @media (max-width: 580px) {
-        .grid,
-        .rules-grid {
+        .grid {
           grid-template-columns: 1fr;
+        }
+        textarea {
+          height: 250px;
         }
       }
     </style>
@@ -143,7 +169,7 @@
       <div class="tool-layout">
         <div>
           <label>Cleaning rules</label>
-          <div class="rules-grid" id="rulesGrid"></div>
+          <div class="rules-bar" id="rulesBar"></div>
         </div>
 
         <div class="action-bar">
@@ -164,29 +190,29 @@
 
         <div class="grid">
           <div class="col">
-            <label>Raw input</label>
+            <div class="out-header">
+              <label style="margin-bottom: 0">Raw input</label>
+            </div>
             <textarea
               id="input"
-              rows="12"
               placeholder="Paste messy text here..."
             ></textarea>
           </div>
           <div class="col">
             <div class="out-header">
               <label style="margin-bottom: 0">Cleaned output</label>
-              <div style="display: flex; align-items: center">
+              <div style="display: flex; align-items: center; gap: 8px">
+                <span class="toast" id="toast">Copied!</span>
                 <button
                   onclick="copyOut()"
                   style="padding: 2px 8px; font-size: 0.65rem"
                 >
                   Copy
                 </button>
-                <span class="toast" id="toast">Copied!</span>
               </div>
             </div>
             <textarea
               id="output"
-              rows="12"
               readonly
               placeholder="Cleaned titles will appear here..."
               style="background: var(--hover)"
@@ -242,59 +268,19 @@
 
     <script>
       const RULES = [
-        {
-          id: 'stripHtml',
-          name: 'Strip HTML tags',
-          desc: 'Removes tags like <b> or <i>',
-          default: true,
-        },
-        {
-          id: 'stripJson',
-          name: 'Strip JSON syntax',
-          desc: 'Removes [ ] { } and quotes',
-          default: true,
-        },
-        {
-          id: 'stripNums',
-          name: 'Remove numbering',
-          desc: '1. / 1) / #1 at start',
-          default: true,
-        },
-        {
-          id: 'stripBullets',
-          name: 'Remove bullets',
-          desc: '• - * > at start',
-          default: true,
-        },
-        {
-          id: 'stripIsbn',
-          name: 'Strip ISBN codes',
-          desc: 'Removes 10/13-digit codes',
-          default: true,
-        },
-        {
-          id: 'stripUrls',
-          name: 'Strip URLs',
-          desc: 'Removes http links',
-          default: true,
-        },
-        {
-          id: 'fixQuotes',
-          name: 'Fix smart quotes',
-          desc: 'Normalises curly quotes',
-          default: true,
-        },
-        {
-          id: 'dedupe',
-          name: 'Remove duplicates',
-          desc: 'Case-insensitive filter',
-          default: true,
-        },
+        { id: 'stripHtml', name: 'HTML', default: true },
+        { id: 'stripJson', name: 'JSON', default: true },
+        { id: 'stripNums', name: 'Numbers', default: true },
+        { id: 'stripBullets', name: 'Bullets', default: true },
+        { id: 'stripIsbn', name: 'ISBN', default: true },
+        { id: 'stripUrls', name: 'URLs', default: true },
+        { id: 'fixQuotes', name: 'Quotes', default: true },
+        { id: 'dedupe', name: 'Dedupe', default: true },
       ];
 
-      const rg = document.getElementById('rulesGrid');
+      const rb = document.getElementById('rulesBar');
       RULES.forEach((r) => {
-        rg.innerHTML += `<label class="rule"><input type="checkbox" id="r_${r.id}" ${r.default ? 'checked' : ''}><span class="rule-info"><span class="rule-name">${r.name}</span>${r.desc}</span></label>`;
+        rb.innerHTML += `<label class="rule"><input type="checkbox" id="r_${r.id}" ${r.default ? 'checked' : ''}><span class="rule-name">${r.name}</span></label>`;
       });
 
       function on(id) {
