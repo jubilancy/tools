@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CSS Units | tools.eliana.lol</title>
+  <link rel="stylesheet" href="../global.css" />
+  <link rel="icon" type="image/x-icon" href="../favicon.svg" />
+  <style>
+    .tool-layout { display: flex; flex-direction: column; gap: 24px; }
+    .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    label { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 5px; }
+    .card { border: 1px solid var(--puny); padding: 14px; }
+    .card h2 { font-size: 0.9rem; text-transform: uppercase; margin: 0 0 12px 0; padding-bottom: 6px; border-bottom: 1px solid var(--puny); }
+    table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+    th { background: var(--highlight); border: 1px solid var(--puny); padding: 6px 10px; text-align: left; }
+    td { border: 1px solid var(--puny); padding: 6px 10px; font-family: monospace; }
+    tr:hover td { background: var(--hover); cursor: pointer; }
+    .unit-val { font-weight: bold; color: var(--accent); }
+    input[type=range] { accent-color: var(--accent); width: 180px; }
+    .preview-box { border: 2px dashed var(--puny); padding: 20px; position: relative; }
+    .preview-text { display: inline-block; background: var(--highlight); }
+    select { background: var(--bg); color: var(--text); border: 1px solid var(--puny); font-family: monospace; padding: 4px 8px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
+    .cg { display: flex; flex-direction: column; gap: 4px; }
+    #copied { font-size: 0.75rem; color: var(--puny); min-height: 1.2rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left"><a href="../index.html">home</a> | <a href="../extra.html">extra</a> | <a href="../credits.html">credits</a> | <a href="../changelog.html">logs</a></div>
+    <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+  </nav>
+  <main>
+    <h1>CSS Units</h1>
+    <p class="puny">Convert between px, rem, em, pt, vw, vh, and %. Live preview of font sizes and box dimensions. Click any row to copy.</p>
+    <div class="tool-layout">
+
+      <div class="card">
+        <h2>Context settings</h2>
+        <div class="controls">
+          <div class="cg"><label>Root font size (px)</label><input type="number" id="root-fs" value="16" min="8" max="32" oninput="updateAll()" style="width:80px" /></div>
+          <div class="cg"><label>Parent font size (px)</label><input type="number" id="parent-fs" value="16" min="8" max="32" oninput="updateAll()" style="width:80px" /></div>
+          <div class="cg"><label>Viewport width (px)</label><input type="number" id="vp-w" value="1440" oninput="updateAll()" style="width:90px" /></div>
+          <div class="cg"><label>Viewport height (px)</label><input type="number" id="vp-h" value="900" oninput="updateAll()" style="width:90px" /></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Convert from px</h2>
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <div><label>Pixels</label><input type="number" id="px-in" value="16" oninput="fromPx()" style="width:100px" /></div>
+          <button onclick="fromPx()">Convert</button>
+        </div>
+        <table style="margin-top:12px">
+          <thead><tr><th>Unit</th><th>Value</th><th>Expression</th></tr></thead>
+          <tbody id="px-table"></tbody>
+        </table>
+        <div id="copied"></div>
+      </div>
+
+      <div class="card">
+        <h2>Font size live preview</h2>
+        <div class="controls">
+          <div class="cg">
+            <label>Value <span id="fs-val-label">16</span></label>
+            <input type="range" id="fs-slider" min="8" max="120" value="16" oninput="updateFSPreview()" />
+          </div>
+          <div class="cg"><label>Unit</label>
+            <select id="fs-unit" onchange="updateFSPreview()">
+              <option>px</option><option>rem</option><option>em</option><option>pt</option><option value="vw">vw</option>
+            </select>
+          </div>
+        </div>
+        <div class="preview-box" style="margin-top:12px">
+          <span class="preview-text" id="fs-preview-text">The quick brown fox jumps over the lazy dog</span>
+        </div>
+        <div id="fs-equivalent" style="font-size:0.8rem;color:var(--puny);margin-top:6px"></div>
+      </div>
+
+      <div class="card">
+        <h2>Box size preview</h2>
+        <div class="controls">
+          <div class="cg"><label>Width <span id="bw-label">200px</span></label><input type="range" id="box-w" min="1" max="100" value="30" oninput="updateBoxPreview()" /></div>
+          <div class="cg"><label>Unit</label><select id="box-unit" onchange="updateBoxPreview()"><option>px</option><option>%</option><option>vw</option><option>rem</option></select></div>
+        </div>
+        <div class="preview-box" style="margin-top:12px;height:80px">
+          <div id="box-preview" style="background:var(--accent);height:40px;transition:width 0.2s"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+  <footer style="margin-top:4rem;text-align:center" class="puny">© 2026 eliana.lol • <a href="../credits.html">credits</a></footer>
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => { const now = htmlEl.getAttribute('data-theme'); const next = now==='dark'?'light':'dark'; htmlEl.setAttribute('data-theme',next); localStorage.setItem('theme',next); toggle.innerText=next==='dark'?'[light]':'[dark]'; };
+
+    function ctx() {
+      return {
+        root: parseFloat(document.getElementById('root-fs').value)||16,
+        parent: parseFloat(document.getElementById('parent-fs').value)||16,
+        vpW: parseFloat(document.getElementById('vp-w').value)||1440,
+        vpH: parseFloat(document.getElementById('vp-h').value)||900,
+      };
+    }
+
+    function fromPx() {
+      const px = parseFloat(document.getElementById('px-in').value)||0;
+      const c = ctx();
+      const rows = [
+        ['px', px, `${px}px`],
+        ['rem', +(px/c.root).toFixed(4), `${+(px/c.root).toFixed(4)}rem`],
+        ['em', +(px/c.parent).toFixed(4), `${+(px/c.parent).toFixed(4)}em`],
+        ['pt', +(px*0.75).toFixed(4), `${+(px*0.75).toFixed(4)}pt`],
+        ['vw', +((px/c.vpW)*100).toFixed(4), `${+((px/c.vpW)*100).toFixed(4)}vw`],
+        ['vh', +((px/c.vpH)*100).toFixed(4), `${+((px/c.vpH)*100).toFixed(4)}vh`],
+        ['%', +((px/c.parent)*100).toFixed(4), `${+((px/c.parent)*100).toFixed(4)}% (of parent)`],
+      ];
+      document.getElementById('px-table').innerHTML = rows.map(([unit,val,expr]) =>
+        `<tr onclick="copy('${expr}')"><td>${unit}</td><td class="unit-val">${val}</td><td>${expr}</td></tr>`
+      ).join('');
+    }
+
+    function copy(text) {
+      navigator.clipboard.writeText(text);
+      document.getElementById('copied').textContent = `Copied: ${text}`;
+      setTimeout(() => document.getElementById('copied').textContent='', 2000);
+    }
+
+    function updateFSPreview() {
+      const val = document.getElementById('fs-slider').value;
+      const unit = document.getElementById('fs-unit').value;
+      document.getElementById('fs-val-label').textContent = val;
+      const el = document.getElementById('fs-preview-text');
+      el.style.fontSize = val+unit;
+      const c = ctx();
+      let px;
+      if (unit==='px') px = val;
+      else if (unit==='rem') px = val*c.root;
+      else if (unit==='em') px = val*c.parent;
+      else if (unit==='pt') px = val/0.75;
+      else if (unit==='vw') px = (val/100)*c.vpW;
+      document.getElementById('fs-equivalent').textContent = px ? `≈ ${px.toFixed(1)}px` : '';
+    }
+
+    function updateBoxPreview() {
+      const val = document.getElementById('box-w').value;
+      const unit = document.getElementById('box-unit').value;
+      document.getElementById('bw-label').textContent = val+unit;
+      document.getElementById('box-preview').style.width = val+unit;
+    }
+
+    function updateAll() { fromPx(); updateFSPreview(); updateBoxPreview(); }
+
+    fromPx(); updateFSPreview(); updateBoxPreview();
+  </script>
+</body>
+</html>

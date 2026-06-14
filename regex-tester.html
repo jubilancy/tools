@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Regex Tester | tools.eliana.lol</title>
+  <link rel="stylesheet" href="../global.css" />
+  <link rel="icon" type="image/x-icon" href="../favicon.svg" />
+  <style>
+    .tool-layout { display: flex; flex-direction: column; gap: 20px; }
+    .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    label { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 5px; }
+    #error { color: var(--accent); font-size: 0.8rem; min-height: 1.2rem; }
+    #test-display { border: 1px solid var(--puny); padding: 14px; font-family: monospace; font-size: 0.9rem; line-height: 1.8; white-space: pre-wrap; word-break: break-all; min-height: 60px; }
+    mark { background: var(--highlight); color: var(--text); border-radius: 2px; }
+    mark.m1 { background: #ffcc00; }
+    mark.m2 { background: #aaffaa; }
+    mark.m3 { background: #aaaaff; }
+    mark.m4 { background: #ffaaff; }
+    .match-list { font-size: 0.8rem; }
+    .match-list li { border-bottom: 1px solid var(--puny); padding: 5px 0; font-family: monospace; }
+    .match-idx { color: var(--puny); margin-right: 8px; }
+    .flags-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .flags-row label { text-transform: none; font-weight: normal; color: var(--text); display: inline-flex; align-items: center; gap: 5px; }
+    .regex-row { display: flex; gap: 0; align-items: stretch; }
+    .regex-delim { border: 1px solid var(--puny); padding: 6px 10px; background: var(--hover); color: var(--puny); font-family: monospace; display: flex; align-items: center; }
+    .regex-row input { flex: 1; border-left: none; border-right: none; }
+    #match-count { font-size: 0.8rem; color: var(--puny); font-weight: bold; }
+    .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+    .presets button { font-size: 0.75rem; padding: 3px 8px; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left"><a href="../index.html">home</a> | <a href="../extra.html">extra</a> | <a href="../credits.html">credits</a> | <a href="../changelog.html">logs</a></div>
+    <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+  </nav>
+  <main>
+    <h1>Regex Tester</h1>
+    <p class="puny">Test regular expressions with live highlighting, match list, and capture groups.</p>
+    <div class="tool-layout">
+      <div>
+        <label>Pattern</label>
+        <div class="regex-row">
+          <div class="regex-delim">/</div>
+          <input type="text" id="pattern" oninput="test()" placeholder="[a-z]+" />
+          <div class="regex-delim">/</div>
+          <input type="text" id="flags-input" value="gi" style="width:60px" oninput="syncFlags();test()" />
+        </div>
+        <div id="error"></div>
+      </div>
+      <div>
+        <label>Flags</label>
+        <div class="flags-row">
+          <label><input type="checkbox" id="flag-g" checked onchange="syncFlagsInput();test()" /> g (global)</label>
+          <label><input type="checkbox" id="flag-i" checked onchange="syncFlagsInput();test()" /> i (ignore case)</label>
+          <label><input type="checkbox" id="flag-m" onchange="syncFlagsInput();test()" /> m (multiline)</label>
+          <label><input type="checkbox" id="flag-s" onchange="syncFlagsInput();test()" /> s (dotAll)</label>
+        </div>
+      </div>
+      <div>
+        <label>Presets</label>
+        <div class="presets">
+          <button onclick="setPreset('email')">Email</button>
+          <button onclick="setPreset('url')">URL</button>
+          <button onclick="setPreset('ipv4')">IPv4</button>
+          <button onclick="setPreset('date')">Date (YYYY-MM-DD)</button>
+          <button onclick="setPreset('hex')">Hex color</button>
+          <button onclick="setPreset('slug')">Slug</button>
+          <button onclick="setPreset('hashtag')">Hashtag</button>
+        </div>
+      </div>
+      <div>
+        <label>Test string</label>
+        <textarea id="test-str" rows="5" oninput="test()" placeholder="Paste text to test against…"></textarea>
+      </div>
+      <div>
+        <label>Highlighted matches <span id="match-count"></span></label>
+        <div id="test-display"></div>
+      </div>
+      <div>
+        <label>Match list</label>
+        <ul id="match-list" class="match-list"></ul>
+      </div>
+      <div>
+        <label>Replace with</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="replace-str" placeholder="Replacement (use $1, $2 for groups)" style="flex:1" />
+          <button onclick="doReplace()">Replace all</button>
+        </div>
+        <textarea id="replace-out" rows="4" readonly style="margin-top:8px" placeholder="Result appears here…"></textarea>
+      </div>
+    </div>
+  </main>
+  <footer style="margin-top:4rem;text-align:center" class="puny">© 2026 eliana.lol • <a href="../credits.html">credits</a></footer>
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => { const now = htmlEl.getAttribute('data-theme'); const next = now==='dark'?'light':'dark'; htmlEl.setAttribute('data-theme',next); localStorage.setItem('theme',next); toggle.innerText=next==='dark'?'[light]':'[dark]'; };
+
+    const presets = {
+      email: { pat: '[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}', test: 'Contact us at hello@example.com or support@tools.eliana.lol for help.' },
+      url: { pat: 'https?:\\/\\/[^\\s]+', test: 'Visit https://eliana.lol or https://tools.eliana.lol/index.html for more.' },
+      ipv4: { pat: '\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b', test: 'Server IPs: 192.168.1.1, 10.0.0.254, and 255.255.255.0 (subnet mask).' },
+      date: { pat: '\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])', test: 'Events on 2024-01-15, 2025-06-30, and 2026-12-01.' },
+      hex: { pat: '#(?:[0-9a-fA-F]{3}){1,2}\\b', test: 'Colors in this palette: #ff6600, #ffff99, #1c1c1c, #eaddca, #fff.' },
+      slug: { pat: '[a-z0-9]+(?:-[a-z0-9]+)*', test: 'my-cool-tool, hello-world, tools-eliana-lol' },
+      hashtag: { pat: '#[\\w]+', test: 'Trending today: #indieweb #smallweb #tools #monospace' },
+    };
+
+    function setPreset(key) {
+      const p = presets[key];
+      document.getElementById('pattern').value = p.pat;
+      document.getElementById('test-str').value = p.test;
+      document.getElementById('flag-g').checked = true;
+      document.getElementById('flag-i').checked = true;
+      document.getElementById('flag-m').checked = false;
+      document.getElementById('flag-s').checked = false;
+      syncFlagsInput();
+      test();
+    }
+
+    function syncFlags() {
+      const f = document.getElementById('flags-input').value;
+      document.getElementById('flag-g').checked = f.includes('g');
+      document.getElementById('flag-i').checked = f.includes('i');
+      document.getElementById('flag-m').checked = f.includes('m');
+      document.getElementById('flag-s').checked = f.includes('s');
+    }
+
+    function syncFlagsInput() {
+      let f = '';
+      if (document.getElementById('flag-g').checked) f += 'g';
+      if (document.getElementById('flag-i').checked) f += 'i';
+      if (document.getElementById('flag-m').checked) f += 'm';
+      if (document.getElementById('flag-s').checked) f += 's';
+      document.getElementById('flags-input').value = f;
+    }
+
+    function test() {
+      const pat = document.getElementById('pattern').value;
+      const flags = document.getElementById('flags-input').value;
+      const str = document.getElementById('test-str').value;
+      const err = document.getElementById('error');
+      const display = document.getElementById('test-display');
+      const matchList = document.getElementById('match-list');
+      const countEl = document.getElementById('match-count');
+      if (!pat) { display.textContent = str; matchList.innerHTML = ''; countEl.textContent = ''; err.textContent = ''; return; }
+      let rx;
+      try { rx = new RegExp(pat, flags.replace(/[^gimsuy]/g, '')); err.textContent = ''; }
+      catch(e) { err.textContent = e.message; display.textContent = str; matchList.innerHTML = ''; countEl.textContent = ''; return; }
+      const matches = [...str.matchAll(new RegExp(pat, flags.includes('g') ? flags : flags+'g'))];
+      countEl.textContent = `(${matches.length} match${matches.length!==1?'es':''})`;
+      // highlight
+      let highlighted = ''; let last = 0;
+      matches.forEach((m, i) => {
+        highlighted += escHtml(str.slice(last, m.index));
+        highlighted += `<mark class="m${(i%4)+1}">${escHtml(m[0])}</mark>`;
+        last = m.index + m[0].length;
+      });
+      highlighted += escHtml(str.slice(last));
+      display.innerHTML = highlighted;
+      matchList.innerHTML = matches.map((m, i) => {
+        const groups = m.slice(1).map((g,j) => g!=null ? `<span class="puny"> $${j+1}:</span> ${escHtml(g)}` : '').join(' ');
+        return `<li><span class="match-idx">${i+1}</span><strong>${escHtml(m[0])}</strong>${groups} <span class="puny">@ ${m.index}</span></li>`;
+      }).join('');
+    }
+
+    function doReplace() {
+      const pat = document.getElementById('pattern').value;
+      const flags = document.getElementById('flags-input').value;
+      const str = document.getElementById('test-str').value;
+      const repl = document.getElementById('replace-str').value;
+      try {
+        const rx = new RegExp(pat, flags.replace(/[^gimsuy]/g,''));
+        document.getElementById('replace-out').value = str.replace(rx, repl);
+      } catch(e) { document.getElementById('replace-out').value = 'Error: '+e.message; }
+    }
+
+    function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    setPreset('email');
+  </script>
+</body>
+</html>

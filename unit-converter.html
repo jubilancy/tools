@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Unit Converter | tools.eliana.lol</title>
+  <link rel="stylesheet" href="../global.css" />
+  <link rel="icon" type="image/x-icon" href="../favicon.svg" />
+  <style>
+    .tool-layout { display: flex; flex-direction: column; gap: 20px; }
+    .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    label { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 5px; }
+    select { background: var(--bg); color: var(--text); border: 1px solid var(--puny); font-family: monospace; padding: 4px 8px; }
+    .conv-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+    .conv-row > div { display: flex; flex-direction: column; gap: 4px; }
+    #result { font-size: 1.4rem; font-weight: bold; min-height: 2rem; }
+    #error { color: var(--accent); font-size: 0.8rem; }
+    .table-out { font-size: 0.85rem; }
+    .table-out tr:hover td { background: var(--hover); }
+    .table-out td, .table-out th { border: 1px solid var(--puny); padding: 5px 10px; }
+    .table-out th { background: var(--highlight); }
+    .tab-bar { display: flex; gap: 0; flex-wrap: wrap; margin-bottom: 16px; }
+    .tab { border: 1px solid var(--puny); padding: 5px 12px; cursor: pointer; font-size: 0.82rem; }
+    .tab.active { background: var(--highlight); border-color: var(--text); }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left"><a href="../index.html">home</a> | <a href="../extra.html">extra</a> | <a href="../credits.html">credits</a> | <a href="../changelog.html">logs</a></div>
+    <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+  </nav>
+  <main>
+    <h1>Unit Converter</h1>
+    <p class="puny">Convert length, weight, temperature, data, CSS units, and time.</p>
+    <div class="tool-layout">
+      <div class="tab-bar" id="cat-tabs"></div>
+      <div class="conv-row">
+        <div><label>Value</label><input type="number" id="val-in" value="1" oninput="convert()" style="width:140px" /></div>
+        <div><label>From</label><select id="from-unit" onchange="convert()"></select></div>
+        <div><label>To</label><select id="to-unit" onchange="convert()"></select></div>
+        <div><button onclick="swapUnits()">⇄</button></div>
+      </div>
+      <div id="result"></div>
+      <div id="error"></div>
+      <div>
+        <label>All conversions from <span id="from-label"></span></label>
+        <table class="table-out"><thead><tr><th>Unit</th><th>Value</th></tr></thead><tbody id="all-rows"></tbody></table>
+      </div>
+    </div>
+  </main>
+  <footer style="margin-top:4rem;text-align:center" class="puny">© 2026 eliana.lol • <a href="../credits.html">credits</a></footer>
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => { const now = htmlEl.getAttribute('data-theme'); const next = now==='dark'?'light':'dark'; htmlEl.setAttribute('data-theme',next); localStorage.setItem('theme',next); toggle.innerText=next==='dark'?'[light]':'[dark]'; };
+
+    const CATS = {
+      Length: {
+        base: 'm',
+        units: { m:1, km:1000, cm:0.01, mm:0.001, mi:1609.344, ft:0.3048, inch:0.0254, yd:0.9144, nmi:1852 }
+      },
+      Weight: {
+        base: 'kg',
+        units: { kg:1, g:0.001, mg:0.000001, lb:0.453592, oz:0.0283495, t:1000, stone:6.35029 }
+      },
+      Data: {
+        base: 'B',
+        units: { B:1, KB:1024, MB:1048576, GB:1073741824, TB:1099511627776, bit:0.125, Kbit:128, Mbit:131072, Gbit:134217728 }
+      },
+      Time: {
+        base: 's',
+        units: { s:1, ms:0.001, min:60, hr:3600, day:86400, week:604800, month:2629746, year:31556952 }
+      },
+      'CSS px': {
+        base: 'px',
+        units: { px:1, rem:16, em:16, pt:1.333, vw:null, vh:null, '%':null }
+      },
+      Temperature: { special: true },
+    };
+
+    const TEMP_UNITS = ['°C','°F','K'];
+
+    let currentCat = 'Length';
+
+    function buildTabs() {
+      const tb = document.getElementById('cat-tabs');
+      tb.innerHTML = Object.keys(CATS).map(c => `<div class="tab${c===currentCat?' active':''}" onclick="switchCat('${c}')">${c}</div>`).join('');
+    }
+
+    function switchCat(cat) {
+      currentCat = cat;
+      buildTabs();
+      buildSelects();
+      convert();
+    }
+
+    function buildSelects() {
+      const cat = CATS[currentCat];
+      const isTemp = cat.special;
+      const units = isTemp ? TEMP_UNITS : Object.keys(cat.units);
+      ['from-unit','to-unit'].forEach((id,i) => {
+        const sel = document.getElementById(id);
+        sel.innerHTML = units.map(u => `<option>${u}</option>`).join('');
+        if (!isTemp) sel.value = i===0 ? units[0] : units[1];
+        else { sel.value = i===0 ? '°C' : '°F'; }
+      });
+    }
+
+    function convert() {
+      const val = parseFloat(document.getElementById('val-in').value);
+      const from = document.getElementById('from-unit').value;
+      const to = document.getElementById('to-unit').value;
+      const err = document.getElementById('error');
+      const res = document.getElementById('result');
+      if (isNaN(val)) { res.textContent=''; return; }
+      const cat = CATS[currentCat];
+      let result;
+      if (cat.special) { // temperature
+        result = convertTemp(val, from, to);
+      } else {
+        const fromF = cat.units[from], toF = cat.units[to];
+        if (!fromF || !toF) { err.textContent='Cannot convert (relative unit)'; res.textContent=''; return; }
+        result = (val * fromF) / toF;
+      }
+      err.textContent = '';
+      res.textContent = `${val} ${from} = ${+result.toFixed(8)} ${to}`;
+      document.getElementById('from-label').textContent = `1 ${from}`;
+      buildTable(from, cat);
+    }
+
+    function convertTemp(val, from, to) {
+      let c;
+      if (from==='°C') c = val;
+      else if (from==='°F') c = (val-32)*5/9;
+      else c = val - 273.15;
+      if (to==='°C') return c;
+      if (to==='°F') return c*9/5+32;
+      return c + 273.15;
+    }
+
+    function buildTable(from, cat) {
+      const val = parseFloat(document.getElementById('val-in').value)||1;
+      const tbody = document.getElementById('all-rows');
+      if (cat.special) {
+        tbody.innerHTML = TEMP_UNITS.map(u => `<tr><td>${u}</td><td>${+convertTemp(val,from,u).toFixed(6)}</td></tr>`).join('');
+      } else {
+        const fromF = cat.units[from];
+        tbody.innerHTML = Object.entries(cat.units).map(([u,f]) => {
+          const v = f && fromF ? +((val*fromF)/f).toFixed(8) : '—';
+          return `<tr><td>${u}</td><td>${v}</td></tr>`;
+        }).join('');
+      }
+    }
+
+    function swapUnits() {
+      const f = document.getElementById('from-unit'), t = document.getElementById('to-unit');
+      [f.value, t.value] = [t.value, f.value];
+      convert();
+    }
+
+    buildTabs();
+    buildSelects();
+    convert();
+  </script>
+</body>
+</html>
