@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CSV Parser | tools.eliana.lol</title>
+  <link rel="stylesheet" href="../global.css" />
+  <link rel="icon" type="image/x-icon" href="../favicon.svg" />
+  <style>
+    .tool-layout { display: flex; flex-direction: column; gap: 20px; }
+    .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    label { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 5px; }
+    #table-wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+    th { background: var(--highlight); border: 1px solid var(--puny); padding: 6px 10px; text-align: left; }
+    td { border: 1px solid var(--puny); padding: 6px 10px; }
+    tr:hover td { background: var(--hover); }
+    #json-out { display: none; white-space: pre-wrap; font-size: 0.8rem; background: var(--hover); padding: 10px; border: 1px solid var(--puny); max-height: 400px; overflow-y: auto; }
+    #stats { font-size: 0.8rem; color: var(--puny); }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left"><a href="../index.html">home</a> | <a href="../extra.html">extra</a> | <a href="../credits.html">credits</a> | <a href="../changelog.html">logs</a></div>
+    <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+  </nav>
+  <main>
+    <h1>CSV Parser</h1>
+    <p class="puny">Paste CSV below. Preview as table or export as JSON.</p>
+    <div class="tool-layout">
+      <div>
+        <label>CSV input</label>
+        <textarea id="csv-in" rows="8" placeholder="name,age,city&#10;Alice,30,NYC&#10;Bob,25,LA"></textarea>
+      </div>
+      <div>
+        <label>Options</label>
+        <div class="action-bar">
+          <label style="display:inline-flex;align-items:center;gap:5px;text-transform:none;font-weight:normal;color:var(--text)">
+            <input type="checkbox" id="has-header" checked /> Has header row
+          </label>
+          <label style="display:inline-flex;align-items:center;gap:5px;text-transform:none;font-weight:normal;color:var(--text)">
+            Delimiter: <input type="text" id="delimiter" value="," style="width:40px;padding:2px 5px;" />
+          </label>
+        </div>
+      </div>
+      <div class="action-bar">
+        <button onclick="parseCSV()">Parse</button>
+        <button onclick="showJSON()">View as JSON</button>
+        <button onclick="downloadJSON()">Download JSON</button>
+        <button onclick="clear()">Clear</button>
+      </div>
+      <div id="stats"></div>
+      <div id="table-wrap"></div>
+      <pre id="json-out"></pre>
+    </div>
+  </main>
+  <footer style="margin-top: 4rem; text-align: center" class="puny">© 2026 eliana.lol • <a href="../credits.html">credits</a></footer>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => { const now = html.getAttribute('data-theme'); const next = now === 'dark' ? 'light' : 'dark'; html.setAttribute('data-theme', next); localStorage.setItem('theme', next); toggle.innerText = next === 'dark' ? '[light]' : '[dark]'; };
+
+    let parsed = null;
+
+    function parseCSV() {
+      const csv = document.getElementById('csv-in').value.trim();
+      if (!csv) return;
+      const delim = document.getElementById('delimiter').value || ',';
+      const header = document.getElementById('has-header').checked;
+      const result = Papa.parse(csv, { header, delimiter: delim, skipEmptyLines: true });
+      parsed = result.data;
+      document.getElementById('json-out').style.display = 'none';
+      renderTable(result, header);
+      document.getElementById('stats').textContent = `${parsed.length} rows · ${result.meta.fields ? result.meta.fields.length : Object.keys(parsed[0]||{}).length} columns`;
+    }
+
+    function renderTable(result, header) {
+      const wrap = document.getElementById('table-wrap');
+      if (!parsed.length) { wrap.innerHTML = '<p class="puny">No data.</p>'; return; }
+      let html = '<table><thead><tr>';
+      const keys = header ? result.meta.fields : Object.keys(parsed[0]);
+      keys.forEach(k => html += `<th>${k}</th>`);
+      html += '</tr></thead><tbody>';
+      parsed.forEach(row => {
+        html += '<tr>';
+        keys.forEach(k => html += `<td>${row[k] ?? ''}</td>`);
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    }
+
+    function showJSON() {
+      if (!parsed) return;
+      const el = document.getElementById('json-out');
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      el.textContent = JSON.stringify(parsed, null, 2);
+    }
+
+    function downloadJSON() {
+      if (!parsed) return;
+      const a = document.createElement('a');
+      a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(parsed, null, 2));
+      a.download = 'data.json';
+      a.click();
+    }
+
+    function clear() {
+      document.getElementById('csv-in').value = '';
+      document.getElementById('table-wrap').innerHTML = '';
+      document.getElementById('json-out').style.display = 'none';
+      document.getElementById('stats').textContent = '';
+      parsed = null;
+    }
+  </script>
+</body>
+</html>

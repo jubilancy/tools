@@ -185,9 +185,8 @@ button:hover {
 </head>
 <body>
   <nav>
-    <div class="left">
-      <a href="https://tools.eliana.lol">tools.eliana.lol</a>
-    </div>
+    <div class="left"><a href="../index.html">home</a> | <a href="../extra.html">extra</a> | <a href="../credits.html">credits</a> | <a href="../changelog.html">logs</a></div>
+    <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
   </nav>
 
   <main>
@@ -200,6 +199,9 @@ button:hover {
       <button id="fetch-btn" onclick="fetchData()">Fetch & download</button>
     </div>
     <div id="status"></div>
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="../credits.html">credits</a>
+  </footer>
   </main>
 
   <script type="text/javascript">
@@ -69781,6 +69783,22 @@ module.exports = function (requireCache, callback) {
     document.getElementById('github-username').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') fetchData();
     });
+  </script>
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
   </script>
 </body>
 </html>
