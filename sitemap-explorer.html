@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sitemap Explorer | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .tab-row {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--puny);
+      margin: 1.5rem 0 0;
+    }
+
+    .tab-btn {
+      border: none;
+      border-bottom: 2px solid transparent;
+      background: none;
+      color: var(--puny);
+      font-family: monospace;
+      font-size: 0.85rem;
+      padding: 6px 14px 6px 0;
+      margin: 0;
+      cursor: pointer;
+      border-radius: 0;
+    }
+
+    .tab-btn:hover {
+      background: none;
+      color: var(--text);
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* INPUT */
+    .url-row {
+      display: flex;
+      gap: 0.5rem;
+      margin: 1rem 0 0.5rem;
+    }
+
+    .url-row input {
+      flex: 1;
+      width: auto;
+    }
+
+    .url-row button {
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    textarea#xmlInput {
+      min-height: 180px;
+      font-size: 0.8rem;
+      color: var(--puny);
+    }
+
+    textarea#xmlInput:focus { color: var(--text); }
+
+    /* STATS */
+    .stats-row {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--puny);
+      margin: 1.25rem 0;
+    }
+
+    .stat-box {
+      flex: 1;
+      padding: 12px 10px;
+      text-align: center;
+      border-right: 1px solid var(--puny);
+    }
+
+    .stat-box:last-child { border-right: none; }
+
+    .stat-num {
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: var(--accent);
+      display: block;
+      line-height: 1.2;
+    }
+
+    .stat-num.red { color: #d97706; }
+
+    .stat-lbl {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    /* CHARTS */
+    .chart-section {
+      margin-bottom: 2rem;
+    }
+
+    canvas {
+      width: 100% !important;
+      max-width: 100%;
+    }
+
+    /* TREE */
+    .cluster-block {
+      border: 1px solid var(--puny);
+      margin-bottom: 0.75rem;
+    }
+
+    .cluster-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 10px;
+      background: var(--hover);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: bold;
+      user-select: none;
+    }
+
+    .cluster-header:hover { background: var(--highlight); }
+
+    .cluster-count {
+      font-size: 0.75rem;
+      color: var(--puny);
+      font-weight: normal;
+    }
+
+    .cluster-block.collapsed .cluster-body { display: none; }
+
+    .url-row-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      border-bottom: 1px solid var(--hover);
+      line-height: 1.4;
+    }
+
+    .url-row-item:last-child { border-bottom: none; }
+    .url-row-item:hover { background: var(--hover); }
+
+    .url-row-item.depth-1 { padding-left: 22px; }
+    .url-row-item.depth-2 { padding-left: 38px; color: var(--puny); }
+    .url-row-item.depth-3 { padding-left: 54px; color: var(--puny); }
+    .url-row-item.orphan { color: #d97706; }
+
+    .url-path {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .badge {
+      font-size: 0.68rem;
+      padding: 1px 5px;
+      border: 1px solid var(--puny);
+      color: var(--puny);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .badge.accent { border-color: var(--accent); color: var(--accent); }
+    .badge.warn { border-color: #d97706; color: #d97706; }
+
+    /* ORPHAN REPORT */
+    .orphan-report {
+      border: 1px dashed #d97706;
+      padding: 0.75rem 1rem;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .orphan-report .section-title {
+      color: #d97706;
+      border-color: #d97706;
+    }
+
+    .orphan-url {
+      font-size: 0.8rem;
+      padding: 2px 0;
+      color: #d97706;
+    }
+
+    .demo-note {
+      font-size: 0.75rem;
+      color: var(--puny);
+      margin-top: 0.4rem;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Sitemap Explorer</h1>
+    <p class="puny">Paste sitemap XML to visualize URL clusters, depth levels, content families, and orphan patterns. Uses fast-xml-parser logic and Chart.js.</p>
+
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="switchTab('input', this)">input</button>
+      <button class="tab-btn" onclick="switchTab('tree', this)">url tree</button>
+      <button class="tab-btn" onclick="switchTab('charts', this)">charts</button>
+    </div>
+
+    <!-- INPUT TAB -->
+    <div class="tab-panel active" id="tab-input">
+      <div class="url-row">
+        <input type="text" id="sitemapUrl" placeholder="https://example.com/sitemap.xml (direct fetch requires CORS)">
+        <button onclick="tryFetchUrl()">fetch</button>
+      </div>
+
+      <textarea id="xmlInput" placeholder="— or paste sitemap XML directly here —
+
+<?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>
+<urlset xmlns=&quot;http://www.sitemaps.org/schemas/sitemap/0.9&quot;>
+  <url>
+    <loc>https://example.com/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>"></textarea>
+
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0;margin-bottom:0.5rem">
+        <button onclick="parseSitemap()" class="primary">parse sitemap ▶</button>
+        <button onclick="loadDemo()">load demo</button>
+        <button onclick="clearAll()" class="danger">✕ clear</button>
+      </div>
+
+      <p class="demo-note">Note: browser fetch requires the sitemap server to allow CORS. If it fails, copy-paste the XML instead.</p>
+
+      <div class="status" id="status"></div>
+
+      <div class="info-box" style="margin-top:1rem">
+        <strong>Tip:</strong> XML is parsed with the browser's built-in DOMParser. Sitemaps with <code>&lt;sitemapindex&gt;</code> (index files) list child sitemaps rather than URLs — paste individual sitemaps for full detail.
+      </div>
+    </div>
+
+    <!-- TREE TAB -->
+    <div class="tab-panel" id="tab-tree">
+      <div id="treePlaceholder" style="color:var(--puny);font-size:0.85rem;margin-top:1rem">
+        No sitemap parsed yet. Paste XML in the <strong>input</strong> tab and click parse.
+      </div>
+
+      <div id="treeMain" style="display:none">
+        <div class="stats-row" id="statsRow">
+          <div class="stat-box"><span class="stat-num" id="statTotal">—</span><span class="stat-lbl">URLs</span></div>
+          <div class="stat-box"><span class="stat-num" id="statClusters">—</span><span class="stat-lbl">Clusters</span></div>
+          <div class="stat-box"><span class="stat-num" id="statDepth">—</span><span class="stat-lbl">Max Depth</span></div>
+          <div class="stat-box"><span class="stat-num red" id="statOrphans">—</span><span class="stat-lbl">Orphans</span></div>
+        </div>
+
+        <div id="urlTree"></div>
+
+        <div class="orphan-report" id="orphanReport">
+          <span class="section-title">⚠ orphan patterns</span>
+          <div id="orphanList" style="margin-top:0.5rem"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARTS TAB -->
+    <div class="tab-panel" id="tab-charts">
+      <div id="chartsPlaceholder" style="color:var(--puny);font-size:0.85rem;margin-top:1rem">
+        No sitemap parsed yet. Paste XML in the <strong>input</strong> tab and click parse.
+      </div>
+
+      <div id="chartsMain" style="display:none">
+        <div class="chart-section">
+          <span class="section-title">depth distribution</span>
+          <canvas id="depthChart" height="200"></canvas>
+        </div>
+
+        <div class="chart-section">
+          <span class="section-title">cluster sizes</span>
+          <canvas id="clusterChart" height="200"></canvas>
+        </div>
+
+        <div class="chart-section">
+          <span class="section-title">content families — avg priority by cluster</span>
+          <canvas id="familyChart" height="180"></canvas>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+        if (sitemapData) renderCharts(sitemapData);
+      };
+    }
+  </script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <script>
+    let sitemapData = null;
+    let chartInstances = {};
+
+    // ── TABS ──────────────────────────────────────────────────────────────
+    function switchTab(id, btn) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + id).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    function showStatus(msg, type = 'success') {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = 'status show ' + type;
+      setTimeout(() => el.classList.remove('show'), 3000);
+    }
+
+    // ── DEMO ──────────────────────────────────────────────────────────────
+    const DEMO = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://example.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://example.com/about</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://example.com/about/team</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://example.com/about/careers</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://example.com/about/careers/engineer</loc><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://example.com/blog</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://example.com/blog/2024/first-post</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://example.com/blog/2024/second-post</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://example.com/blog/2025/big-update</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://example.com/blog/2025/tools-roundup</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://example.com/products</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://example.com/products/widget-pro</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://example.com/products/widget-lite</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://example.com/products/enterprise</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://example.com/docs</loc><changefreq>daily</changefreq><priority>0.85</priority></url>
+  <url><loc>https://example.com/docs/getting-started</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://example.com/docs/api-reference</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://example.com/docs/api-reference/auth</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://example.com/docs/api-reference/endpoints</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://example.com/contact</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://example.com/pricing</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://example.com/legal/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://example.com/legal/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://example.com/some-orphan-page</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>
+  <url><loc>https://example.com/deep/orphan/page</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>
+</urlset>`;
+
+    function loadDemo() {
+      document.getElementById('xmlInput').value = DEMO;
+      parseSitemap();
+    }
+
+    // ── FETCH URL ─────────────────────────────────────────────────────────
+    async function tryFetchUrl() {
+      const url = document.getElementById('sitemapUrl').value.trim();
+      if (!url) return showStatus('Enter a URL first', 'error');
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const text = await res.text();
+        document.getElementById('xmlInput').value = text;
+        parseSitemap();
+      } catch(e) {
+        showStatus('Fetch failed (CORS?). Paste the XML manually instead.', 'error');
+      }
+    }
+
+    // ── PARSE ─────────────────────────────────────────────────────────────
+    function parseSitemap() {
+      const xml = document.getElementById('xmlInput').value.trim();
+      if (!xml) return showStatus('Paste sitemap XML first', 'error');
+
+      try {
+        const doc = new DOMParser().parseFromString(xml, 'text/xml');
+        const parseErr = doc.querySelector('parsererror');
+        if (parseErr) throw new Error('Invalid XML');
+
+        const urlEls = [...doc.querySelectorAll('url')];
+        if (urlEls.length === 0) {
+          // Maybe it's a sitemapindex
+          const sitemapEls = [...doc.querySelectorAll('sitemap loc')];
+          if (sitemapEls.length > 0) {
+            showStatus(`This is a sitemap index with ${sitemapEls.length} child sitemaps. Paste individual sitemaps for URL-level detail.`, 'error');
+            return;
+          }
+          throw new Error('No <url> elements found');
+        }
+
+        const urls = urlEls.map(u => ({
+          loc: u.querySelector('loc')?.textContent?.trim() || '',
+          changefreq: u.querySelector('changefreq')?.textContent?.trim() || '',
+          priority: parseFloat(u.querySelector('priority')?.textContent?.trim() || '0.5'),
+          lastmod: u.querySelector('lastmod')?.textContent?.trim() || '',
+        })).filter(u => u.loc);
+
+        sitemapData = analyze(urls);
+        renderTree(sitemapData);
+        renderCharts(sitemapData);
+
+        // Switch to tree tab
+        switchTab('tree', document.querySelectorAll('.tab-btn')[1]);
+        showStatus(`Parsed ${urls.length} URLs across ${Object.keys(sitemapData.clusters).length} clusters`);
+      } catch(e) {
+        showStatus('Parse error: ' + e.message, 'error');
+      }
+    }
+
+    // ── ANALYZE ───────────────────────────────────────────────────────────
+    function analyze(urls) {
+      const clusters = {};
+      const allPaths = new Set();
+      const depthCounts = {};
+      let maxDepth = 0;
+
+      urls.forEach(u => {
+        try {
+          const p = new URL(u.loc);
+          const segs = p.pathname.split('/').filter(Boolean);
+          const depth = segs.length;
+          const cluster = segs[0] || '__root__';
+
+          if (!clusters[cluster]) clusters[cluster] = [];
+          clusters[cluster].push({ ...u, segs, depth, pathname: p.pathname });
+          allPaths.add(p.pathname);
+          depthCounts[depth] = (depthCounts[depth] || 0) + 1;
+          if (depth > maxDepth) maxDepth = depth;
+        } catch(e) {}
+      });
+
+      const orphans = urls.filter(u => {
+        try {
+          const segs = new URL(u.loc).pathname.split('/').filter(Boolean);
+          if (segs.length <= 1) return false;
+          const parentPath = '/' + segs.slice(0, -1).join('/');
+          return !allPaths.has(parentPath);
+        } catch { return false; }
+      }).map(u => u.loc);
+
+      return { urls, clusters, depthCounts, maxDepth, orphans };
+    }
+
+    // ── RENDER TREE ───────────────────────────────────────────────────────
+    function renderTree(data) {
+      document.getElementById('statTotal').textContent = data.urls.length;
+      document.getElementById('statClusters').textContent = Object.keys(data.clusters).length;
+      document.getElementById('statDepth').textContent = data.maxDepth;
+      document.getElementById('statOrphans').textContent = data.orphans.length;
+
+      const tree = document.getElementById('urlTree');
+      tree.innerHTML = Object.keys(data.clusters).sort().map(name => {
+        const items = data.clusters[name];
+        const label = name === '__root__' ? '/ (root)' : '/' + name;
+        const rows = items.sort((a,b) => a.depth - b.depth).map(item => {
+          const isOrphan = data.orphans.includes(item.loc);
+          const d = Math.min(item.depth, 3);
+          return `<div class="url-row-item depth-${d} ${isOrphan ? 'orphan' : ''}">
+            <span class="url-path" title="${item.loc}">${item.pathname || '/'}</span>
+            ${item.priority ? `<span class="badge accent">${item.priority}</span>` : ''}
+            ${item.changefreq ? `<span class="badge">${item.changefreq}</span>` : ''}
+            ${isOrphan ? `<span class="badge warn">orphan</span>` : ''}
+          </div>`;
+        }).join('');
+
+        return `<div class="cluster-block">
+          <div class="cluster-header" onclick="this.closest('.cluster-block').classList.toggle('collapsed')">
+            <span>${label}</span>
+            <span class="cluster-count">${items.length} URL${items.length !== 1 ? 's' : ''} ▾</span>
+          </div>
+          <div class="cluster-body">${rows}</div>
+        </div>`;
+      }).join('');
+
+      // Orphan report
+      const orphanEl = document.getElementById('orphanReport');
+      if (data.orphans.length > 0) {
+        orphanEl.style.display = 'block';
+        document.getElementById('orphanList').innerHTML =
+          data.orphans.map(u => `<div class="orphan-url">⚠ ${u}</div>`).join('');
+      } else {
+        orphanEl.style.display = 'none';
+      }
+
+      document.getElementById('treePlaceholder').style.display = 'none';
+      document.getElementById('treeMain').style.display = 'block';
+    }
+
+    // ── RENDER CHARTS ─────────────────────────────────────────────────────
+    function renderCharts(data) {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const gridColor = isDark ? '#3a3a3a' : '#e0e0e0';
+      const textColor = isDark ? '#a0a0a0' : 'grey';
+      const accent = isDark ? '#ff9900' : '#ff6600';
+
+      Chart.defaults.color = textColor;
+      Chart.defaults.font.family = 'monospace';
+      Chart.defaults.font.size = 11;
+
+      Object.values(chartInstances).forEach(c => c.destroy());
+      chartInstances = {};
+
+      const palette = [accent, '#4fc3f7', '#4caf50', '#ce93d8', '#ef9a9a', '#fff176', '#80cbc4'];
+
+      // Depth distribution
+      const depthLabels = Object.keys(data.depthCounts).sort((a,b) => a-b).map(d => `depth ${d}`);
+      const depthVals = depthLabels.map(l => data.depthCounts[+l.split(' ')[1]]);
+
+      chartInstances.depth = new Chart(document.getElementById('depthChart'), {
+        type: 'bar',
+        data: {
+          labels: depthLabels,
+          datasets: [{
+            data: depthVals,
+            backgroundColor: depthLabels.map((_, i) => palette[i % palette.length] + 'bb'),
+            borderColor: depthLabels.map((_, i) => palette[i % palette.length]),
+            borderWidth: 1,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: gridColor } },
+            y: { grid: { color: gridColor }, beginAtZero: true, ticks: { stepSize: 1 } }
+          }
+        }
+      });
+
+      // Cluster sizes
+      const clusterNames = Object.keys(data.clusters).sort();
+      const clusterLabels = clusterNames.map(n => n === '__root__' ? 'root' : n);
+      const clusterVals = clusterNames.map(k => data.clusters[k].length);
+
+      chartInstances.cluster = new Chart(document.getElementById('clusterChart'), {
+        type: 'bar',
+        data: {
+          labels: clusterLabels,
+          datasets: [{
+            label: 'URLs',
+            data: clusterVals,
+            backgroundColor: clusterNames.map((_, i) => palette[i % palette.length] + 'bb'),
+            borderColor: clusterNames.map((_, i) => palette[i % palette.length]),
+            borderWidth: 1,
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: gridColor }, beginAtZero: true, ticks: { stepSize: 1 } },
+            y: { grid: { color: gridColor } }
+          }
+        }
+      });
+
+      // Avg priority by cluster
+      const famLabels = clusterLabels;
+      const famVals = clusterNames.map(k => {
+        const items = data.clusters[k];
+        return (items.reduce((s, u) => s + (u.priority || 0.5), 0) / items.length).toFixed(2);
+      });
+
+      chartInstances.family = new Chart(document.getElementById('familyChart'), {
+        type: 'bar',
+        data: {
+          labels: famLabels,
+          datasets: [{
+            label: 'avg priority',
+            data: famVals,
+            backgroundColor: accent + '99',
+            borderColor: accent,
+            borderWidth: 1,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: gridColor } },
+            y: { grid: { color: gridColor }, min: 0, max: 1,
+              title: { display: true, text: 'priority', color: textColor } }
+          }
+        }
+      });
+
+      document.getElementById('chartsPlaceholder').style.display = 'none';
+      document.getElementById('chartsMain').style.display = 'block';
+    }
+
+    // ── CLEAR ─────────────────────────────────────────────────────────────
+    function clearAll() {
+      document.getElementById('xmlInput').value = '';
+      document.getElementById('sitemapUrl').value = '';
+      sitemapData = null;
+      Object.values(chartInstances).forEach(c => c.destroy());
+      chartInstances = {};
+      document.getElementById('treePlaceholder').style.display = 'block';
+      document.getElementById('treeMain').style.display = 'none';
+      document.getElementById('chartsPlaceholder').style.display = 'block';
+      document.getElementById('chartsMain').style.display = 'none';
+      document.getElementById('urlTree').innerHTML = '';
+    }
+  </script>
+</body>
+</html>
