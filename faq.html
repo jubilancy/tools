@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Extra | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container { max-width: 900px; margin: 0 auto; }
+    .card { padding: 1.5rem; background: var(--hover); border-left: 3px solid var(--accent); border-radius: 4px; margin: 1.5rem 0; }
+    .card-title { font-weight: bold; font-size: 1.05rem; color: var(--accent); margin-bottom: 0.75rem; }
+    .card-content { line-height: 1.6; }
+    .card a { color: var(--accent); border-bottom: 1px dotted var(--accent); text-decoration: none; }
+    .card a:hover { background-color: var(--hover); }
+    .keyboard-shortcut { display: inline-block; background: var(--bg); border: 1px solid var(--puny); padding: 2px 6px; border-radius: 2px; font-family: monospace; font-size: 0.8rem; margin: 0 0.25rem; }
+    .tip { background: var(--highlight); padding: 1rem; border-left: 3px solid var(--accent); border-radius: 4px; margin: 1rem 0; }
+    .tip strong { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> | <a href="credits.html">credits</a> | <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+      <h1>Extra</h1>
+      <p class="puny">Tips, tricks, and additional resources for using the tools.</p>
+
+      <div class="card">
+        <div class="card-title">🎨 Theme Customization</div>
+        <div class="card-content">
+          Every tool has a theme toggle button in the top-right corner. Your choice is saved automatically.
+          The theme preference persists across all tools and page reloads using your browser's localStorage.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📋 Copy-to-Clipboard</div>
+        <div class="card-content">
+          Most tools with text output have a "Copy" button. Click it to copy the result to your clipboard.
+          Your browser will confirm with a status message. You can then paste it anywhere with 
+          <span class="keyboard-shortcut">Ctrl+V</span> or <span class="keyboard-shortcut">Cmd+V</span>.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔒 Privacy & Security</div>
+        <div class="card-content">
+          All tools process data entirely in your browser. No data is sent to external servers 
+          (except when fetching RSS feeds from URLs you specify). Your privacy is protected.
+          All processing happens locally on your device.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📱 Mobile Support</div>
+        <div class="card-content">
+          All tools are fully responsive and work on mobile devices. Buttons stack vertically on small screens.
+          Text areas and inputs scale appropriately. Use landscape orientation for larger screens when available.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🌐 Browser Compatibility</div>
+        <div class="card-content">
+          These tools work in modern browsers:
+          <strong>Chrome 90+</strong> • <strong>Firefox 88+</strong> • <strong>Safari 14+</strong> • <strong>Edge 90+</strong><br/>
+          For best experience, keep your browser updated. Old browsers may have limited support.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">⌨️ Keyboard Shortcuts</div>
+        <div class="card-content">
+          Most tools accept Enter key submissions in input fields. Press <span class="keyboard-shortcut">Ctrl+A</span> to 
+          select all text in a textarea. Use <span class="keyboard-shortcut">Tab</span> to navigate between fields.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔄 Bulk Processing</div>
+        <div class="card-content">
+          Tools like "Bulk Hyperlink Generator", "Bulk URL Generator", and "Bulk RSS Finder" process multiple items at once.
+          Paste one item per line, then click the action button. Results appear instantly.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">💾 Saving Your Work</div>
+        <div class="card-content">
+          Use your browser's "Save as" feature to download tool output. Most tools also have export buttons (CSV, JSON, etc.).
+          Some tools like the Guestbook save data to localStorage automatically.
+        </div>
+      </div>
+
+      <div class="tip">
+        <strong>💡 Pro Tip:</strong> Bookmark your favorite tools for quick access. You can also create browser shortcuts on mobile.
+      </div>
+
+      <div class="card">
+        <div class="card-title">🐛 Troubleshooting</div>
+        <div class="card-content">
+          <strong>Tool not loading?</strong> Try refreshing the page or clearing your browser cache.<br/>
+          <strong>Copy button not working?</strong> Use Ctrl+A to select all, then Ctrl+C to copy manually.<br/>
+          <strong>Theme not saving?</strong> Check if your browser has localStorage enabled. Try a different browser.<br/>
+          <strong>RSS feed not loading?</strong> The feed URL must be publicly accessible and valid RSS/Atom format.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📚 Feature Categories</div>
+        <div class="card-content">
+          <strong>Text Processing:</strong> Clean text, remove formatting, work with code<br/>
+          <strong>URL Tools:</strong> Clean, split, generate, and manage URLs<br/>
+          <strong>Data Conversion:</strong> Convert between formats (CSV, JSON, HTML, Markdown)<br/>
+          <strong>RSS/Feeds:</strong> Read, find, convert, and widget-ify RSS feeds<br/>
+          <strong>Collections:</strong> Manage lists, books, ISBNs, and guestbook entries
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔗 External Services</div>
+        <div class="card-content">
+          Some tools use external services for specific features:<br/>
+          <strong>AllOrigins:</strong> CORS proxy for fetching RSS feeds (allorigins.win)<br/>
+          <strong>Turndown/GFM:</strong> HTML to Markdown conversion libraries (unpkg.com)<br/>
+          These services are free and don't store your data.
+        </div>
+      </div>
+
+      <hr style="margin: 2rem 0; border: none; border-top: 1px dashed var(--puny);" />
+
+      <div class="card">
+        <div class="card-title">❓ FAQs</div>
+        <div class="card-content">
+          <strong>Q: Are my data safe?</strong><br/>
+          A: Yes. All processing happens in your browser. No servers store your data.<br/><br/>
+          
+          <strong>Q: Can I use these tools offline?</strong><br/>
+          A: Most can! Download the HTML file and open locally. RSS tools need internet for feed fetching.<br/><br/>
+          
+          <strong>Q: Why is my theme not saving?</strong><br/>
+          A: Check browser settings. Some browsers require localStorage permission. Try another browser if issues persist.<br/><br/>
+          
+          <strong>Q: Can I share these tools?</strong><br/>
+          A: Yes! Share the link to tools.eliana.lol. The tools are free and designed for sharing.<br/>
+        </div>
+      </div>
+
+      <p class="puny" style="text-align: center; margin-top: 3rem;">
+        Need more help? Visit the main site at <a href="https://eliana.lol">eliana.lol</a>
+      </p>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+</body>
+</html>
