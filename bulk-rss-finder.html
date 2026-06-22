@@ -1,136 +1,247 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bulk Feed Finder | tools.eliana.lol</title>
-    <link rel="stylesheet" href="global.css" />
-    <link rel="icon" type="image/x-icon" href="favicon.svg" />
-    <style>
-      /* Specific tweaks for this tool's results */
-      .feed-result {
-        border-left: 3px solid var(--text);
-        padding-left: 15px;
-        margin-top: 20px;
-        margin-bottom: 20px;
-      }
-      .feed-item {
-        margin: 8px 0;
-        display: block;
-      }
-    </style>
-  </head>
-  <body>
-    <nav>
-      <div class="left">
-        <a href="index.html">home</a> | <a href="extra.html">extra</a> |
-        <a href="credits.html">credits</a> |
-        <a href="changelog.html">logs</a>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bulk RSS Finder | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container { display: flex; flex-direction: column; gap: 1.5rem; }
+    .input-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .input-label { font-size: 0.85rem; font-weight: bold; text-transform: uppercase; color: var(--puny); letter-spacing: 0.05em; }
+    .button-group { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    button { flex: 0 1 auto; min-width: 100px; padding: 10px; cursor: pointer; font-family: monospace; border: 1px solid var(--text); background: var(--bg); color: var(--text); border-radius: 4px; transition: all 150ms; }
+    button:hover { background-color: var(--hover); border-color: var(--accent); }
+    button.primary { border-color: var(--accent); font-weight: bold; color: var(--accent); }
+    textarea { width: 100%; min-height: 150px; font-family: monospace; padding: 10px; border: 1px solid var(--puny); background: var(--bg); color: var(--text); box-sizing: border-box; border-radius: 4px; }
+    textarea:focus { outline: none; border-color: var(--accent); }
+    .status { padding: 0.75rem 1rem; border-radius: 4px; margin: 0.5rem 0; display: none; font-size: 0.9rem; }
+    .status.show { display: block; background-color: rgba(16, 185, 129, 0.1); border-left: 3px solid var(--accent); color: var(--accent); }
+    .status.error { background-color: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; color: #ef4444; }
+    .info-box { padding: 1rem; background-color: var(--highlight); border-left: 3px solid var(--accent); font-size: 0.9rem; line-height: 1.6; }
+    .result-list { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; }
+    .result-site { padding: 1rem; background: var(--hover); border-left: 3px solid var(--accent); border-radius: 4px; }
+    .result-url { font-weight: bold; color: var(--accent); word-break: break-all; font-size: 0.9rem; }
+    .result-feeds { margin-top: 0.5rem; padding-left: 1rem; border-left: 1px solid var(--puny); }
+    .feed-link { display: block; font-family: monospace; font-size: 0.8rem; color: var(--puny); margin: 0.25rem 0; }
+    .feed-link:hover { color: var(--accent); cursor: pointer; }
+    .spinner { display: inline-block; width: 1rem; height: 1rem; border: 2px solid var(--accent); border-top: 2px solid var(--bg); border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 600px) { .button-group { flex-direction: column; } button { width: 100%; } }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> | <a href="credits.html">credits</a> | <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Bulk RSS Finder</h1>
+    <p class="puny">Discover RSS feeds from multiple websites at once.</p>
+
+    <div class="container">
+      <div class="input-group">
+        <label class="input-label">Website URLs (one per line)</label>
+        <textarea id="input" placeholder="https://example.com&#10;https://blog.example.com&#10;https://news.site.com"></textarea>
       </div>
-      <div class="right">
-        <button id="theme-toggle">[theme]</button> |
-        <a href="https://eliana.lol">site</a>
-      </div>
-    </nav>
 
-    <main>
-      <h1>Bulk Feed Finder</h1>
-      <p class="puny">Enter URLs (one per line) to sniff out RSS/Atom feeds.</p>
-
-      <textarea
-        id="urlInput"
-        rows="8"
-        placeholder="j3s.sh&#10;eliana.lol"
-      ></textarea>
-
-      <div class="tool-actions">
-        <button id="findBtn">Find Feeds</button>
-        <button id="clearBtn">Clear</button>
+      <div class="button-group">
+        <button id="find" class="primary">✨ Find All Feeds</button>
+        <button id="exportCSV">Export CSV</button>
+        <button id="clear">Clear</button>
       </div>
 
-      <div id="results"></div>
-    </main>
+      <div class="status" id="status"></div>
 
-    <script>
-      const html = document.documentElement;
-      const toggle = document.getElementById('theme-toggle');
-      const saved =
-        localStorage.getItem('theme') ||
-        (window.matchMedia('(prefers-color-scheme: dark)').matches
-          ? 'dark'
-          : 'light');
-      html.setAttribute('data-theme', saved);
-      if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
-      if (toggle) {
-        toggle.onclick = () => {
-          const now = html.getAttribute('data-theme');
-          const next = now === 'dark' ? 'light' : 'dark';
-          html.setAttribute('data-theme', next);
-          localStorage.setItem('theme', next);
-          toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
-        };
+      <div id="resultContainer" style="display: none;">
+        <div class="input-group">
+          <label class="input-label">Results</label>
+          <div class="result-list" id="results"></div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> Paste multiple website URLs and find all their RSS feeds automatically. Click feed URLs to copy them.
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <script>
+    const input = document.getElementById('input');
+    const findBtn = document.getElementById('find');
+    const exportCSVBtn = document.getElementById('exportCSV');
+    const clearBtn = document.getElementById('clear');
+    const status = document.getElementById('status');
+    const resultContainer = document.getElementById('resultContainer');
+    const results = document.getElementById('results');
+
+    let foundFeeds = [];
+
+    findBtn.onclick = () => {
+      const text = input.value.trim();
+      if (!text) {
+        showStatus('Please enter website URLs!', 'error');
+        return;
       }
-    </script>
 
-    <script type="module">
-      import { findRssFeeds } from 'https://esm.sh/rss-agent-discovery@0.1.6';
+      const urls = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      foundFeeds = [];
+      results.innerHTML = '<div style="padding: 1rem; text-align: center;"><div class="spinner"></div> Scanning websites...</div>';
+      resultContainer.style.display = 'block';
 
-      const resultsDiv = document.getElementById('results');
+      let completed = 0;
 
-      document.getElementById('findBtn').onclick = async () => {
-        const input = document.getElementById('urlInput').value.trim();
-        if (!input) return;
+      urls.forEach((url, idx) => {
+        if (!url.startsWith('http')) url = 'https://' + url;
 
-        const urls = input.split('\n').filter((u) => u.trim());
-        resultsDiv.innerHTML = '<p class="puny">Processing...</p>';
+        const corsUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
 
-        for (let url of urls) {
-          if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        fetch(corsUrl)
+          .then(r => r.json())
+          .then(data => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data.contents, 'text/html');
 
-          const container = document.createElement('div');
-          container.className = 'feed-result';
-          container.innerHTML = `<strong>${url}</strong>`;
-          resultsDiv.appendChild(container);
-
-          try {
-            const discovered = await findRssFeeds(url, {
-              fetcher: async (u) => {
-                // Using AllOrigins to bypass CORS
-                const p = `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`;
-                const r = await fetch(p);
-                const d = await r.json();
-                return d.contents;
-              },
+            const feeds = [];
+            const linkElements = doc.querySelectorAll('link[rel*="feed"], link[type*="rss"], link[type*="atom"]');
+            linkElements.forEach(link => {
+              const href = link.getAttribute('href');
+              if (href) {
+                const absoluteUrl = new URL(href, url).toString();
+                feeds.push(absoluteUrl);
+              }
             });
 
-            if (!discovered.length) {
-              container.innerHTML += `<div class="puny">No feeds found.</div>`;
-            } else {
-              discovered.forEach((f) => {
-                const link = document.createElement('a');
-                link.href = f.url;
-                link.className = 'feed-item';
-                link.innerHTML = `> ${f.title || 'Feed'} <span class="puny">(${f.type || 'XML'})</span>`;
-                container.appendChild(link);
-              });
-            }
-          } catch (e) {
-            container.innerHTML += `<div class="puny">Error connecting to site.</div>`;
-          }
-        }
-        // Remove the "Processing" text once done
-        if (
-          resultsDiv.firstChild &&
-          resultsDiv.firstChild.textContent === 'Processing...'
-        ) {
-          resultsDiv.removeChild(resultsDiv.firstChild);
-        }
-      };
+            // Add common paths
+            const commonPaths = ['/feed', '/feed.xml', '/rss', '/rss.xml', '/atom.xml'];
+            commonPaths.forEach(path => {
+              feeds.push(new URL(path, url).toString());
+            });
 
-      document.getElementById('clearBtn').onclick = () => {
-        document.getElementById('urlInput').value = '';
-        resultsDiv.innerHTML = '';
-      };
-    </script>
-  </body>
+            foundFeeds.push({ site: url, feeds: [...new Set(feeds)] });
+            completed++;
+
+            if (completed === urls.length) {
+              displayResults();
+            }
+          })
+          .catch(err => {
+            foundFeeds.push({ site: url, feeds: [], error: true });
+            completed++;
+
+            if (completed === urls.length) {
+              displayResults();
+            }
+          });
+      });
+    };
+
+    function displayResults() {
+      results.innerHTML = '';
+      let totalFeeds = 0;
+
+      foundFeeds.forEach(item => {
+        const feedCount = item.feeds.length;
+        totalFeeds += feedCount;
+
+        let html = `<div class="result-site">`;
+        html += `<div class="result-url">${escapeHtml(item.site)}</div>`;
+
+        if (item.error) {
+          html += `<div class="result-feeds"><span style="color: #ef4444;">Error scanning site</span></div>`;
+        } else if (feedCount > 0) {
+          html += `<div class="result-feeds">`;
+          item.feeds.forEach(feed => {
+            html += `<span class="feed-link" onclick="copyFeed('${feed}')" title="Click to copy">${escapeHtml(feed)}</span>`;
+          });
+          html += `</div>`;
+        } else {
+          html += `<div class="result-feeds"><span style="color: var(--puny);">No feeds found</span></div>`;
+        }
+
+        html += `</div>`;
+        results.innerHTML += html;
+      });
+
+      showStatus(`Found ${totalFeeds} feed(s) from ${foundFeeds.length} site(s)`);
+    }
+
+    exportCSVBtn.onclick = () => {
+      if (foundFeeds.length === 0) {
+        showStatus('No results to export!', 'error');
+        return;
+      }
+
+      let csv = 'Website,Feed URL\n';
+      foundFeeds.forEach(item => {
+        item.feeds.forEach(feed => {
+          csv += `"${item.site}","${feed}"\n`;
+        });
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'feeds.csv';
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      showStatus('CSV exported!');
+    };
+
+    clearBtn.onclick = () => {
+      input.value = '';
+      results.innerHTML = '';
+      resultContainer.style.display = 'none';
+      foundFeeds = [];
+      showStatus('Cleared!');
+    };
+
+    window.copyFeed = function(feed) {
+      navigator.clipboard.writeText(feed).then(() => {
+        showStatus('Feed URL copied!');
+      });
+    };
+
+    function showStatus(message, type = 'success') {
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 3000);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
 </html>
