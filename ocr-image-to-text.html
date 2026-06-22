@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OCR / Image to Text | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script src="https://unpkg.com/tesseract.js/dist/tesseract.min.js"></script>
+  <style>
+    .container { display: flex; flex-direction: column; gap: 1.5rem; }
+
+    .drop-zone {
+      border: 2px dashed var(--puny);
+      padding: 2.5rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 150ms, background 150ms;
+      color: var(--puny);
+      font-size: 0.9rem;
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); background: var(--hover); color: var(--accent); }
+    .drop-zone input[type="file"] { display: none; }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+    @media (max-width: 600px) { .split { grid-template-columns: 1fr; } }
+
+    .pane { display: flex; flex-direction: column; gap: 0.5rem; }
+    .pane-label { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: var(--puny); border-bottom: 1px solid var(--puny); padding-bottom: 4px; }
+
+    #preview-img {
+      width: 100%;
+      border: 1px solid var(--puny);
+      display: none;
+      object-fit: contain;
+      max-height: 400px;
+      background: #111;
+    }
+
+    #result-text {
+      width: 100%;
+      min-height: 300px;
+      font-family: monospace;
+      font-size: 0.875rem;
+      padding: 12px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      resize: vertical;
+      line-height: 1.7;
+    }
+    #result-text:focus { outline: none; border-color: var(--accent); }
+
+    .progress-wrap {
+      display: none;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .progress-wrap.show { display: flex; }
+
+    .progress-bar-outer {
+      width: 100%;
+      height: 6px;
+      background: var(--highlight);
+      border: 1px solid var(--puny);
+    }
+    .progress-bar-inner {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 200ms ease;
+    }
+
+    .progress-label { font-size: 0.8rem; color: var(--puny); }
+
+    .lang-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; }
+
+    select {
+      font-family: monospace;
+      padding: 6px 10px;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--puny);
+      cursor: pointer;
+    }
+    select:focus { outline: none; border-color: var(--accent); }
+
+    .input-label { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: var(--puny); display: block; margin-bottom: 4px; }
+
+    .confidence { font-size: 0.75rem; color: var(--puny); }
+    .confidence span { color: var(--accent); font-weight: bold; }
+
+    button {
+      padding: 6px 12px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+    button:hover { background: var(--hover); border-color: var(--accent); }
+    button.primary { border-color: var(--accent); color: var(--accent); font-weight: bold; }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+
+    .status { padding: 0.75rem 1rem; margin: 0.5rem 0; display: none; font-size: 0.9rem; border-left: 3px solid var(--accent); background: rgba(255,102,0,0.08); color: var(--accent); }
+    .status.show { display: block; }
+
+    .info-box { padding: 0.75rem 1rem; background-color: var(--highlight); border-left: 3px solid var(--accent); font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>OCR / Image to Text</h1>
+    <p class="puny">extract text from any image — runs entirely in your browser via tesseract.js. nothing is uploaded.</p>
+
+    <div class="container">
+      <div class="lang-row">
+        <div>
+          <label class="input-label">Language</label>
+          <select id="lang-sel">
+            <option value="eng">english</option>
+            <option value="fra">french</option>
+            <option value="deu">german</option>
+            <option value="spa">spanish</option>
+            <option value="por">portuguese</option>
+            <option value="ita">italian</option>
+            <option value="jpn">japanese</option>
+            <option value="chi_sim">chinese (simplified)</option>
+            <option value="kor">korean</option>
+            <option value="ara">arabic</option>
+            <option value="rus">russian</option>
+            <option value="hin">hindi</option>
+          </select>
+        </div>
+        <div>
+          <label class="input-label">Mode</label>
+          <select id="psm-sel">
+            <option value="3">auto detect (default)</option>
+            <option value="6">single block of text</option>
+            <option value="7">single line</option>
+            <option value="8">single word</option>
+            <option value="11">sparse text</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" accept="image/*" onchange="handleFile(this.files[0])">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">🔍</div>
+        drop an image here or click to upload<br>
+        <span style="font-size:0.75rem;">jpg, png, gif, bmp, webp supported</span>
+      </div>
+
+      <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-label" id="progress-label">initializing...</div>
+        <div class="progress-bar-outer">
+          <div class="progress-bar-inner" id="progress-bar"></div>
+        </div>
+      </div>
+
+      <div class="split" id="result-split" style="display:none;">
+        <div class="pane">
+          <div class="pane-label">image</div>
+          <img id="preview-img" alt="uploaded image" style="display:block;">
+        </div>
+        <div class="pane">
+          <div class="pane-label">extracted text</div>
+          <textarea id="result-text" placeholder="text will appear here..."></textarea>
+          <div class="confidence" id="confidence"></div>
+        </div>
+      </div>
+
+      <div class="toolbar" id="result-toolbar" style="display:none;">
+        <button class="primary" onclick="copyText()">copy text</button>
+        <button onclick="downloadTxt()">download .txt</button>
+        <button onclick="rerun()">re-run OCR</button>
+        <button onclick="clearAll()">clear</button>
+      </div>
+
+      <div class="info-box">
+        <strong>Privacy:</strong> all processing happens locally in your browser — your images never leave your device.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => {
+      const next = htmlEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      htmlEl.setAttribute('data-theme', next); localStorage.setItem('theme', next);
+      toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+    };
+
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+
+    let currentFile = null;
+
+    function handleFile(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+      currentFile = file;
+      const url = URL.createObjectURL(file);
+      const img = document.getElementById('preview-img');
+      img.src = url; img.style.display = 'block';
+      document.getElementById('result-split').style.display = 'grid';
+      runOCR(url);
+    }
+
+    async function runOCR(url) {
+      const lang = document.getElementById('lang-sel').value;
+      const psm = document.getElementById('psm-sel').value;
+      const progress = document.getElementById('progress-wrap');
+      const bar = document.getElementById('progress-bar');
+      const label = document.getElementById('progress-label');
+      progress.classList.add('show');
+      document.getElementById('result-toolbar').style.display = 'none';
+
+      try {
+        const worker = await Tesseract.createWorker(lang, 1, {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              bar.style.width = (m.progress * 100).toFixed(0) + '%';
+              label.textContent = `recognizing... ${(m.progress * 100).toFixed(0)}%`;
+            } else {
+              label.textContent = m.status;
+            }
+          }
+        });
+        await worker.setParameters({ tessedit_pageseg_mode: psm });
+        const { data } = await worker.recognize(url);
+        await worker.terminate();
+
+        document.getElementById('result-text').value = data.text.trim();
+        document.getElementById('confidence').innerHTML = `confidence: <span>${data.confidence.toFixed(1)}%</span>`;
+        progress.classList.remove('show');
+        document.getElementById('result-toolbar').style.display = 'flex';
+        showStatus('done!');
+      } catch (e) {
+        label.textContent = 'error: ' + e.message;
+      }
+    }
+
+    function rerun() {
+      if (currentFile) handleFile(currentFile);
+    }
+
+    function copyText() {
+      navigator.clipboard.writeText(document.getElementById('result-text').value);
+      showStatus('copied!');
+    }
+
+    function downloadTxt() {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([document.getElementById('result-text').value], { type: 'text/plain' }));
+      a.download = 'ocr-result.txt'; a.click();
+    }
+
+    function clearAll() {
+      currentFile = null;
+      document.getElementById('result-split').style.display = 'none';
+      document.getElementById('result-toolbar').style.display = 'none';
+      document.getElementById('progress-wrap').classList.remove('show');
+      document.getElementById('result-text').value = '';
+      document.getElementById('file-input').value = '';
+    }
+
+    function showStatus(msg) {
+      const s = document.getElementById('status');
+      s.textContent = msg; s.classList.add('show');
+      setTimeout(() => s.classList.remove('show'), 2000);
+    }
+  </script>
+</body>
+</html>

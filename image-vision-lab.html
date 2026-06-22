@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image Vision Lab | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container { display: flex; flex-direction: column; gap: 1.5rem; }
+
+    .drop-zone {
+      border: 2px dashed var(--puny);
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      color: var(--puny);
+      font-size: 0.9rem;
+      transition: border-color 150ms, background 150ms;
+    }
+    .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); background: var(--hover); color: var(--accent); }
+    .drop-zone input[type="file"] { display: none; }
+
+    .canvas-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 600px) { .canvas-row { grid-template-columns: 1fr; } }
+
+    .canvas-pane { display: flex; flex-direction: column; gap: 0.5rem; }
+    .pane-label { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: var(--puny); border-bottom: 1px solid var(--puny); padding-bottom: 4px; }
+
+    canvas { width: 100%; border: 1px solid var(--puny); display: block; background: #111; }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .filter-btn {
+      padding: 8px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      text-align: center;
+    }
+    .filter-btn:hover, .filter-btn.active { border-color: var(--accent); color: var(--accent); background: var(--hover); }
+
+    .controls { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+    .control-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .input-label { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: var(--puny); }
+    input[type="range"] { width: 100%; padding: 0; }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+    button {
+      padding: 6px 12px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+    button:hover { background: var(--hover); border-color: var(--accent); }
+    button.primary { border-color: var(--accent); color: var(--accent); font-weight: bold; }
+
+    .status { padding: 0.75rem 1rem; margin: 0.5rem 0; display: none; font-size: 0.9rem; border-left: 3px solid var(--accent); background: rgba(255,102,0,0.08); color: var(--accent); }
+    .status.show { display: block; }
+
+    #cv-loading { color: var(--puny); font-size: 0.85rem; }
+
+    .section-label { font-weight: bold; font-size: 0.85rem; text-transform: uppercase; border-bottom: 1px solid var(--puny); padding-bottom: 4px; margin-bottom: 0.75rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Image Vision Lab</h1>
+    <p class="puny">real-time computer vision filters powered by opencv.js (webassembly). runs entirely in-browser.</p>
+
+    <div class="container">
+      <p id="cv-loading" class="puny">⟳ loading opencv.js (~8mb)...</p>
+
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" accept="image/*" onchange="loadImage(this.files[0])">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">👁</div>
+        drop an image here or click to upload
+      </div>
+
+      <div class="canvas-row" id="canvas-row" style="display:none;">
+        <div class="canvas-pane">
+          <div class="pane-label">original</div>
+          <canvas id="canvas-src"></canvas>
+        </div>
+        <div class="canvas-pane">
+          <div class="pane-label">processed</div>
+          <canvas id="canvas-dst"></canvas>
+        </div>
+      </div>
+
+      <div id="controls-section" style="display:none;">
+        <div class="section-label">Filter</div>
+        <div class="filter-grid">
+          <button class="filter-btn active" onclick="applyFilter('none',this)">original</button>
+          <button class="filter-btn" onclick="applyFilter('gray',this)">grayscale</button>
+          <button class="filter-btn" onclick="applyFilter('canny',this)">edges (canny)</button>
+          <button class="filter-btn" onclick="applyFilter('blur',this)">gaussian blur</button>
+          <button class="filter-btn" onclick="applyFilter('threshold',this)">threshold</button>
+          <button class="filter-btn" onclick="applyFilter('dilate',this)">dilate</button>
+          <button class="filter-btn" onclick="applyFilter('erode',this)">erode</button>
+          <button class="filter-btn" onclick="applyFilter('laplacian',this)">laplacian</button>
+          <button class="filter-btn" onclick="applyFilter('invert',this)">invert</button>
+          <button class="filter-btn" onclick="applyFilter('contours',this)">contours</button>
+        </div>
+
+        <div class="controls" style="margin-top:1rem;">
+          <div class="control-group">
+            <label class="input-label">Blur Size <span id="blur-val">5</span></label>
+            <input type="range" id="blur-size" min="1" max="25" step="2" value="5" oninput="document.getElementById('blur-val').textContent=this.value;reapply()">
+          </div>
+          <div class="control-group">
+            <label class="input-label">Threshold <span id="thresh-val">127</span></label>
+            <input type="range" id="thresh-val-input" min="0" max="255" value="127" oninput="document.getElementById('thresh-val').textContent=this.value;reapply()">
+          </div>
+          <div class="control-group">
+            <label class="input-label">Canny Low <span id="canny-lo-val">50</span></label>
+            <input type="range" id="canny-lo" min="0" max="200" value="50" oninput="document.getElementById('canny-lo-val').textContent=this.value;reapply()">
+          </div>
+          <div class="control-group">
+            <label class="input-label">Canny High <span id="canny-hi-val">150</span></label>
+            <input type="range" id="canny-hi" min="0" max="400" value="150" oninput="document.getElementById('canny-hi-val').textContent=this.value;reapply()">
+          </div>
+        </div>
+
+        <div class="toolbar" style="margin-top:1rem;">
+          <button class="primary" onclick="downloadResult()">download result</button>
+          <button onclick="resetAll()">clear</button>
+        </div>
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => {
+      const next = htmlEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      htmlEl.setAttribute('data-theme', next); localStorage.setItem('theme', next);
+      toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+    };
+
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); loadImage(e.dataTransfer.files[0]); });
+  </script>
+
+  <script async src="https://docs.opencv.org/4.10.0/opencv.js" onload="onCvReady()"></script>
+
+  <script>
+    let cvReady = false;
+    let srcImg = null;
+    let currentFilter = 'none';
+
+    function onCvReady() {
+      cvReady = true;
+      document.getElementById('cv-loading').textContent = '✓ opencv.js ready';
+      setTimeout(() => document.getElementById('cv-loading').style.display = 'none', 1500);
+    }
+
+    function loadImage(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+      if (!cvReady) { showStatus('opencv still loading, please wait...'); return; }
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        srcImg = img;
+        const src = document.getElementById('canvas-src');
+        src.width = img.width; src.height = img.height;
+        src.getContext('2d').drawImage(img, 0, 0);
+        document.getElementById('canvas-row').style.display = 'grid';
+        document.getElementById('controls-section').style.display = 'block';
+        applyFilter('none', document.querySelector('.filter-btn'));
+      };
+      img.src = url;
+    }
+
+    function applyFilter(type, btn) {
+      currentFilter = type;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      processImage();
+    }
+
+    function reapply() { processImage(); }
+
+    function processImage() {
+      if (!srcImg || !cvReady) return;
+      const srcCanvas = document.getElementById('canvas-src');
+      const dstCanvas = document.getElementById('canvas-dst');
+      dstCanvas.width = srcCanvas.width;
+      dstCanvas.height = srcCanvas.height;
+
+      let src = cv.imread(srcCanvas);
+      let dst = new cv.Mat();
+
+      try {
+        const blurSize = parseInt(document.getElementById('blur-size').value);
+        const ksize = blurSize % 2 === 0 ? blurSize + 1 : blurSize;
+        const thresh = parseInt(document.getElementById('thresh-val-input').value);
+        const cannyLo = parseInt(document.getElementById('canny-lo').value);
+        const cannyHi = parseInt(document.getElementById('canny-hi').value);
+
+        switch (currentFilter) {
+          case 'none':
+            src.copyTo(dst); break;
+          case 'gray':
+            cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY); break;
+          case 'canny': {
+            let gray = new cv.Mat();
+            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+            cv.Canny(gray, dst, cannyLo, cannyHi);
+            cv.cvtColor(dst, dst, cv.COLOR_GRAY2RGBA);
+            gray.delete();
+            break;
+          }
+          case 'blur':
+            cv.GaussianBlur(src, dst, new cv.Size(ksize, ksize), 0); break;
+          case 'threshold': {
+            let gray = new cv.Mat();
+            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+            cv.threshold(gray, dst, thresh, 255, cv.THRESH_BINARY);
+            cv.cvtColor(dst, dst, cv.COLOR_GRAY2RGBA);
+            gray.delete();
+            break;
+          }
+          case 'dilate': {
+            let kernel = cv.Mat.ones(ksize, ksize, cv.CV_8U);
+            cv.dilate(src, dst, kernel);
+            kernel.delete();
+            break;
+          }
+          case 'erode': {
+            let kernel = cv.Mat.ones(ksize, ksize, cv.CV_8U);
+            cv.erode(src, dst, kernel);
+            kernel.delete();
+            break;
+          }
+          case 'laplacian': {
+            let gray = new cv.Mat(), lap = new cv.Mat(), abs = new cv.Mat();
+            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+            cv.Laplacian(gray, lap, cv.CV_16S, 3);
+            cv.convertScaleAbs(lap, abs);
+            cv.cvtColor(abs, dst, cv.COLOR_GRAY2RGBA);
+            gray.delete(); lap.delete(); abs.delete();
+            break;
+          }
+          case 'invert':
+            cv.bitwise_not(src, dst); break;
+          case 'contours': {
+            let gray = new cv.Mat(), binary = new cv.Mat();
+            src.copyTo(dst);
+            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+            cv.threshold(gray, binary, thresh, 255, cv.THRESH_BINARY);
+            let contours = new cv.MatVector();
+            let hierarchy = new cv.Mat();
+            cv.findContours(binary, contours, hierarchy, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE);
+            for (let i = 0; i < contours.size(); i++) {
+              cv.drawContours(dst, contours, i, new cv.Scalar(255, 102, 0, 255), 2, cv.LINE_8, hierarchy, 100);
+            }
+            gray.delete(); binary.delete(); contours.delete(); hierarchy.delete();
+            break;
+          }
+        }
+
+        cv.imshow(dstCanvas, dst);
+      } catch (e) {
+        showStatus('error: ' + e.message);
+      } finally {
+        src.delete(); dst.delete();
+      }
+    }
+
+    function downloadResult() {
+      const a = document.createElement('a');
+      a.href = document.getElementById('canvas-dst').toDataURL('image/png');
+      a.download = `vision-${currentFilter}.png`; a.click();
+    }
+
+    function resetAll() {
+      srcImg = null;
+      document.getElementById('canvas-row').style.display = 'none';
+      document.getElementById('controls-section').style.display = 'none';
+      document.getElementById('file-input').value = '';
+    }
+
+    function showStatus(msg) {
+      const s = document.getElementById('status');
+      s.textContent = msg; s.classList.add('show');
+      setTimeout(() => s.classList.remove('show'), 3000);
+    }
+  </script>
+</body>
+</html>
