@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>XSLT Viewer | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container { display: flex; flex-direction: column; gap: 1.5rem; }
+    .input-label { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: var(--puny); letter-spacing: 0.05em; display: block; margin-bottom: 0.4rem; }
+    .button-group { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+    button { font-family: monospace; padding: 8px 16px; cursor: pointer; background: var(--bg); color: var(--text); border: 1px solid var(--text); }
+    button.primary { border-color: var(--accent); color: var(--accent); font-weight: bold; }
+    button:hover { background-color: var(--hover); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .upload-steps {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 600px) { .upload-steps { grid-template-columns: 1fr; } }
+
+    .step-box {
+      border: 1px solid var(--puny);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .step-box.done { border-color: var(--accent); }
+
+    .file-label {
+      display: inline-block;
+      font-family: monospace;
+      padding: 8px 16px;
+      cursor: pointer;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--text);
+    }
+    .file-label:hover { background-color: var(--hover); }
+    .file-label.done { border-color: var(--accent); color: var(--accent); }
+
+    input[type="file"] { display: none; }
+
+    .file-name { font-size: 0.8rem; color: var(--puny); }
+    .file-name.loaded { color: var(--accent); }
+
+    .info-box { padding: 1rem; background-color: var(--highlight); border-left: 3px solid var(--accent); font-size: 0.9rem; line-height: 1.6; }
+
+    #output-section { display: none; }
+    #output-section.show { display: block; }
+    #output { border: 1px solid var(--puny); padding: 1rem; min-height: 200px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>XSLT Viewer</h1>
+    <p class="puny">Upload an XML file and an XSLT stylesheet to render the transformation in-browser.</p>
+
+    <div class="container">
+      <div class="info-box">
+        <strong>How it works:</strong> Upload your XML data file and the XSL/XSLT stylesheet. Click "Render" to see the transformed output. Works entirely in your browser — no data is sent anywhere.
+      </div>
+
+      <div class="upload-steps">
+        <div class="step-box" id="xml-box">
+          <span class="input-label">Step 1 — XML File</span>
+          <label class="file-label" id="xml-label" for="xml-input">Upload XML</label>
+          <input type="file" id="xml-input" accept=".xml" onchange="uploadXml(event)" />
+          <span class="file-name" id="xml-name">No file selected</span>
+        </div>
+        <div class="step-box" id="xsl-box">
+          <span class="input-label">Step 2 — XSLT Stylesheet</span>
+          <label class="file-label" id="xsl-label" for="xsl-input">Upload XSL / XSLT</label>
+          <input type="file" id="xsl-input" accept=".xsl,.xslt" onchange="uploadXsl(event)" />
+          <span class="file-name" id="xsl-name">No file selected</span>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" id="run-button" disabled onclick="displayResult()">Render Output</button>
+        <button onclick="resetAll()">Reset</button>
+      </div>
+
+      <div id="output-section">
+        <span class="section-title">Rendered Output</span>
+        <div id="output"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => {
+      const now = htmlEl.getAttribute('data-theme');
+      const next = now === 'dark' ? 'light' : 'dark';
+      htmlEl.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+    };
+  </script>
+
+  <script>
+    let xml = null, xsl = null;
+
+    function readFile(event, callback, labelId, nameId, boxId) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(e.target.result, 'text/xml');
+        const err = doc.querySelector('parsererror');
+        if (err) { alert('XML parse error: ' + err.textContent.slice(0, 200)); return; }
+        callback(doc);
+        document.getElementById(labelId).classList.add('done');
+        const nameEl = document.getElementById(nameId);
+        nameEl.textContent = '✓ ' + file.name;
+        nameEl.classList.add('loaded');
+        document.getElementById(boxId).classList.add('done');
+        if (xml && xsl) document.getElementById('run-button').removeAttribute('disabled');
+      };
+      reader.readAsText(file);
+    }
+
+    function uploadXml(event) { readFile(event, doc => xml = doc, 'xml-label', 'xml-name', 'xml-box'); }
+    function uploadXsl(event) { readFile(event, doc => xsl = doc, 'xsl-label', 'xsl-name', 'xsl-box'); }
+
+    function displayResult() {
+      if (!xml || !xsl) return;
+      try {
+        const processor = new XSLTProcessor();
+        processor.importStylesheet(xsl);
+        const result = processor.transformToFragment(xml, document);
+        const out = document.getElementById('output');
+        out.innerHTML = '';
+        out.appendChild(result);
+        document.getElementById('output-section').classList.add('show');
+        document.getElementById('output-section').scrollIntoView({ behavior: 'smooth' });
+      } catch(e) {
+        alert('Transform error: ' + e.message);
+      }
+    }
+
+    function resetAll() {
+      xml = null; xsl = null;
+      ['xml-label','xsl-label'].forEach(id => document.getElementById(id).classList.remove('done'));
+      ['xml-name','xsl-name'].forEach(id => {
+        const el = document.getElementById(id);
+        el.textContent = 'No file selected';
+        el.classList.remove('loaded');
+      });
+      ['xml-box','xsl-box'].forEach(id => document.getElementById(id).classList.remove('done'));
+      document.getElementById('run-button').setAttribute('disabled', true);
+      document.getElementById('output').innerHTML = '';
+      document.getElementById('output-section').classList.remove('show');
+      document.getElementById('xml-input').value = '';
+      document.getElementById('xsl-input').value = '';
+    }
+  </script>
+</body>
+</html>

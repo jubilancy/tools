@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RSS Widget Generator | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    /* Override global max-width for this tool's two-panel layout */
+    html { max-width: 100%; padding: 0; }
+    body { padding: 0; }
+
+    .site-nav {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--puny);
+      font-size: 0.9rem;
+      font-family: monospace;
+    }
+    .site-nav .left { display: flex; gap: 15px; }
+    .site-nav .right { display: flex; align-items: center; gap: 10px; }
+    .site-nav a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--text); }
+    .site-nav a:hover { background-color: var(--hover); }
+    #theme-toggle { background: none; border: none; color: inherit; font-family: monospace; cursor: pointer; padding: 0; border-bottom: 1px dotted var(--text); }
+    #theme-toggle:hover { background-color: var(--hover); }
+
+    /* Two-panel layout */
+    .layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      height: calc(100vh - 45px);
+      overflow: hidden;
+    }
+    @media (max-width: 780px) {
+      .layout { grid-template-columns: 1fr; height: auto; overflow: auto; }
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--puny);
+      overflow-y: auto;
+      padding: 1.25rem 1rem;
+      font-family: monospace;
+      font-size: 0.82rem;
+    }
+
+    .sidebar h2 { font-size: 1rem; text-transform: uppercase; margin: 0 0 0.2rem; }
+    .sidebar-sub { color: var(--puny); font-size: 0.75rem; margin-bottom: 1.25rem; }
+
+    .sec-label {
+      font-size: 0.68rem; color: var(--puny); text-transform: uppercase;
+      letter-spacing: 0.1em; margin: 1rem 0 0.5rem;
+      padding-top: 0.75rem; border-top: 1px solid var(--puny);
+    }
+    .sec-label:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+
+    .field { margin-bottom: 0.6rem; }
+    .field label { display: block; font-size: 0.68rem; color: var(--puny); margin-bottom: 0.25rem; }
+    .field input[type=text],
+    .field input[type=url],
+    .field input[type=number],
+    .field select {
+      width: 100%; background: var(--bg); border: 1px solid var(--puny);
+      color: var(--text); font-family: monospace; font-size: 0.75rem;
+      padding: 0.45rem 0.6rem; box-sizing: border-box;
+    }
+    .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
+    .field input::placeholder { color: var(--puny); }
+
+    .color-row { display: flex; gap: 0.4rem; align-items: center; }
+    .color-row input[type=color] { width: 32px; height: 28px; border: 1px solid var(--puny); background: none; cursor: pointer; padding: 2px; flex-shrink: 0; }
+    .color-row input[type=text] { flex: 1; }
+
+    .range-row { display: flex; align-items: center; gap: 0.5rem; }
+    .range-row input[type=range] { flex: 1; height: 3px; background: var(--puny); outline: none; cursor: pointer; -webkit-appearance: none; border-radius: 2px; }
+    .range-row input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+    .range-val { font-size: 0.68rem; color: var(--accent); width: 26px; text-align: right; }
+
+    .btn-primary {
+      background: var(--bg); color: var(--accent); font-family: monospace;
+      font-size: 0.78rem; font-weight: bold; padding: 0.55rem 1rem;
+      border: 1px solid var(--accent); cursor: pointer; width: 100%; margin-bottom: 0.5rem;
+    }
+    .btn-primary:hover { background: var(--hover); }
+    .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: var(--bg); color: var(--text); font-family: monospace;
+      font-size: 0.72rem; padding: 0.38rem 0.65rem;
+      border: 1px solid var(--puny); cursor: pointer;
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    .status-chip { font-size: 0.7rem; color: var(--puny); display: flex; align-items: center; gap: 0.4rem; min-height: 1.4em; }
+    .spinner { display: inline-block; width: 10px; height: 10px; border: 1.5px solid var(--puny); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.65s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status-chip.ok { color: var(--accent); }
+    .status-chip.err { color: #ef4444; }
+
+    /* Right panel */
+    .right-panel { display: flex; flex-direction: column; overflow: hidden; }
+    .preview-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 1rem 1.25rem 0; }
+    .code-area { padding: 0 1.25rem 1rem; }
+
+    .pane-hd {
+      font-size: 0.65rem; color: var(--puny); text-transform: uppercase;
+      letter-spacing: 0.1em; margin-bottom: 0.4rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .preview-frame { flex: 1; border: 1px solid var(--puny); overflow: hidden; min-height: 160px; }
+    .preview-frame iframe { width: 100%; height: 100%; border: none; display: block; }
+
+    .code-tabs { display: flex; border: 1px solid var(--puny); width: fit-content; margin-bottom: 0.5rem; }
+    .code-tab { padding: 0.35rem 0.8rem; font-size: 0.68rem; cursor: pointer; background: var(--bg); color: var(--puny); border: none; border-right: 1px solid var(--puny); font-family: monospace; }
+    .code-tab:last-child { border-right: none; }
+    .code-tab.active { background: var(--accent); color: var(--bg); font-weight: bold; }
+
+    .code-block {
+      background: var(--hover); border: 1px solid var(--puny); padding: 0.75rem;
+      font-size: 0.67rem; line-height: 1.6; overflow: auto; max-height: 130px;
+      white-space: pre-wrap; color: var(--text); font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="left">
+    <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+    <a href="credits.html">credits</a> |
+    <a href="changelog.html">logs</a>
+  </div>
+  <div class="right">
+    <button id="theme-toggle">[theme]</button> |
+    <a href="https://eliana.lol">site</a>
+  </div>
+</nav>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <h2>RSS Widget</h2>
+    <p class="sidebar-sub">Build an embeddable RSS widget for any site.</p>
+
+    <div class="sec-label">Feed</div>
+    <div class="field">
+      <label>Feed URL</label>
+      <input type="url" id="feedUrl" placeholder="https://example.com/feed.xml" spellcheck="false" autocomplete="off" />
+    </div>
+    <button class="btn-primary" id="loadBtn" onclick="loadFeed()">Load Feed</button>
+    <div id="feedStatus" class="status-chip"></div>
+
+    <div class="sec-label">Content</div>
+    <div class="field">
+      <label>Widget title (blank = feed title)</label>
+      <input type="text" id="cfgTitle" placeholder="Latest Posts" oninput="up()" />
+    </div>
+    <div class="field">
+      <label>Number of posts</label>
+      <input type="number" id="cfgCount" value="5" min="1" max="30" oninput="up()" />
+    </div>
+    <div class="field">
+      <label>Show</label>
+      <select id="cfgShow" onchange="up()">
+        <option value="title">Title only</option>
+        <option value="date">Title + date</option>
+        <option value="desc">Title + description</option>
+        <option value="all">Title + date + description</option>
+      </select>
+    </div>
+
+    <div class="sec-label">Theme</div>
+    <div class="field">
+      <label>Preset</label>
+      <select id="cfgTheme" onchange="applyTheme()">
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+        <option value="minimal">Minimal</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+
+    <div class="sec-label">Colors</div>
+    <div class="field"><label>Background</label>
+      <div class="color-row">
+        <input type="color" id="cBg"  value="#0e0e0e" oninput="syncC('cBg','cBgH');up()">
+        <input type="text"  id="cBgH" value="#0e0e0e" oninput="syncH('cBgH','cBg');up()" placeholder="#000000">
+      </div>
+    </div>
+    <div class="field"><label>Text</label>
+      <div class="color-row">
+        <input type="color" id="cTx"  value="#e8e8e0" oninput="syncC('cTx','cTxH');up()">
+        <input type="text"  id="cTxH" value="#e8e8e0" oninput="syncH('cTxH','cTx');up()" placeholder="#ffffff">
+      </div>
+    </div>
+    <div class="field"><label>Accent / links</label>
+      <div class="color-row">
+        <input type="color" id="cAc"  value="#ff6600" oninput="syncC('cAc','cAcH');up()">
+        <input type="text"  id="cAcH" value="#ff6600" oninput="syncH('cAcH','cAc');up()" placeholder="#ff6600">
+      </div>
+    </div>
+    <div class="field"><label>Border</label>
+      <div class="color-row">
+        <input type="color" id="cBo"  value="#2a2a2a" oninput="syncC('cBo','cBoH');up()">
+        <input type="text"  id="cBoH" value="#2a2a2a" oninput="syncH('cBoH','cBo');up()" placeholder="#2a2a2a">
+      </div>
+    </div>
+
+    <div class="sec-label">Size</div>
+    <div class="field"><label>Font size</label>
+      <div class="range-row">
+        <input type="range" id="cfgFs" min="11" max="20" value="14" oninput="document.getElementById('fsV').textContent=this.value;up()">
+        <span class="range-val" id="fsV">14</span>
+      </div>
+    </div>
+    <div class="field"><label>Border radius</label>
+      <div class="range-row">
+        <input type="range" id="cfgRad" min="0" max="20" value="6" oninput="document.getElementById('radV').textContent=this.value;up()">
+        <span class="range-val" id="radV">6</span>
+      </div>
+    </div>
+    <div class="field"><label>Width</label>
+      <input type="text" id="cfgW" value="100%" oninput="up()" />
+    </div>
+    <div class="field"><label>Max height</label>
+      <input type="text" id="cfgH" value="360px" oninput="up()" />
+    </div>
+  </aside>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="preview-area">
+      <div class="pane-hd">Live preview</div>
+      <div class="preview-frame">
+        <iframe id="previewFrame" sandbox="allow-scripts"></iframe>
+      </div>
+    </div>
+
+    <div class="code-area" style="margin-top:1rem;">
+      <div class="pane-hd">
+        Export
+        <div style="display:flex;gap:0.4rem;">
+          <button class="btn-secondary" onclick="copyCode()">Copy</button>
+          <button class="btn-secondary" onclick="dlWidget()">Download .html</button>
+        </div>
+      </div>
+      <div class="code-tabs">
+        <button class="code-tab active" onclick="switchTab('inline',this)">Inline HTML</button>
+        <button class="code-tab" onclick="switchTab('script',this)">Script snippet</button>
+      </div>
+      <div class="code-block" id="codeBlock">Load a feed to generate widget code.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Theme toggle
+const htmlEl = document.documentElement;
+const themeBtn = document.getElementById('theme-toggle');
+const savedTheme = localStorage.getItem('theme') ||
+  (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+htmlEl.setAttribute('data-theme', savedTheme);
+themeBtn.innerText = savedTheme === 'dark' ? '[light]' : '[dark]';
+themeBtn.onclick = () => {
+  const now = htmlEl.getAttribute('data-theme');
+  const next = now === 'dark' ? 'light' : 'dark';
+  htmlEl.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  themeBtn.innerText = next === 'dark' ? '[light]' : '[dark]';
+};
+
+// Proxies — multiple fallbacks for CORS
+const PROXIES = [
+  u => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
+  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+  u => `https://thingproxy.freeboard.io/fetch/${u}`,
+];
+
+async function proxyFetch(url) {
+  let last;
+  for (const mk of PROXIES) {
+    try {
+      const r = await fetch(mk(url), { signal: AbortSignal.timeout(9000) });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const t = await r.text();
+      if (t && (t.trim().startsWith('<') || t.trim().startsWith('{'))) return t;
+      throw new Error('Unexpected response format');
+    } catch(e) { last = e; }
+  }
+  throw last ?? new Error('All proxies failed — try a different feed URL');
+}
+
+function parseFeed(xml) {
+  const doc = new DOMParser().parseFromString(xml, 'text/xml');
+  if (doc.querySelector('parsererror')) throw new Error('Invalid XML — check the feed URL');
+  const isAtom = !!doc.querySelector('feed');
+  const txt = el => el?.textContent?.trim() ?? '';
+  const attr = (el, a) => el?.getAttribute(a) ?? '';
+  if (isAtom) {
+    return {
+      title: txt(doc.querySelector('feed > title')),
+      items: [...doc.querySelectorAll('entry')].map(e => ({
+        title: txt(e.querySelector('title')) || '(no title)',
+        link:  attr(e.querySelector('link[rel="alternate"],link:not([rel])'),'href') || txt(e.querySelector('id')),
+        date:  txt(e.querySelector('published,updated')),
+        desc:  txt(e.querySelector('summary,content')),
+      })),
+    };
+  }
+  return {
+    title: txt(doc.querySelector('channel > title')),
+    items: [...doc.querySelectorAll('item')].map(i => ({
+      title: txt(i.querySelector('title')) || '(no title)',
+      link:  i.querySelector('link')?.textContent?.trim() || txt(i.querySelector('guid')),
+      date:  txt(i.querySelector('pubDate')),
+      desc:  txt(i.getElementsByTagNameNS('http://purl.org/rss/1.0/modules/content/','encoded')[0]) || txt(i.querySelector('description')),
+    })),
+  };
+}
+
+let feed = null, codeMode = 'inline';
+
+const THEMES = {
+  dark:    { bg:'#0e0e0e', tx:'#e8e8e0', ac:'#ff6600', bo:'#2a2a2a' },
+  light:   { bg:'#ffffff', tx:'#1a1a1a', ac:'#ff6600', bo:'#e5e7eb' },
+  minimal: { bg:'#f9f9f9', tx:'#222222', ac:'#000000', bo:'#dddddd' },
+};
+
+function applyTheme() {
+  const t = document.getElementById('cfgTheme').value;
+  if (!THEMES[t]) return;
+  const { bg, tx, ac, bo } = THEMES[t];
+  setColor('cBg','cBgH',bg); setColor('cTx','cTxH',tx);
+  setColor('cAc','cAcH',ac); setColor('cBo','cBoH',bo);
+  up();
+}
+function setColor(cid, hid, v) { document.getElementById(cid).value = v; document.getElementById(hid).value = v; }
+function syncC(cid, hid) { document.getElementById(hid).value = document.getElementById(cid).value; }
+function syncH(hid, cid) { const v = document.getElementById(hid).value; if (/^#[0-9a-f]{6}$/i.test(v)) document.getElementById(cid).value = v; }
+
+function cfg() {
+  return {
+    feedUrl: document.getElementById('feedUrl').value.trim(),
+    title:   document.getElementById('cfgTitle').value,
+    count:   Math.max(1, parseInt(document.getElementById('cfgCount').value)||5),
+    show:    document.getElementById('cfgShow').value,
+    bg:      document.getElementById('cBgH').value || '#0e0e0e',
+    tx:      document.getElementById('cTxH').value || '#e8e8e0',
+    ac:      document.getElementById('cAcH').value || '#ff6600',
+    bo:      document.getElementById('cBoH').value || '#2a2a2a',
+    fs:      document.getElementById('cfgFs').value,
+    rad:     document.getElementById('cfgRad').value,
+    w:       document.getElementById('cfgW').value || '100%',
+    h:       document.getElementById('cfgH').value || '360px',
+  };
+}
+
+async function loadFeed() {
+  const url = document.getElementById('feedUrl').value.trim();
+  if (!url) return;
+  const btn = document.getElementById('loadBtn');
+  const st  = document.getElementById('feedStatus');
+  btn.disabled = true;
+  st.className = 'status-chip'; st.innerHTML = '<span class="spinner"></span> Loading…';
+  try {
+    const xml = await proxyFetch(url);
+    feed = parseFeed(xml);
+    st.className = 'status-chip ok';
+    st.textContent = `✓ ${feed.title || 'Feed'} — ${feed.items.length} items`;
+    up();
+  } catch(e) {
+    st.className = 'status-chip err';
+    st.textContent = '✗ ' + e.message;
+  }
+  btn.disabled = false;
+}
+
+function buildWidget(c, items, feedTitle) {
+  const wTitle = c.title || feedTitle || 'Latest Posts';
+  const wDate  = c.show === 'date' || c.show === 'all';
+  const wDesc  = c.show === 'desc' || c.show === 'all';
+  const he = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const fmt = d => { try { return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch { return ''; } };
+
+  const rows = items.slice(0, c.count).map(it => {
+    const dateHtml = wDate && it.date ? `<span style="font-size:.82em;color:${c.tx}88;margin-left:.4em;">${fmt(it.date)}</span>` : '';
+    const descHtml = wDesc && it.desc
+      ? `<div style="font-size:.85em;color:${c.tx}99;margin-top:.25em;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${he(String(it.desc).replace(/<[^>]*>/g,'').slice(0,140))}</div>`
+      : '';
+    return `<li style="padding:.55em 0;border-bottom:1px solid ${c.bo}9a;list-style:none;">
+  <a href="${he(it.link||'#')}" target="_blank" style="color:${c.ac};text-decoration:none;line-height:1.4;">${he(it.title)}</a>${dateHtml}${descHtml}
+</li>`;
+  }).join('\n');
+
+  return `<div style="background:${c.bg};color:${c.tx};font-family:system-ui,-apple-system,sans-serif;font-size:${c.fs}px;border-radius:${c.rad}px;border:1px solid ${c.bo};padding:1em 1.1em;width:${c.w};max-height:${c.h};overflow:auto;box-sizing:border-box;">
+  <div style="font-weight:600;font-size:1.05em;margin-bottom:.7em;padding-bottom:.5em;border-bottom:1px solid ${c.bo};">${he(wTitle)}</div>
+  <ul style="margin:0;padding:0;">${rows}</ul>
+  <div style="margin-top:.65em;font-size:.7em;color:${c.tx}44;text-align:right;">RSS</div>
+</div>`;
+}
+
+function buildScriptSnippet(c) {
+  if (!c.feedUrl) return '// Enter a feed URL and click "Load Feed" first.';
+  const cfg2 = JSON.stringify({ title:c.title, count:c.count, show:c.show, bg:c.bg, tx:c.tx, ac:c.ac, bo:c.bo, fs:c.fs, rad:c.rad, w:c.w, h:c.h });
+  return `<div id="rsswgt"></div>
+<script>
+(function(){
+  var F='${c.feedUrl.replace(/'/g,"\\'")}',C=${cfg2};
+  var P=['https://corsproxy.io/?url=','https://api.allorigins.win/raw?url='];
+  var el=document.getElementById('rsswgt');
+  function tryFetch(i){if(i>=P.length){el.textContent='Feed unavailable.';return;}
+    fetch(P[i]+encodeURIComponent(F)).then(function(r){return r.ok?r.text():Promise.reject()})
+    .then(render).catch(function(){tryFetch(i+1);});}
+  function render(xml){
+    var doc=new DOMParser().parseFromString(xml,'text/xml');
+    var isAtom=!!doc.querySelector('feed');
+    var items=[...doc.querySelectorAll(isAtom?'entry':'item')];
+    var feedTitle=doc.querySelector(isAtom?'feed > title':'channel > title')?.textContent||'';
+    var wTitle=C.title||feedTitle||'Latest Posts';
+    var wDate=C.show==='date'||C.show==='all', wDesc=C.show==='desc'||C.show==='all';
+    function he(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+    function fmt(d){try{return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch{return '';}}
+    var rows=items.slice(0,C.count).map(function(i){
+      var t=i.querySelector('title')?.textContent||'';
+      var l=isAtom?(i.querySelector('link[rel=alternate],link')?.getAttribute('href')):(i.querySelector('link')?.textContent||i.querySelector('guid')?.textContent);
+      var d=isAtom?i.querySelector('published,updated')?.textContent:i.querySelector('pubDate')?.textContent;
+      var desc=isAtom?i.querySelector('summary,content')?.textContent:i.querySelector('description')?.textContent;
+      return '<li style="padding:.55em 0;border-bottom:1px solid '+C.bo+'9a;list-style:none;"><a href="'+(l||'#')+'" target="_blank" style="color:'+C.ac+';text-decoration:none;">'+he(t)+'</a>'+(wDate&&d?'<span style="font-size:.82em;color:'+C.tx+'88;margin-left:.4em;">'+fmt(d)+'</span>':'')+(wDesc&&desc?'<div style="font-size:.85em;color:'+C.tx+'99;margin-top:.25em;">'+he(String(desc).replace(/<[^>]*>/g,'').slice(0,140))+'</div>':'')+'</li>';
+    }).join('');
+    el.innerHTML='<div style="background:'+C.bg+';color:'+C.tx+';font-family:system-ui,sans-serif;font-size:'+C.fs+'px;border-radius:'+C.rad+'px;border:1px solid '+C.bo+';padding:1em 1.1em;width:'+C.w+';max-height:'+C.h+';overflow:auto;box-sizing:border-box;"><div style="font-weight:600;font-size:1.05em;margin-bottom:.7em;padding-bottom:.5em;border-bottom:1px solid '+C.bo+';">'+he(wTitle)+'</div><ul style="margin:0;padding:0;">'+rows+'</ul></div>';
+  }
+  tryFetch(0);
+})();
+<\/script>`;
+}
+
+function up() {
+  const c = cfg();
+  const items = feed ? feed.items : DEMO;
+  const feedTitle = feed ? (feed.title||'') : 'My Blog';
+  const widgetHtml = buildWidget(c, items, feedTitle);
+  const frame = document.getElementById('previewFrame');
+  frame.srcdoc = `<!DOCTYPE html><html><head><style>body{margin:0;padding:12px;background:#888;}</style></head><body>${widgetHtml}</body></html>`;
+  updateCode(c, widgetHtml);
+}
+
+function updateCode(c, widgetHtml) {
+  const cb = document.getElementById('codeBlock');
+  if (codeMode === 'inline') cb.textContent = widgetHtml;
+  else cb.textContent = buildScriptSnippet(c);
+}
+
+function switchTab(mode, btn) {
+  codeMode = mode;
+  document.querySelectorAll('.code-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateCode(cfg(), '');
+}
+
+function copyCode() {
+  navigator.clipboard.writeText(document.getElementById('codeBlock').textContent)
+    .then(() => { const b = event.target; b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy', 1800); });
+}
+
+function dlWidget() {
+  const c = cfg();
+  const items = feed ? feed.items : DEMO;
+  const feedTitle = feed ? (feed.title||'') : 'My Blog';
+  const body = buildWidget(c, items, feedTitle);
+  const full = `<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<title>RSS Widget</title>\n</head>\n<body style="margin:0;padding:1rem;">\n${body}\n</body>\n</html>`;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([full],{type:'text/html'}));
+  a.download = 'rss-widget.html'; a.click();
+}
+
+const DEMO = [
+  { title: 'How to Build a Digital Garden', link: '#', date: new Date().toISOString(), desc: 'Creating your own corner of the internet.' },
+  { title: 'RSS is Not Dead', link: '#', date: new Date(Date.now()-86400000).toISOString(), desc: 'Why RSS remains one of the best tools for reading the web.' },
+  { title: 'The Minimalist Tech Stack', link: '#', date: new Date(Date.now()-172800000).toISOString(), desc: 'Doing more with fewer tools and dependencies.' },
+];
+
+document.getElementById('feedUrl').addEventListener('keydown', e => { if (e.key === 'Enter') loadFeed(); });
+up();
+</script>
+</body>
+</html>
