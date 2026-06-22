@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Soundboard | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
+  <style>
+    .container { display: flex; flex-direction: column; gap: 1.5rem; }
+
+    .drop-zone {
+      border: 2px dashed var(--puny);
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 150ms, background 150ms;
+      font-size: 0.9rem;
+      color: var(--puny);
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--accent);
+      background: var(--hover);
+      color: var(--accent);
+    }
+
+    .drop-zone input[type="file"] { display: none; }
+
+    .sound-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .sound-card {
+      border: 1px solid var(--puny);
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      position: relative;
+    }
+
+    .sound-card.playing { border-color: var(--accent); }
+
+    .sound-name {
+      font-size: 0.8rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text);
+    }
+
+    .sound-controls {
+      display: flex;
+      gap: 4px;
+    }
+
+    .play-btn {
+      flex: 1;
+      padding: 6px;
+      font-size: 0.8rem;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      font-family: monospace;
+    }
+    .play-btn:hover { background: var(--hover); border-color: var(--accent); }
+    .play-btn.active { border-color: var(--accent); color: var(--accent); background: var(--hover); }
+
+    .remove-btn {
+      padding: 6px 8px;
+      border: 1px dashed var(--puny);
+      background: transparent;
+      color: var(--puny);
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+    .remove-btn:hover { color: #ef4444; border-color: #ef4444; background: rgba(239,68,68,0.08); }
+
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: var(--puny);
+      opacity: 0.3;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-bar .fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    input[type="range"] { width: 100%; padding: 0; }
+    .input-label { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: var(--puny); }
+
+    .controls { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+    .control-group { display: flex; flex-direction: column; gap: 0.4rem; }
+
+    button {
+      padding: 8px 14px;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+    button:hover { background-color: var(--hover); border-color: var(--accent); }
+    button.primary { border-color: var(--accent); color: var(--accent); font-weight: bold; }
+
+    .status { padding: 0.75rem 1rem; margin: 0.5rem 0; display: none; font-size: 0.9rem; border-left: 3px solid var(--accent); background: rgba(255,102,0,0.08); color: var(--accent); }
+    .status.show { display: block; }
+
+    .info-box { padding: 0.75rem 1rem; background-color: var(--highlight); border-left: 3px solid var(--accent); font-size: 0.875rem; }
+
+    .empty-msg { color: var(--puny); font-size: 0.85rem; text-align: center; padding: 1rem 0; }
+
+    .section-label { font-weight: bold; font-size: 0.85rem; text-transform: uppercase; border-bottom: 1px solid var(--puny); padding-bottom: 4px; margin-bottom: 0.75rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Soundboard</h1>
+    <p class="puny">upload audio files and build a soundboard. drag, drop, and layer sounds.</p>
+
+    <div class="container">
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" accept="audio/*" multiple onchange="handleFiles(this.files)">
+        <div style="font-size:1.5rem;margin-bottom:0.5rem;">♫</div>
+        drop audio files here or click to upload<br>
+        <span style="font-size:0.75rem;">mp3, wav, ogg, flac, m4a supported</span>
+      </div>
+
+      <div>
+        <div class="section-label">Sounds</div>
+        <div class="sound-grid" id="sound-grid">
+          <div class="empty-msg" id="empty-msg">no sounds loaded yet</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="control-group">
+          <label class="input-label">Master Volume <span id="vol-val">80</span>%</label>
+          <input type="range" id="master-vol" min="0" max="100" value="80" oninput="document.getElementById('vol-val').textContent=this.value;Howler.volume(this.value/100)">
+        </div>
+        <div class="control-group">
+          <label class="input-label">Playback Rate <span id="rate-val">1.0</span>x</label>
+          <input type="range" id="playback-rate" min="0.25" max="3" step="0.05" value="1" oninput="document.getElementById('rate-val').textContent=parseFloat(this.value).toFixed(2)">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <button onclick="stopAll()" class="primary">■ stop all</button>
+        <button onclick="clearAll()" style="border-style:dashed;opacity:0.7;">clear all</button>
+      </div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> Multiple sounds can play at once — great for layering ambience, loops, or effects. Toggle <em>loop</em> on a card to make it repeat.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <script>
+    const sounds = [];
+    const grid = document.getElementById('sound-grid');
+
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    function handleFiles(files) {
+      Array.from(files).forEach(file => {
+        if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|wav|ogg|flac|m4a|aac)$/i)) return;
+        const url = URL.createObjectURL(file);
+        addSound(file.name.replace(/\.[^/.]+$/, ''), url);
+      });
+      document.getElementById('empty-msg')?.remove();
+    }
+
+    function addSound(name, url) {
+      const id = Date.now() + Math.random();
+      let looping = false;
+
+      const howl = new Howl({
+        src: [url],
+        loop: false,
+        volume: 1,
+        rate: 1,
+        onend: () => {
+          if (!looping) {
+            card.classList.remove('playing');
+            playBtn.textContent = '▶ play';
+            playBtn.classList.remove('active');
+          }
+        }
+      });
+
+      const card = document.createElement('div');
+      card.className = 'sound-card';
+      card.innerHTML = `
+        <div class="sound-name" title="${name}">${name}</div>
+        <div class="progress-bar"><div class="fill" id="fill-${id}"></div></div>
+        <div class="sound-controls">
+          <button class="play-btn" id="play-${id}">▶ play</button>
+          <button class="remove-btn" title="remove">✕</button>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <input type="checkbox" id="loop-${id}" style="width:auto;padding:0;">
+          <label for="loop-${id}" style="font-size:0.75rem;color:var(--puny);cursor:pointer;">loop</label>
+          <input type="range" id="cvol-${id}" min="0" max="100" value="100" style="flex:1;" title="volume">
+        </div>
+      `;
+
+      const playBtn = card.querySelector(`#play-${id}`);
+      const loopCheck = card.querySelector(`#loop-${id}`);
+      const volSlider = card.querySelector(`#cvol-${id}`);
+      const removeBtn = card.querySelector('.remove-btn');
+      const fill = card.querySelector(`#fill-${id}`);
+
+      playBtn.onclick = () => {
+        if (howl.playing()) {
+          howl.stop();
+          card.classList.remove('playing');
+          playBtn.textContent = '▶ play';
+          playBtn.classList.remove('active');
+        } else {
+          const rate = parseFloat(document.getElementById('playback-rate').value);
+          howl.rate(rate);
+          howl.play();
+          card.classList.add('playing');
+          playBtn.textContent = '■ stop';
+          playBtn.classList.add('active');
+          animateProgress();
+        }
+      };
+
+      loopCheck.onchange = () => { looping = loopCheck.checked; howl.loop(looping); };
+      volSlider.oninput = () => howl.volume(volSlider.value / 100);
+      removeBtn.onclick = () => { howl.unload(); card.remove(); };
+
+      function animateProgress() {
+        if (!howl.playing()) { fill.style.width = '0%'; return; }
+        const pct = (howl.seek() / howl.duration()) * 100;
+        fill.style.width = isNaN(pct) ? '0%' : pct + '%';
+        requestAnimationFrame(animateProgress);
+      }
+
+      grid.appendChild(card);
+      sounds.push(howl);
+      showStatus(`loaded: ${name}`);
+    }
+
+    function stopAll() {
+      Howler.stop();
+      document.querySelectorAll('.play-btn').forEach(b => { b.textContent = '▶ play'; b.classList.remove('active'); });
+      document.querySelectorAll('.sound-card').forEach(c => c.classList.remove('playing'));
+      document.querySelectorAll('.fill').forEach(f => f.style.width = '0%');
+    }
+
+    function clearAll() {
+      Howler.stop();
+      sounds.forEach(h => h.unload());
+      sounds.length = 0;
+      grid.innerHTML = '<div class="empty-msg" id="empty-msg">no sounds loaded yet</div>';
+    }
+
+    function showStatus(msg) {
+      const s = document.getElementById('status');
+      s.textContent = msg;
+      s.classList.add('show');
+      setTimeout(() => s.classList.remove('show'), 2000);
+    }
+  </script>
+</body>
+</html>
