@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OCR | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+      display: block;
+      margin-bottom: 0.35rem;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    button.danger {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    textarea,
+    input[type="text"],
+    select {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: flex-end;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    #drop-zone {
+      border: 2px dashed var(--puny);
+      padding: 2.5rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      color: var(--puny);
+      font-size: 0.9rem;
+      transition: border-color 150ms, background 150ms;
+    }
+
+    #drop-zone:hover,
+    #drop-zone.dragover {
+      border-color: var(--accent);
+      background: var(--hover);
+      color: var(--text);
+    }
+
+    #preview-img {
+      max-width: 100%;
+      max-height: 300px;
+      border: 1px solid var(--puny);
+      display: none;
+      margin-top: 0.75rem;
+    }
+
+    .progress-wrap {
+      display: none;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .progress-wrap.show {
+      display: flex;
+    }
+
+    .progress-bar-outer {
+      width: 100%;
+      height: 6px;
+      background: var(--highlight);
+      border: 1px solid var(--puny);
+    }
+
+    .progress-bar-inner {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 200ms ease;
+    }
+
+    .progress-label {
+      font-size: 0.8rem;
+      color: var(--puny);
+    }
+
+    .confidence {
+      font-size: 0.8rem;
+      color: var(--puny);
+    }
+
+    .confidence span {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+      button {
+        width: 100%;
+        min-width: unset;
+      }
+      .controls-row {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>OCR — Image to Text</h1>
+    <p class="puny">Extract text from any image in the browser using Tesseract.js. Nothing leaves your device.</p>
+
+    <div class="container">
+
+      <div class="controls-row">
+        <div class="control-group">
+          <label class="input-label" for="lang-sel">Language</label>
+          <select id="lang-sel">
+            <option value="eng">English</option>
+            <option value="fra">French</option>
+            <option value="deu">German</option>
+            <option value="spa">Spanish</option>
+            <option value="por">Portuguese</option>
+            <option value="ita">Italian</option>
+            <option value="jpn">Japanese</option>
+            <option value="chi_sim">Chinese (Simplified)</option>
+            <option value="kor">Korean</option>
+            <option value="ara">Arabic</option>
+            <option value="rus">Russian</option>
+            <option value="hin">Hindi</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label class="input-label" for="psm-sel">Mode</label>
+          <select id="psm-sel">
+            <option value="3">Auto detect (default)</option>
+            <option value="6">Single block of text</option>
+            <option value="7">Single line</option>
+            <option value="8">Single word</option>
+            <option value="11">Sparse text</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleFile(this.files[0])">
+        Drop an image here or click to upload<br>
+        <span style="font-size:0.75rem;">jpg, png, gif, bmp, webp supported</span>
+      </div>
+
+      <img id="preview-img" alt="Preview" />
+
+      <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-label" id="progress-label">Initialising…</div>
+        <div class="progress-bar-outer">
+          <div class="progress-bar-inner" id="progress-bar"></div>
+        </div>
+      </div>
+
+      <div>
+        <label class="input-label" for="result-text">Extracted Text</label>
+        <textarea id="result-text" rows="10" placeholder="Text will appear here…"></textarea>
+        <div class="confidence" id="confidence"></div>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" id="rerun-btn" onclick="rerun()" disabled>Re-run OCR</button>
+        <button onclick="copyText()">Copy text</button>
+        <button onclick="downloadText()">Download .txt</button>
+        <button class="danger" onclick="clearAll()">Clear</button>
+      </div>
+
+      <div class="info-box">
+        <strong>Privacy:</strong> all processing happens locally in your browser — your images never leave your device.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <script>
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      handleFile(e.dataTransfer.files[0]);
+    });
+
+    let currentFile = null;
+
+    function handleFile(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+      currentFile = file;
+      const img = document.getElementById('preview-img');
+      img.src = URL.createObjectURL(file);
+      img.style.display = 'block';
+      document.getElementById('rerun-btn').disabled = false;
+      runOCR();
+    }
+
+    async function runOCR() {
+      if (!currentFile) return;
+      const lang = document.getElementById('lang-sel').value;
+      const psm = document.getElementById('psm-sel').value;
+      const progress = document.getElementById('progress-wrap');
+      const bar = document.getElementById('progress-bar');
+      const label = document.getElementById('progress-label');
+
+      progress.classList.add('show');
+      bar.style.width = '0%';
+      document.getElementById('result-text').value = '';
+      document.getElementById('confidence').innerHTML = '';
+
+      try {
+        const worker = await Tesseract.createWorker(lang, 1, {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              bar.style.width = (m.progress * 100).toFixed(0) + '%';
+              label.textContent = `Recognising… ${(m.progress * 100).toFixed(0)}%`;
+            } else {
+              label.textContent = m.status;
+            }
+          }
+        });
+        await worker.setParameters({ tessedit_pageseg_mode: psm });
+        const { data } = await worker.recognize(currentFile);
+        await worker.terminate();
+
+        document.getElementById('result-text').value = data.text.trim();
+        document.getElementById('confidence').innerHTML =
+          `Confidence: <span>${data.confidence.toFixed(1)}%</span>`;
+        bar.style.width = '100%';
+        label.textContent = 'Done.';
+        showStatus('Extraction complete.', 'success');
+      } catch (e) {
+        label.textContent = 'Error: ' + e.message;
+        showStatus('Error: ' + e.message, 'error');
+      }
+    }
+
+    function rerun() {
+      if (currentFile) runOCR();
+    }
+
+    function copyText() {
+      const text = document.getElementById('result-text').value;
+      if (!text) return;
+      navigator.clipboard.writeText(text);
+      showStatus('Copied to clipboard.', 'success');
+    }
+
+    function downloadText() {
+      const text = document.getElementById('result-text').value;
+      if (!text) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+      a.download = 'ocr-result.txt';
+      a.click();
+    }
+
+    function clearAll() {
+      currentFile = null;
+      document.getElementById('preview-img').style.display = 'none';
+      document.getElementById('preview-img').src = '';
+      document.getElementById('result-text').value = '';
+      document.getElementById('confidence').innerHTML = '';
+      document.getElementById('file-input').value = '';
+      document.getElementById('progress-wrap').classList.remove('show');
+      document.getElementById('progress-bar').style.width = '0%';
+      document.getElementById('rerun-btn').disabled = true;
+    }
+
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2500);
+    }
+  </script>
+</body>
+</html>
