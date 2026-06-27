@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OMDB IMDb ID Fetcher | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    /* API key section */
+    .api-key-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .api-key-row input {
+      flex: 1;
+      min-width: 0;
+      font-family: monospace;
+      letter-spacing: 0.05em;
+    }
+
+    #apiKeyStatus {
+      font-size: 0.8rem;
+      color: var(--puny);
+    }
+    #apiKeyStatus.ok { color: var(--accent); }
+
+    /* Progress bar */
+    .progress-wrap {
+      height: 3px;
+      background: var(--puny);
+      display: none;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .status-line {
+      font-size: 0.85rem;
+      color: var(--puny);
+      min-height: 1.2rem;
+    }
+
+    /* Results */
+    #resultsList {
+      display: none;
+    }
+
+    .result-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 0.75rem;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--puny);
+      font-size: 0.9rem;
+    }
+
+    .result-row:last-child { border-bottom: none; }
+
+    .result-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .result-imdbid {
+      color: var(--accent);
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .result-year {
+      color: var(--puny);
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+
+    .result-error {
+      color: #ef4444;
+      grid-column: 2 / -1;
+      font-size: 0.85rem;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .button-group { flex-direction: column; }
+      button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>OMDB IMDb ID Fetcher</h1>
+    <p class="puny">Paste a list of movie/show titles and fetch their IMDb IDs in bulk via the OMDB API.</p>
+
+    <div class="container">
+
+      <!-- API Key -->
+      <div class="input-group">
+        <span class="input-label">OMDB API Key</span>
+        <div class="api-key-row">
+          <input type="password" id="apiKeyInput" placeholder="Paste your OMDB key — stored locally only" autocomplete="off" />
+          <button onclick="saveKey()">Save Key</button>
+          <button onclick="clearKey()" class="danger" style="border-style:dashed;opacity:0.7">Forget Key</button>
+        </div>
+        <span id="apiKeyStatus">No key saved. Get one free at <a href="https://www.omdbapi.com/apikey.aspx" target="_blank" rel="noopener">omdbapi.com</a>.</span>
+      </div>
+
+      <div class="info-box">
+        <strong>Privacy:</strong> Your API key is stored only in <code>localStorage</code> on this device and never sent anywhere except the OMDB API. One title per line. Free OMDB keys allow 1,000 requests/day.
+      </div>
+
+      <!-- Input -->
+      <div class="input-group">
+        <span class="input-label">Titles — one per line</span>
+        <textarea id="titleInput" placeholder="The Dark Knight&#10;Inception&#10;Parasite&#10;Everything Everywhere All at Once"></textarea>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" id="fetchBtn" onclick="fetchAll()">▶ Fetch IDs</button>
+        <button onclick="copyResults()" id="copyBtn" style="display:none">Copy Results</button>
+        <button onclick="doClear()">Clear</button>
+      </div>
+
+      <!-- Progress -->
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="status-line" id="statusLine"></div>
+
+      <!-- Results -->
+      <div id="resultsList"></div>
+
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    // Theme toggle
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+
+    // API key management
+    const KEY_STORAGE = 'omdb_api_key';
+
+    function loadKey() {
+      const k = localStorage.getItem(KEY_STORAGE);
+      if (k) {
+        document.getElementById('apiKeyInput').value = k;
+        setKeyStatus(true);
+      }
+    }
+
+    function saveKey() {
+      const k = document.getElementById('apiKeyInput').value.trim();
+      if (!k) { alert('Please enter an API key.'); return; }
+      localStorage.setItem(KEY_STORAGE, k);
+      setKeyStatus(true);
+    }
+
+    function clearKey() {
+      localStorage.removeItem(KEY_STORAGE);
+      document.getElementById('apiKeyInput').value = '';
+      setKeyStatus(false);
+    }
+
+    function setKeyStatus(ok) {
+      const el = document.getElementById('apiKeyStatus');
+      if (ok) {
+        el.textContent = '✓ Key saved locally.';
+        el.className = 'ok';
+      } else {
+        el.innerHTML = 'No key saved. Get one free at <a href="https://www.omdbapi.com/apikey.aspx" target="_blank" rel="noopener">omdbapi.com</a>.';
+        el.className = '';
+      }
+    }
+
+    function getKey() {
+      return localStorage.getItem(KEY_STORAGE) || document.getElementById('apiKeyInput').value.trim();
+    }
+
+    loadKey();
+
+    // Fetching
+    let resultsData = [];
+
+    async function fetchAll() {
+      const apiKey = getKey();
+      if (!apiKey) { alert('Please enter and save your OMDB API key first.'); return; }
+
+      const raw = document.getElementById('titleInput').value.trim();
+      if (!raw) return;
+      const titles = raw.split('\n').map(t => t.trim()).filter(Boolean);
+      if (!titles.length) return;
+
+      resultsData = [];
+      const list = document.getElementById('resultsList');
+      list.innerHTML = '';
+      list.style.display = 'block';
+      document.getElementById('copyBtn').style.display = 'none';
+      document.getElementById('fetchBtn').disabled = true;
+      document.getElementById('progressWrap').style.display = 'block';
+      document.getElementById('progressBar').style.width = '0%';
+
+      for (let i = 0; i < titles.length; i++) {
+        const title = titles[i];
+        document.getElementById('statusLine').textContent = `Fetching ${i + 1}/${titles.length}: ${title}`;
+        document.getElementById('progressBar').style.width = `${(i / titles.length) * 100}%`;
+
+        try {
+          const url = `https://www.omdbapi.com/?apikey=${encodeURIComponent(apiKey)}&t=${encodeURIComponent(title)}&r=json`;
+          const res = await fetch(url);
+          const data = await res.json();
+
+          if (data.Response === 'True') {
+            resultsData.push({ title: data.Title, year: data.Year, imdbID: data.imdbID });
+            list.appendChild(buildRow(data.Title, data.Year, data.imdbID, null));
+          } else {
+            resultsData.push({ title, year: null, imdbID: null, error: data.Error });
+            list.appendChild(buildRow(title, null, null, data.Error || 'Not found'));
+          }
+        } catch (err) {
+          resultsData.push({ title, year: null, imdbID: null, error: 'Network error' });
+          list.appendChild(buildRow(title, null, null, 'Network error'));
+        }
+      }
+
+      document.getElementById('progressBar').style.width = '100%';
+      const found = resultsData.filter(r => r.imdbID).length;
+      document.getElementById('statusLine').textContent = `Done — ${found}/${titles.length} found`;
+      document.getElementById('fetchBtn').disabled = false;
+      document.getElementById('copyBtn').style.display = '';
+      setTimeout(() => { document.getElementById('progressWrap').style.display = 'none'; }, 600);
+    }
+
+    function buildRow(title, year, imdbID, error) {
+      const row = document.createElement('div');
+      row.className = 'result-row';
+
+      const titleEl = document.createElement('div');
+      titleEl.className = 'result-title';
+      titleEl.textContent = title;
+      row.appendChild(titleEl);
+
+      if (imdbID) {
+        const yearEl = document.createElement('div');
+        yearEl.className = 'result-year';
+        yearEl.textContent = year || '';
+
+        const idEl = document.createElement('div');
+        idEl.className = 'result-imdbid';
+        idEl.textContent = imdbID;
+
+        row.appendChild(yearEl);
+        row.appendChild(idEl);
+      } else {
+        const errEl = document.createElement('div');
+        errEl.className = 'result-error';
+        errEl.textContent = `✕ ${error}`;
+        row.appendChild(errEl);
+      }
+
+      return row;
+    }
+
+    function copyResults() {
+      const lines = resultsData.map(r =>
+        r.imdbID ? `${r.title} (${r.year})\t${r.imdbID}` : `${r.title}\tNOT FOUND`
+      ).join('\n');
+      navigator.clipboard.writeText(lines).then(() => {
+        const btn = document.getElementById('copyBtn');
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    }
+
+    function doClear() {
+      document.getElementById('titleInput').value = '';
+      document.getElementById('resultsList').innerHTML = '';
+      document.getElementById('resultsList').style.display = 'none';
+      document.getElementById('copyBtn').style.display = 'none';
+      document.getElementById('statusLine').textContent = '';
+      document.getElementById('progressWrap').style.display = 'none';
+      resultsData = [];
+    }
+  </script>
+</body>
+</html>
