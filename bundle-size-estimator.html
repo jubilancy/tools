@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bundle Size Estimator | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    button.danger {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+      .add-row {
+        flex-direction: column;
+        align-items: stretch !important;
+      }
+    }
+
+    /* Tool-specific styles */
+    .add-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .add-row input {
+      flex: 1;
+    }
+
+    .add-row button {
+      flex: none;
+    }
+
+    .pkg-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .pkg-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    .pkg-name {
+      font-weight: bold;
+      flex: 1;
+    }
+
+    .pkg-size {
+      font-family: monospace;
+      color: var(--puny);
+      white-space: nowrap;
+    }
+
+    .pkg-remove {
+      flex: none;
+      min-width: auto;
+      padding: 4px 10px;
+    }
+
+    .totals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+    }
+
+    .total-card {
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .total-card .num {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    .total-card .label {
+      font-size: 0.75rem;
+      color: var(--puny);
+      text-transform: uppercase;
+    }
+
+    .load-time-bar {
+      height: 24px;
+      background: var(--hover);
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .load-time-segment {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      color: var(--bg);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Bundle Size Estimator</h1>
+    <p class="puny">Enter npm package names, estimate their gzipped sizes, and see the cumulative impact on load time.</p>
+
+    <div class="container">
+      <div class="input-group">
+        <span class="input-label">Add a package</span>
+        <div class="add-row">
+          <input type="text" id="pkg-input" placeholder="e.g. react, lodash, moment, axios" list="pkg-suggestions" />
+          <datalist id="pkg-suggestions"></datalist>
+          <button class="primary" id="add-pkg-btn">Add</button>
+        </div>
+        <p class="puny" id="suggestion-note"></p>
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">Selected packages</span>
+        <div class="pkg-list" id="pkg-list"></div>
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">Cumulative impact</span>
+        <div class="totals-grid" id="totals-grid"></div>
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">Estimated load time by connection speed</span>
+        <div id="load-times" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> Sizes come from a curated reference table of common package gzip sizes — for packages not in the table, type an estimated KB size manually when prompted. This won't hit a live registry, so treat numbers as ballpark estimates for comparing options, not exact byte counts.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool-specific script -->
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    }
+
+    // Curated reference table of approximate gzipped sizes in KB
+    const PACKAGE_SIZES = {
+      react: 2.6, 'react-dom': 44.5, vue: 19.3, angular: 62.0, svelte: 1.7,
+      lodash: 24.7, 'lodash-es': 24.0, underscore: 6.0, ramda: 14.5,
+      moment: 19.0, dayjs: 2.7, 'date-fns': 13.0, luxon: 22.0,
+      axios: 14.0, 'node-fetch': 3.0, ky: 3.6, got: 25.0,
+      jquery: 30.0, zepto: 9.6,
+      redux: 2.0, 'redux-toolkit': 12.0, mobx: 16.0, zustand: 1.2, recoil: 22.0,
+      'react-router-dom': 11.0, 'vue-router': 5.0,
+      'styled-components': 13.0, emotion: 7.5, tailwindcss: 0,
+      three: 150.0, 'd3': 43.0, chartjs: 60.0, 'chart.js': 60.0,
+      uuid: 0.9, nanoid: 0.5, ulid: 0.7,
+      zod: 12.0, yup: 12.5, joi: 45.0, ajv: 33.0,
+      'rxjs': 30.0, immer: 6.0, immutable: 16.0,
+      classnames: 0.4, clsx: 0.4,
+      'react-query': 13.0, '@tanstack/react-query': 13.0, swr: 4.4,
+      formik: 14.0, 'react-hook-form': 9.0,
+      'framer-motion': 50.0, gsap: 28.0, 'anime.js': 6.5,
+      dompurify: 7.0, marked: 7.0, 'showdown': 22.0,
+      sharp: 0, // native, not bundled client-side
+      express: 13.0, koa: 8.0, fastify: 18.0,
+      typescript: 0, webpack: 0, vite: 0, eslint: 0, // build tools, not bundled
+      'socket.io-client': 16.0,
+      bootstrap: 25.0, 'bulma': 0,
+      vuex: 5.5, pinia: 4.0,
+      'react-icons': 0.5, 'lucide-react': 3.0,
+      jest: 0, mocha: 0, // test tools
+      lottie: 60, 'lottie-web': 60,
+      luxon2: 22,
+      papaparse: 19.0,
+      xlsx: 280.0,
+      jspdf: 90.0,
+      'js-cookie': 0.8,
+      qs: 4.0,
+      'query-string': 1.5
+    };
+
+    function populateSuggestions() {
+      const datalist = document.getElementById('pkg-suggestions');
+      datalist.innerHTML = Object.keys(PACKAGE_SIZES).map((name) => `<option value="${name}">`).join('');
+    }
+    populateSuggestions();
+
+    let packages = [
+      { name: 'react', size: PACKAGE_SIZES.react },
+      { name: 'react-dom', size: PACKAGE_SIZES['react-dom'] },
+      { name: 'lodash', size: PACKAGE_SIZES.lodash }
+    ];
+
+    function addPackage(name) {
+      const trimmed = name.trim().toLowerCase();
+      if (!trimmed) return;
+      if (packages.some((p) => p.name === trimmed)) {
+        showStatus('That package is already added.', 'error');
+        return;
+      }
+
+      let size = PACKAGE_SIZES[trimmed];
+      if (size === undefined) {
+        const manual = prompt(`"${trimmed}" isn't in the reference table. Enter an estimated gzipped size in KB:`, '10');
+        const parsed = parseFloat(manual);
+        if (isNaN(parsed)) {
+          showStatus('Skipped — no valid size entered.', 'error');
+          return;
+        }
+        size = parsed;
+      }
+
+      packages.push({ name: trimmed, size });
+      render();
+      showStatus(`Added ${trimmed} (${size}KB gzipped).`, 'success');
+    }
+
+    document.getElementById('add-pkg-btn').addEventListener('click', () => {
+      const input = document.getElementById('pkg-input');
+      addPackage(input.value);
+      input.value = '';
+    });
+
+    document.getElementById('pkg-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        addPackage(e.target.value);
+        e.target.value = '';
+      }
+    });
+
+    function removePackage(idx) {
+      packages.splice(idx, 1);
+      render();
+    }
+
+    function render() {
+      const list = document.getElementById('pkg-list');
+      list.innerHTML = '';
+
+      if (packages.length === 0) {
+        list.innerHTML = '<p class="puny">No packages added yet.</p>';
+      }
+
+      packages.forEach((pkg, idx) => {
+        const row = document.createElement('div');
+        row.className = 'pkg-row';
+        row.innerHTML = `
+          <span class="pkg-name">${pkg.name}</span>
+          <span class="pkg-size">${pkg.size.toFixed(1)} KB gzip</span>
+          <button class="danger pkg-remove" data-idx="${idx}">×</button>
+        `;
+        list.appendChild(row);
+      });
+
+      list.querySelectorAll('.pkg-remove').forEach((btn) => {
+        btn.addEventListener('click', (e) => removePackage(parseInt(e.target.dataset.idx, 10)));
+      });
+
+      const totalKb = packages.reduce((sum, p) => sum + p.size, 0);
+      const totalBytes = totalKb * 1024;
+
+      const totalsGrid = document.getElementById('totals-grid');
+      totalsGrid.innerHTML = `
+        <div class="total-card"><div class="num">${totalKb.toFixed(1)}</div><div class="label">KB gzipped</div></div>
+        <div class="total-card"><div class="num">${packages.length}</div><div class="label">packages</div></div>
+        <div class="total-card"><div class="num">${(totalKb * 3.5).toFixed(0)}</div><div class="label">KB approx parsed JS</div></div>
+      `;
+
+      const speeds = [
+        { label: 'Slow 3G (400 Kbps)', kbps: 400 },
+        { label: 'Fast 3G (1.6 Mbps)', kbps: 1600 },
+        { label: '4G / broadband (10 Mbps)', kbps: 10000 },
+        { label: 'Fiber (50 Mbps)', kbps: 50000 }
+      ];
+
+      const loadTimesEl = document.getElementById('load-times');
+      loadTimesEl.innerHTML = speeds.map((speed) => {
+        const seconds = (totalBytes * 8) / (speed.kbps * 1000);
+        const displayTime = seconds < 1 ? `${Math.round(seconds * 1000)}ms` : `${seconds.toFixed(2)}s`;
+        const barWidth = Math.min(100, (seconds / 5) * 100);
+        return `
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:4px;">
+              <span class="puny">${speed.label}</span>
+              <span style="font-family:monospace;">${displayTime}</span>
+            </div>
+            <div class="load-time-bar">
+              <div class="load-time-segment" style="width:${Math.max(2, barWidth)}%; background: var(--accent);"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    render();
+  </script>
+</body>
+</html>
