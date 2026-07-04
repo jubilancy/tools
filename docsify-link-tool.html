@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>docsify link tool | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global-2.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+    button.danger {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+    textarea,
+    input[type="text"],
+    select {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+    textarea:focus,
+    input[type="text"]:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+    .status.show {
+      display: block;
+    }
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .result-box {
+      border: 1px solid var(--puny);
+      padding: 1rem;
+      border-radius: 4px;
+      background: var(--bg);
+      word-break: break-word;
+    }
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .checkbox-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.6rem 1rem;
+    }
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .check input {
+      width: auto;
+      margin: 0;
+    }
+    .link-out {
+      display: inline-block;
+      margin-top: 0.75rem;
+      font-weight: bold;
+    }
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+      button {
+        width: 100%;
+      }
+      .row-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a>
+      <a href="extra.html">extra</a>
+      <a href="credits.html">credits</a>
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">theme</button>
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>docsify link tool</h1>
+    <p class="puny">Generate a Docsify-This URL from a Markdown file link so you can publish, embed, or present it from a single static page.</p>
+
+    <div class="container">
+      <div class="info-box">
+        <strong>Tip:</strong> Paste a raw Markdown file URL first. GitHub blob links usually need to be converted to raw links before Docsify-This can render them reliably.
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="source-url">markdown file url</label>
+        <input id="source-url" type="text" placeholder="https://raw.githubusercontent.com/user/repo/main/README.md" />
+      </div>
+
+      <div class="row-2">
+        <div class="input-group">
+          <label class="input-label" for="site-name">site title</label>
+          <input id="site-name" type="text" placeholder="optional title" />
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="theme-name">theme</label>
+          <select id="theme-name">
+            <option value="">default</option>
+            <option value="vue">vue</option>
+            <option value="buble">buble</option>
+            <option value="dark">dark</option>
+            <option value="pure">pure</option>
+            <option value="dolphin">dolphin</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="cover-image">cover image url</label>
+        <input id="cover-image" type="text" placeholder="optional image url" />
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="repo-link">repo link</label>
+        <input id="repo-link" type="text" placeholder="optional repo homepage or source url" />
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">options</span>
+        <div class="checkbox-row">
+          <label class="check"><input id="opt-sidebar" type="checkbox" /> sidebar</label>
+          <label class="check"><input id="opt-navbar" type="checkbox" /> navbar</label>
+          <label class="check"><input id="opt-search" type="checkbox" /> search</label>
+          <label class="check"><input id="opt-coverpage" type="checkbox" /> coverpage</label>
+          <label class="check"><input id="opt-pagination" type="checkbox" /> pagination</label>
+          <label class="check"><input id="opt-editlink" type="checkbox" /> edit link</label>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button id="generate" class="primary">generate link</button>
+        <button id="copy-link">copy link</button>
+        <button id="open-link">open link</button>
+        <button id="reset" class="danger">reset</button>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <div class="input-group">
+        <label class="input-label" for="output-url">docsify-this url</label>
+        <textarea id="output-url" readonly placeholder="Generated URL appears here"></textarea>
+      </div>
+
+      <div class="result-box" id="preview-box">
+        <span class="puny">No link generated yet.</span>
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center;" class="puny">
+    © 2026 eliana.lol · <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? 'light' : 'dark';
+    if (toggle) toggle.onclick = () => {
+      const now = html.getAttribute('data-theme');
+      const next = now === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      toggle.innerText = next === 'dark' ? 'light' : 'dark';
+    };
+  </script>
+
+  <script>
+    const sourceUrl = document.getElementById('source-url');
+    const siteName = document.getElementById('site-name');
+    const themeName = document.getElementById('theme-name');
+    const coverImage = document.getElementById('cover-image');
+    const repoLink = document.getElementById('repo-link');
+    const outputUrl = document.getElementById('output-url');
+    const previewBox = document.getElementById('preview-box');
+
+    const optSidebar = document.getElementById('opt-sidebar');
+    const optNavbar = document.getElementById('opt-navbar');
+    const optSearch = document.getElementById('opt-search');
+    const optCoverpage = document.getElementById('opt-coverpage');
+    const optPagination = document.getElementById('opt-pagination');
+    const optEditlink = document.getElementById('opt-editlink');
+
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status show ' + type;
+      setTimeout(() => status.classList.remove('show'), 2400);
+    }
+
+    function normalizeGithubUrl(url) {
+      try {
+        const u = new URL(url.trim());
+        if (u.hostname === 'github.com') {
+          const parts = u.pathname.split('/').filter(Boolean);
+          if (parts.length >= 5 && parts[2] === 'blob') {
+            const user = parts[0];
+            const repo = parts[1];
+            const branch = parts[3];
+            const path = parts.slice(4).join('/');
+            return `https://raw.githubusercontent.com/${user}/${repo}/${branch}/${path}`;
+          }
+        }
+        return u.toString();
+      } catch {
+        return url.trim();
+      }
+    }
+
+    function buildDocsifyUrl() {
+      const raw = sourceUrl.value.trim();
+      if (!raw) {
+        throw new Error('Add a Markdown file URL first.');
+      }
+
+      const normalized = normalizeGithubUrl(raw);
+      let parsed;
+      try {
+        parsed = new URL(normalized);
+      } catch {
+        throw new Error('That does not look like a valid URL.');
+      }
+
+      const docsifyUrl = new URL('https://docsify-this.net/');
+      docsifyUrl.searchParams.set('basePath', normalized.replace(/[^/]+$/, ''));
+      docsifyUrl.searchParams.set('homepage', parsed.pathname.split('/').pop());
+
+      if (siteName.value.trim()) docsifyUrl.searchParams.set('name', siteName.value.trim());
+      if (themeName.value) docsifyUrl.searchParams.set('theme', themeName.value);
+      if (coverImage.value.trim()) docsifyUrl.searchParams.set('coverpage', coverImage.value.trim());
+      if (repoLink.value.trim()) docsifyUrl.searchParams.set('repo', repoLink.value.trim());
+
+      if (optSidebar.checked) docsifyUrl.searchParams.set('sidebar', 'true');
+      if (optNavbar.checked) docsifyUrl.searchParams.set('navbar', 'true');
+      if (optSearch.checked) docsifyUrl.searchParams.set('search', 'true');
+      if (optCoverpage.checked && !coverImage.value.trim()) docsifyUrl.searchParams.set('coverpage', 'true');
+      if (optPagination.checked) docsifyUrl.searchParams.set('pagination', 'true');
+      if (optEditlink.checked) docsifyUrl.searchParams.set('edit-link', 'true');
+
+      return docsifyUrl.toString();
+    }
+
+    function renderPreview(url) {
+      previewBox.innerHTML = '';
+      const text = document.createElement('div');
+      text.textContent = url;
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.className = 'link-out';
+      link.textContent = 'open generated docsify page';
+      previewBox.appendChild(text);
+      previewBox.appendChild(link);
+    }
+
+    document.getElementById('generate').addEventListener('click', () => {
+      try {
+        const url = buildDocsifyUrl();
+        outputUrl.value = url;
+        renderPreview(url);
+        showStatus('Docsify link generated.');
+      } catch (error) {
+        showStatus(error.message, 'error');
+      }
+    });
+
+    document.getElementById('copy-link').addEventListener('click', async () => {
+      try {
+        if (!outputUrl.value.trim()) {
+          outputUrl.value = buildDocsifyUrl();
+          renderPreview(outputUrl.value);
+        }
+        await navigator.clipboard.writeText(outputUrl.value);
+        showStatus('Link copied to clipboard.');
+      } catch (error) {
+        showStatus(error.message || 'Copy failed.', 'error');
+      }
+    });
+
+    document.getElementById('open-link').addEventListener('click', () => {
+      try {
+        const url = outputUrl.value.trim() || buildDocsifyUrl();
+        outputUrl.value = url;
+        renderPreview(url);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        showStatus('Opening generated link.');
+      } catch (error) {
+        showStatus(error.message, 'error');
+      }
+    });
+
+    document.getElementById('reset').addEventListener('click', () => {
+      sourceUrl.value = '';
+      siteName.value = '';
+      themeName.value = '';
+      coverImage.value = '';
+      repoLink.value = '';
+      outputUrl.value = '';
+      optSidebar.checked = false;
+      optNavbar.checked = false;
+      optSearch.checked = false;
+      optCoverpage.checked = false;
+      optPagination.checked = false;
+      optEditlink.checked = false;
+      previewBox.innerHTML = '<span class="puny">No link generated yet.</span>';
+      showStatus('Form reset.');
+    });
+  </script>
+</body>
+</html>
