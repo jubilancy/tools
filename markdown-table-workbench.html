@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Markdown Table Workbench | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    select,
+    textarea,
+    input[type="text"],
+    input[type="number"],
+    input[type="checkbox"] {
+      font-family: monospace;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    select:focus,
+    textarea:focus,
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .mode-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--puny);
+      padding-bottom: 1rem;
+    }
+
+    .mode-tabs button {
+      min-width: auto;
+      border-style: dashed;
+    }
+
+    .mode-tabs button.active {
+      border-style: solid;
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .mode-panel {
+      display: none;
+    }
+
+    .mode-panel.active {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .grid-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      min-width: 120px;
+    }
+
+    .control-group label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+    }
+
+    .control-group input[type="number"] {
+      width: 100%;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--puny);
+    }
+
+    table input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--puny);
+      font-family: monospace;
+      font-size: 0.9rem;
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+    }
+
+    th, td {
+      border: 1px solid var(--puny);
+      padding: 8px;
+    }
+
+    th {
+      background-color: var(--highlight);
+      font-weight: bold;
+      text-align: left;
+    }
+
+    .formatter-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      border: 1px dashed var(--puny);
+      padding: 1rem;
+      border-radius: 4px;
+    }
+
+    .option {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .option input[type="checkbox"] {
+      width: auto;
+      cursor: pointer;
+    }
+
+    .option label {
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      .grid-controls {
+        flex-direction: column;
+      }
+
+      .control-group {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Markdown Table Workbench</h1>
+    <p class="puny">Build tables from scratch or format existing Markdown tables &mdash; one tool instead of two.</p>
+
+    <div class="container">
+
+      <!-- MODE SELECT -->
+      <div class="input-group">
+        <span class="input-label">Mode</span>
+        <div class="mode-tabs" id="modeTabs">
+          <button data-mode="builder" class="active">Grid Builder</button>
+          <button data-mode="formatter">Formatter</button>
+        </div>
+      </div>
+
+      <!-- GRID BUILDER MODE -->
+      <div class="mode-panel active" id="panel-builder">
+        <div class="input-group">
+          <span class="input-label">Create Table Grid</span>
+          <div class="grid-controls">
+            <div class="control-group">
+              <label for="cols">Columns</label>
+              <input type="number" id="cols" value="3" min="1" max="20" />
+            </div>
+            <div class="control-group">
+              <label for="rows">Rows</label>
+              <input type="number" id="rows" value="3" min="1" max="50" />
+            </div>
+            <button class="primary" id="createGridBtn">Create Grid</button>
+          </div>
+        </div>
+
+        <div id="gridContainer"></div>
+
+        <div class="two-col">
+          <div class="input-group">
+            <span class="input-label">Preview</span>
+            <textarea id="gridPreview" readonly></textarea>
+          </div>
+          <div class="input-group">
+            <span class="input-label">Markdown Output</span>
+            <textarea id="gridOutput" readonly></textarea>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="generateGridBtn">Generate Markdown</button>
+          <button id="copyGridBtn">Copy</button>
+          <button id="downloadGridBtn">Download</button>
+        </div>
+      </div>
+
+      <!-- FORMATTER MODE -->
+      <div class="mode-panel hidden" id="panel-formatter">
+        <div class="input-group">
+          <span class="input-label">Format Options</span>
+          <div class="formatter-options">
+            <div class="option">
+              <input type="checkbox" id="align" checked />
+              <label for="align">Align Columns</label>
+            </div>
+            <div class="option">
+              <input type="checkbox" id="padding" checked />
+              <label for="padding">Add Padding</label>
+            </div>
+            <div class="option">
+              <input type="checkbox" id="trim" checked />
+              <label for="trim">Trim Whitespace</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="input-group">
+            <span class="input-label">Input Markdown Table</span>
+            <textarea id="formatterInput" placeholder="| Name | Age | City |
+| --- | --- | --- |
+| John | 25 | NYC |
+| Jane | 30 | LA |"></textarea>
+          </div>
+          <div class="input-group">
+            <span class="input-label">Formatted Output</span>
+            <textarea id="formatterOutput" readonly></textarea>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="formatBtn">Format</button>
+          <button id="copyFormatterBtn">Copy</button>
+          <button id="downloadFormatterBtn">Download</button>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>Grid Builder:</strong> Set columns and rows, fill in data using the table editor, then generate Markdown.
+        <br /><strong>Formatter:</strong> Paste a Markdown table and clean it up with alignment and padding options.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    &copy; 2026 eliana.lol &bull; <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Table Workbench logic -->
+  <script>
+    (function () {
+      let currentMode = 'builder';
+      const modeTabs = document.getElementById('modeTabs');
+      const panels = {
+        builder: document.getElementById('panel-builder'),
+        formatter: document.getElementById('panel-formatter')
+      };
+
+      function showStatus(message, type) {
+        const status = document.getElementById('status');
+        status.textContent = message;
+        status.className = 'status show ' + (type || 'success');
+        setTimeout(() => status.classList.remove('show'), 3000);
+      }
+
+      function setMode(mode) {
+        currentMode = mode;
+        Object.keys(panels).forEach((key) => {
+          panels[key].classList.toggle('hidden', key !== mode);
+        });
+        Array.from(modeTabs.querySelectorAll('button')).forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+      }
+
+      modeTabs.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-mode]');
+        if (btn) setMode(btn.dataset.mode);
+      });
+
+      /* ---------- Grid Builder Logic ---------- */
+
+      function createGrid() {
+        const cols = parseInt(document.getElementById('cols').value) || 3;
+        const rows = parseInt(document.getElementById('rows').value) || 3;
+
+        let html = '<table><thead><tr>';
+        for (let i = 0; i < cols; i++) {
+          html += '<th><input type="text" placeholder="Header ' + (i + 1) + '"></th>';
+        }
+        html += '</tr></thead><tbody>';
+
+        for (let r = 0; r < rows; r++) {
+          html += '<tr>';
+          for (let c = 0; c < cols; c++) {
+            html += '<td><input type="text" placeholder="Data"></td>';
+          }
+          html += '</tr>';
+        }
+        html += '</tbody></table>';
+
+        document.getElementById('gridContainer').innerHTML = html;
+        showStatus('Grid created.', 'success');
+      }
+
+      function generateMarkdownFromGrid() {
+        const table = document.querySelector('#gridContainer table');
+        if (!table) {
+          showStatus('Please create a grid first', 'error');
+          return;
+        }
+
+        const headers = [];
+        table.querySelectorAll('thead th input').forEach((input) => {
+          headers.push(input.value || 'Header');
+        });
+
+        let markdown = '| ' + headers.join(' | ') + ' |\n';
+        markdown += '| ' + headers.map(() => '---').join(' | ') + ' |\n';
+
+        table.querySelectorAll('tbody tr').forEach((row) => {
+          const cells = [];
+          row.querySelectorAll('td input').forEach((input) => {
+            cells.push(input.value || '');
+          });
+          markdown += '| ' + cells.join(' | ') + ' |\n';
+        });
+
+        document.getElementById('gridOutput').value = markdown.trim();
+        document.getElementById('gridPreview').value = markdown.trim();
+        showStatus('Markdown generated.', 'success');
+      }
+
+      document.getElementById('createGridBtn').addEventListener('click', createGrid);
+      document.getElementById('generateGridBtn').addEventListener('click', generateMarkdownFromGrid);
+
+      /* ---------- Formatter Logic ---------- */
+
+      function parseMarkdownTable(input) {
+        let lines = input.trim().split('\n').map((line) => line.trim());
+
+        const rows = lines
+          .map((line) => line.split('|').map((cell) => cell.trim()).filter((cell) => cell.length > 0))
+          .filter((row) => row.length > 0);
+
+        if (rows.length < 2) throw new Error('Invalid table: need at least header and separator');
+
+        const isSeparator = (row) => row.every((cell) => /^-+$/.test(cell));
+
+        if (!isSeparator(rows[1])) throw new Error('Second row should be separator (dashes)');
+
+        const headers = rows[0];
+        const dataRows = rows.slice(2);
+
+        return { headers, dataRows };
+      }
+
+      function formatMarkdownTable(input, options) {
+        const { headers, dataRows } = parseMarkdownTable(input);
+        const shouldAlign = options.align;
+        const shouldPad = options.pad;
+
+        const colWidths = [];
+        for (let c = 0; c < headers.length; c++) {
+          let maxWidth = headers[c].length;
+          for (let row of dataRows) {
+            if (row[c]) maxWidth = Math.max(maxWidth, row[c].length);
+          }
+          colWidths.push(shouldAlign ? maxWidth + (shouldPad ? 2 : 0) : maxWidth);
+        }
+
+        let output = '';
+
+        // Header
+        output += '| ';
+        for (let c = 0; c < headers.length; c++) {
+          let cell = headers[c];
+          if (shouldAlign) cell = cell.padEnd(colWidths[c]);
+          output += cell + ' | ';
+        }
+        output += '\n';
+
+        // Separator
+        output += '| ';
+        for (let c = 0; c < colWidths.length; c++) {
+          output += '---'.padEnd(colWidths[c], '-') + ' | ';
+        }
+        output += '\n';
+
+        // Data rows
+        for (let row of dataRows) {
+          output += '| ';
+          for (let c = 0; c < headers.length; c++) {
+            let cell = row[c] || '';
+            if (shouldAlign) cell = cell.padEnd(colWidths[c]);
+            output += cell + ' | ';
+          }
+          output += '\n';
+        }
+
+        return output.trim();
+      }
+
+      function format() {
+        try {
+          const input = document.getElementById('formatterInput').value;
+          const align = document.getElementById('align').checked;
+          const pad = document.getElementById('padding').checked;
+          const trim = document.getElementById('trim').checked;
+
+          if (trim) {
+            document.getElementById('formatterInput').value = input
+              .trim()
+              .split('\n')
+              .map((line) => line.trim())
+              .join('\n');
+          }
+
+          const output = formatMarkdownTable(input, { align, pad });
+          document.getElementById('formatterOutput').value = output;
+          showStatus('Table formatted.', 'success');
+        } catch (err) {
+          showStatus('Error: ' + err.message, 'error');
+        }
+      }
+
+      document.getElementById('formatBtn').addEventListener('click', format);
+
+      /* ---------- Copy/Download Buttons ---------- */
+
+      function copyText(textareaId) {
+        const textarea = document.getElementById(textareaId);
+        if (!textarea.value) {
+          showStatus('Nothing to copy', 'error');
+          return;
+        }
+        textarea.select();
+        document.execCommand('copy');
+        showStatus('Copied to clipboard', 'success');
+      }
+
+      function downloadText(textareaId, filename) {
+        const content = document.getElementById(textareaId).value;
+        if (!content) {
+          showStatus('Nothing to download', 'error');
+          return;
+        }
+        const blob = new Blob([content], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        showStatus('Downloaded as ' + filename, 'success');
+      }
+
+      document.getElementById('copyGridBtn').addEventListener('click', () => copyText('gridOutput'));
+      document.getElementById('downloadGridBtn').addEventListener('click', () => downloadText('gridOutput', 'table.md'));
+      document.getElementById('copyFormatterBtn').addEventListener('click', () => copyText('formatterOutput'));
+      document.getElementById('downloadFormatterBtn').addEventListener('click', () =>
+        downloadText('formatterOutput', 'formatted-table.md')
+      );
+
+      // Initial grid creation
+      setMode('builder');
+      createGrid();
+    })();
+  </script>
+</body>
+</html>
