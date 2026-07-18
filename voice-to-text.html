@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voice to Text | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* ── model load state ── */
+    #load-status {
+      padding: 0.75rem 1rem;
+      border: 1px dashed var(--puny);
+      font-size: 0.85rem;
+      color: var(--puny);
+      line-height: 1.6;
+    }
+    #load-status.loading { border-color: var(--accent); color: var(--accent); }
+    #load-status.ready   { border-color: var(--text);   color: var(--text);   }
+    #load-status.error   { border-color: #e06c6c;       color: #e06c6c;       }
+
+    #progress-wrap {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 0.5rem;
+    }
+    #progress-wrap.show { display: flex; }
+    .prog-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      color: var(--puny);
+    }
+    .prog-bar-track {
+      flex: 1;
+      height: 4px;
+      background: var(--hover);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .prog-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 200ms;
+    }
+    .prog-pct { min-width: 36px; text-align: right; }
+
+    /* ── record button ── */
+    #btn-record {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1rem;
+      padding: 10px 18px;
+      border: 1px solid var(--text);
+    }
+    #btn-record:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    #btn-record.recording {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    #btn-record.recording .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: blink 1s infinite;
+      flex-shrink: 0;
+    }
+    #btn-record:not(.recording) .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--text);
+      flex-shrink: 0;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    .button-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0; }
+    .button-row button { margin: 10px 5px 10px 0; }
+
+    #timer {
+      font-size: 0.85rem;
+      color: var(--puny);
+      margin-left: 4px;
+      min-width: 48px;
+      display: none;
+    }
+    #timer.show { display: inline; }
+
+    /* ── transcription area ── */
+    #transcript {
+      min-height: 180px;
+      resize: vertical;
+    }
+
+    /* ── processing indicator ── */
+    #processing {
+      display: none;
+      font-size: 0.85rem;
+      color: var(--accent);
+      padding: 0.5rem 0;
+    }
+    #processing.show { display: block; }
+
+    /* ── audio file section ── */
+    #drop-zone {
+      border: 1px dashed var(--puny);
+      padding: 1.5rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--puny);
+      cursor: pointer;
+      transition: border-color 150ms, color 150ms;
+    }
+    #drop-zone:hover,
+    #drop-zone.dragover {
+      border-color: var(--text);
+      color: var(--text);
+    }
+    #drop-zone.has-file {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .info-box {
+      padding: 0.75rem 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    span.section-title { margin-top: 0; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Voice to Text</h1>
+    <p class="puny">whisper-small running entirely in your browser — no server, no api key, stays on your device.</p>
+
+    <div class="container">
+
+      <!-- model load -->
+      <div id="load-status">
+        ⏳ loading whisper-small model (~460mb) — first visit only, then cached…
+        <div id="progress-wrap">
+          <!-- rows injected by JS -->
+        </div>
+      </div>
+
+      <!-- record -->
+      <span class="section-title">record</span>
+
+      <div class="button-row">
+        <button id="btn-record" disabled>
+          <span class="dot"></span>
+          <span id="btn-label">record</span>
+        </button>
+        <span id="timer">0:00</span>
+        <button id="btn-transcribe-mic" disabled>transcribe recording</button>
+      </div>
+
+      <div id="processing">⟳ transcribing…</div>
+
+      <!-- file -->
+      <span class="section-title">or upload a file</span>
+
+      <div id="drop-zone">
+        drop an audio file here, or click to browse<br>
+        <span class="puny">supports mp3 · wav · ogg · m4a · webm</span>
+      </div>
+      <input type="file" id="file-input" accept="audio/*" style="display:none" />
+
+      <div class="button-row">
+        <button id="btn-transcribe-file" disabled>transcribe file</button>
+      </div>
+
+      <!-- output -->
+      <span class="section-title">transcript</span>
+
+      <textarea id="transcript" placeholder="transcript will appear here…" readonly></textarea>
+
+      <div class="button-row">
+        <button id="btn-copy" disabled>copy</button>
+        <button id="btn-clear" disabled>clear</button>
+        <button id="btn-save" disabled>save .txt</button>
+      </div>
+
+      <div class="info-box">
+        <strong>note:</strong> the model runs locally in your browser via WebAssembly.
+        first load downloads ~460mb (cached after that). processing a 1-min clip takes
+        ~15–60 seconds depending on your device. works fully offline after first load.
+      </div>
+
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a> •
+    transcription by <a href="https://github.com/xenova/transformers.js" target="_blank" rel="noopener">transformers.js</a> + openai whisper
+  </footer>
+
+  <!-- theme toggle -->
+  <script>
+    const html   = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved  = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    toggle.onclick = () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+    };
+  </script>
+
+  <!-- transformers.js (runs whisper in-browser via WASM) -->
+  <script type="module">
+    import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js';
+
+    // use CDN-hosted WASM/model files
+    env.allowLocalModels = false;
+
+    /* ── refs ───────────────────────────────────────────────── */
+    const loadStatus        = document.getElementById('load-status');
+    const progressWrap      = document.getElementById('progress-wrap');
+    const btnRecord         = document.getElementById('btn-record');
+    const btnLabel          = document.getElementById('btn-label');
+    const btnTranscribeMic  = document.getElementById('btn-transcribe-mic');
+    const btnTranscribeFile = document.getElementById('btn-transcribe-file');
+    const btnCopy           = document.getElementById('btn-copy');
+    const btnClear          = document.getElementById('btn-clear');
+    const btnSave           = document.getElementById('btn-save');
+    const transcriptEl      = document.getElementById('transcript');
+    const timerEl           = document.getElementById('timer');
+    const processingEl      = document.getElementById('processing');
+    const dropZone          = document.getElementById('drop-zone');
+    const fileInput         = document.getElementById('file-input');
+
+    /* ── state ──────────────────────────────────────────────── */
+    let transcriber = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordedBlob = null;
+    let uploadedFile = null;
+    let timerInterval = null;
+    let timerSecs = 0;
+    const progBars = {}; // file → { row, fill, pct }
+
+    /* ── model load ─────────────────────────────────────────── */
+    function getOrCreateBar(file) {
+      if (progBars[file]) return progBars[file];
+      const row  = document.createElement('div');
+      row.className = 'prog-row';
+      const label = document.createElement('span');
+      label.textContent = file.length > 28 ? '…' + file.slice(-26) : file;
+      label.style.minWidth = '120px';
+      const track = document.createElement('div');
+      track.className = 'prog-bar-track';
+      const fill = document.createElement('div');
+      fill.className = 'prog-bar-fill';
+      track.appendChild(fill);
+      const pct = document.createElement('span');
+      pct.className = 'prog-pct';
+      pct.textContent = '0%';
+      row.append(label, track, pct);
+      progressWrap.appendChild(row);
+      progBars[file] = { fill, pct };
+      return progBars[file];
+    }
+
+    try {
+      loadStatus.className = 'loading';
+      progressWrap.classList.add('show');
+
+      transcriber = await pipeline(
+        'automatic-speech-recognition',
+        'Xenova/whisper-small',
+        {
+          progress_callback(p) {
+            if (p.status === 'downloading' || p.status === 'progress') {
+              const bar = getOrCreateBar(p.file ?? 'model');
+              const pct = p.progress != null ? Math.round(p.progress) : 0;
+              bar.fill.style.width = pct + '%';
+              bar.pct.textContent  = pct + '%';
+            }
+          }
+        }
+      );
+
+      loadStatus.className = 'ready';
+      loadStatus.innerHTML = '✓ whisper-small ready';
+      btnRecord.disabled = false;
+
+    } catch(e) {
+      loadStatus.className = 'error';
+      loadStatus.textContent = '✗ failed to load model: ' + e.message;
+      console.error(e);
+    }
+
+    /* ── recording ──────────────────────────────────────────── */
+    function startTimer() {
+      timerSecs = 0;
+      timerEl.classList.add('show');
+      timerEl.textContent = '0:00';
+      timerInterval = setInterval(() => {
+        timerSecs++;
+        const m = Math.floor(timerSecs / 60);
+        const s = String(timerSecs % 60).padStart(2, '0');
+        timerEl.textContent = `${m}:${s}`;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+      timerEl.classList.remove('show');
+    }
+
+    btnRecord.addEventListener('click', async () => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        // stop
+        mediaRecorder.stop();
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        recordedBlob = null;
+        btnTranscribeMic.disabled = true;
+
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => { if (e.data.size) audioChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          stream.getTracks().forEach(t => t.stop());
+          recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          btnRecord.classList.remove('recording');
+          btnLabel.textContent = 'record';
+          btnTranscribeMic.disabled = !transcriber;
+          stopTimer();
+        };
+
+        mediaRecorder.start();
+        btnRecord.classList.add('recording');
+        btnLabel.textContent = 'stop';
+        startTimer();
+
+      } catch(e) {
+        alert('Microphone access denied: ' + e.message);
+      }
+    });
+
+    /* ── transcribe helpers ─────────────────────────────────── */
+    async function blobToFloat32(blob) {
+      const arrayBuf = await blob.arrayBuffer();
+      const audioBuf = await new AudioContext({ sampleRate: 16000 }).decodeAudioData(arrayBuf);
+      return audioBuf.getChannelData(0); // mono float32 at 16 kHz
+    }
+
+    async function runTranscription(blob) {
+      processingEl.classList.add('show');
+      btnTranscribeMic.disabled  = true;
+      btnTranscribeFile.disabled = true;
+      btnRecord.disabled         = true;
+      try {
+        const audio  = await blobToFloat32(blob);
+        const result = await transcriber(audio, {
+          language: 'english',
+          task: 'transcribe',
+          chunk_length_s: 30,
+          stride_length_s: 5,
+          return_timestamps: false
+        });
+        const text = Array.isArray(result)
+          ? result.map(r => r.text).join(' ').trim()
+          : (result.text ?? '').trim();
+
+        if (transcriptEl.value && transcriptEl.value.trim()) {
+          transcriptEl.value += '\n\n' + text;
+        } else {
+          transcriptEl.value = text;
+        }
+        btnCopy.disabled  = false;
+        btnClear.disabled = false;
+        btnSave.disabled  = false;
+      } catch(e) {
+        alert('Transcription error: ' + e.message);
+        console.error(e);
+      } finally {
+        processingEl.classList.remove('show');
+        btnRecord.disabled         = false;
+        btnTranscribeMic.disabled  = !recordedBlob;
+        btnTranscribeFile.disabled = !uploadedFile;
+      }
+    }
+
+    btnTranscribeMic.addEventListener('click', () => {
+      if (recordedBlob) runTranscription(recordedBlob);
+    });
+
+    /* ── file upload ────────────────────────────────────────── */
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', e => {
+      const f = e.target.files[0];
+      if (!f) return;
+      uploadedFile = f;
+      dropZone.classList.add('has-file');
+      dropZone.textContent = '✓ ' + f.name;
+      btnTranscribeFile.disabled = !transcriber;
+      fileInput.value = '';
+    });
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const f = e.dataTransfer.files[0];
+      if (!f) return;
+      uploadedFile = f;
+      dropZone.classList.add('has-file');
+      dropZone.textContent = '✓ ' + f.name;
+      btnTranscribeFile.disabled = !transcriber;
+    });
+
+    btnTranscribeFile.addEventListener('click', () => {
+      if (uploadedFile) runTranscription(uploadedFile);
+    });
+
+    /* ── output buttons ─────────────────────────────────────── */
+    btnCopy.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(transcriptEl.value).catch(() => {});
+      const orig = btnCopy.textContent;
+      btnCopy.textContent = 'copied!';
+      setTimeout(() => (btnCopy.textContent = orig), 1500);
+    });
+
+    btnClear.addEventListener('click', () => {
+      transcriptEl.value = '';
+      btnCopy.disabled  = true;
+      btnClear.disabled = true;
+      btnSave.disabled  = true;
+    });
+
+    btnSave.addEventListener('click', () => {
+      const blob = new Blob([transcriptEl.value], { type: 'text/plain' });
+      const url  = URL.createObjectURL(blob);
+      const a    = Object.assign(document.createElement('a'), {
+        href: url, download: 'transcript.txt'
+      });
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>

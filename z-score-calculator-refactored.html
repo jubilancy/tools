@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Z-Score Calculator | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    input[type="number"],
+    textarea {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    input[type="number"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .section {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .section h3 {
+      font-size: 1rem;
+      color: var(--accent);
+    }
+
+    .results {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      display: none;
+    }
+
+    .results.show {
+      display: block;
+    }
+
+    .results h3 {
+      margin-bottom: 1rem;
+      color: var(--accent);
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .result-field {
+      text-align: center;
+      padding: 1rem;
+      background-color: var(--bg);
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+    }
+
+    .result-label {
+      font-weight: bold;
+      color: var(--puny);
+      font-size: 0.8rem;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+    }
+
+    .result-value {
+      font-size: 1.5rem;
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .result-text {
+      color: var(--text);
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    th,
+    td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px dashed var(--puny);
+    }
+
+    th {
+      color: var(--puny);
+      text-transform: uppercase;
+      font-size: 0.8rem;
+    }
+
+    td.z-value {
+      text-align: right;
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    @media (max-width: 600px) {
+      .two-col,
+      .result-grid {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Z-Score Calculator</h1>
+    <p class="puny">Calculate z-scores for single values or entire datasets, with percentile and probability interpretation.</p>
+
+    <div class="container">
+
+      <div class="two-col">
+        <!-- SINGLE VALUE -->
+        <div class="section">
+          <h3>Single Value Z-Score</h3>
+          <div class="input-group">
+            <span class="input-label">Value (X)</span>
+            <input type="number" id="value" placeholder="Enter value" value="75" />
+          </div>
+          <div class="input-group">
+            <span class="input-label">Mean (μ)</span>
+            <input type="number" id="mean" placeholder="Enter mean" value="70" />
+          </div>
+          <div class="input-group">
+            <span class="input-label">Std Dev (σ)</span>
+            <input type="number" id="stddev" placeholder="Enter standard deviation" value="10" />
+          </div>
+          <button class="primary" id="calcSingleBtn">Calculate Z-Score</button>
+        </div>
+
+        <!-- DATASET -->
+        <div class="section">
+          <h3>Dataset Z-Scores</h3>
+          <div class="input-group">
+            <span class="input-label">Data (one value per line)</span>
+            <textarea id="dataset" placeholder="10
+20
+30
+40
+50">10
+20
+30
+40
+50
+60</textarea>
+          </div>
+          <button class="primary" id="calcDatasetBtn">Calculate All Z-Scores</button>
+        </div>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <!-- RESULTS -->
+      <div class="results" id="results"></div>
+
+      <div class="info-box">
+        <strong>Z-Score:</strong> Measures how many standard deviations a value is from the mean. A z-score of 0 means the value equals the mean; positive values are above the mean, negative below.
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    &copy; 2026 eliana.lol &bull; <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Z-Score Calculator Logic -->
+  <script>
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status show ' + (type || 'error');
+      setTimeout(() => status.classList.remove('show'), 3000);
+    }
+
+    function calculateZScore() {
+      const value = parseFloat(document.getElementById('value').value);
+      const mean = parseFloat(document.getElementById('mean').value);
+      const stddev = parseFloat(document.getElementById('stddev').value);
+
+      if (isNaN(value) || isNaN(mean) || isNaN(stddev) || stddev === 0) {
+        showStatus('Please enter valid numbers', 'error');
+        return;
+      }
+
+      const zScore = (value - mean) / stddev;
+
+      let interpretation = '';
+      if (zScore < -2) interpretation = 'Very unlikely (2+ σ below mean)';
+      else if (zScore < -1) interpretation = 'Unlikely (1-2 σ below mean)';
+      else if (zScore < 1) interpretation = 'Common (within 1 σ)';
+      else if (zScore < 2) interpretation = 'Unusual (1-2 σ above mean)';
+      else interpretation = 'Very unusual (2+ σ above mean)';
+
+      const percentile = getPercentile(zScore);
+
+      const resultsHtml = `
+        <h3>Results</h3>
+        <div class="result-grid">
+          <div class="result-field">
+            <div class="result-label">Z-Score</div>
+            <div class="result-value">${zScore.toFixed(4)}</div>
+          </div>
+          <div class="result-field">
+            <div class="result-label">Interpretation</div>
+            <div class="result-text">${interpretation}</div>
+          </div>
+        </div>
+        <div class="result-grid">
+          <div class="result-field">
+            <div class="result-label">Percentile</div>
+            <div class="result-value">${percentile.toFixed(2)}%</div>
+          </div>
+          <div class="result-field">
+            <div class="result-label">Probability (Z &gt; value)</div>
+            <div class="result-value">${(100 - percentile).toFixed(2)}%</div>
+          </div>
+        </div>
+      `;
+
+      const resultsEl = document.getElementById('results');
+      resultsEl.innerHTML = resultsHtml;
+      resultsEl.classList.add('show');
+    }
+
+    function calculateDatasetZScores() {
+      const dataInput = document.getElementById('dataset').value;
+      const values = dataInput.trim().split('\n').map((v) => parseFloat(v.trim()));
+
+      if (values.some(isNaN)) {
+        showStatus('Please enter valid numbers', 'error');
+        return;
+      }
+
+      const mean = values.reduce((a, b) => a + b) / values.length;
+      const variance = values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length;
+      const stddev = Math.sqrt(variance);
+
+      const zScores = values.map((v) => (v - mean) / stddev);
+
+      let resultsHtml = `
+        <h3>Dataset Statistics</h3>
+        <div class="result-grid">
+          <div class="result-field">
+            <div class="result-label">Mean</div>
+            <div class="result-value">${mean.toFixed(4)}</div>
+          </div>
+          <div class="result-field">
+            <div class="result-label">Std Dev</div>
+            <div class="result-value">${stddev.toFixed(4)}</div>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Value</th>
+              <th>Z-Score</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      values.forEach((v, i) => {
+        resultsHtml += `<tr>
+          <td>${v.toFixed(4)}</td>
+          <td class="z-value">${zScores[i].toFixed(4)}</td>
+        </tr>`;
+      });
+
+      resultsHtml += '</tbody></table>';
+
+      const resultsEl = document.getElementById('results');
+      resultsEl.innerHTML = resultsHtml;
+      resultsEl.classList.add('show');
+    }
+
+    function getPercentile(zScore) {
+      // Approximation of cumulative normal distribution
+      const t = 1 / (1 + 0.2316419 * Math.abs(zScore));
+      const d = 0.3989423 * Math.exp((-zScore * zScore) / 2);
+      const prob =
+        1 -
+        d *
+          t *
+          (0.31938153 +
+            t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+      return (zScore >= 0 ? prob : 1 - prob) * 100;
+    }
+
+    document.getElementById('calcSingleBtn').addEventListener('click', calculateZScore);
+    document.getElementById('calcDatasetBtn').addEventListener('click', calculateDatasetZScores);
+  </script>
+</body>
+</html>

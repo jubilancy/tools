@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Font Metrics Inspector | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    button.danger {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+
+    textarea,
+    input[type="text"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+
+    /* Tool-specific styles */
+    .dropzone {
+      border: 2px dashed var(--puny);
+      border-radius: 4px;
+      padding: 1.5rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 150ms;
+    }
+
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: var(--accent);
+      background-color: var(--hover);
+    }
+
+    .dropzone input {
+      display: none;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .slider-row input[type="range"] {
+      flex: 1;
+      width: auto;
+      padding: 0;
+      border: none;
+      accent-color: var(--accent);
+    }
+
+    .slider-value {
+      min-width: 3.5rem;
+      text-align: right;
+      font-size: 0.9rem;
+      color: var(--puny);
+    }
+
+    .canvas-wrap {
+      width: 100%;
+      overflow: auto;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      background: #fff;
+    }
+
+    #metrics-canvas {
+      display: block;
+      max-width: 100%;
+    }
+
+    .metrics-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .metrics-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--hover);
+    }
+
+    .metrics-table td:first-child {
+      color: var(--puny);
+      width: 50%;
+    }
+
+    .metrics-table td:last-child {
+      font-family: monospace;
+      text-align: right;
+    }
+
+    .source-toggle {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .source-toggle button {
+      flex: 1;
+    }
+
+    .source-toggle button.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Font Metrics Inspector</h1>
+    <p class="puny">Type any text and see actual font metrics — ascender, descender, cap height, x-height — rendered visually.</p>
+
+    <div class="container">
+      <div class="input-group">
+        <span class="input-label">Font source</span>
+        <div class="source-toggle">
+          <button id="source-system-btn" class="active">System font</button>
+          <button id="source-upload-btn">Upload font file</button>
+        </div>
+      </div>
+
+      <div class="input-group" id="system-font-group">
+        <label class="puny" for="system-font-input">Font family name</label>
+        <input type="text" id="system-font-input" value="Georgia" placeholder="e.g. Georgia, Arial, monospace" />
+      </div>
+
+      <div class="input-group" id="upload-font-group" style="display:none">
+        <div class="dropzone" id="dropzone">
+          <p>Drop or click to upload a .ttf, .otf, or .woff file</p>
+        </div>
+        <input type="file" id="file-input" accept=".ttf,.otf,.woff" style="display:none" />
+        <p class="puny" id="font-name-display"></p>
+      </div>
+
+      <div class="input-group">
+        <label class="puny" for="text-input">Sample text</label>
+        <input type="text" id="text-input" value="Typography" />
+      </div>
+
+      <div class="input-group">
+        <label class="puny" for="size-slider">Font size (px)</label>
+        <div class="slider-row">
+          <input type="range" id="size-slider" min="40" max="200" value="100" step="1" />
+          <span class="slider-value" id="size-value">100</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">Rendered metrics</span>
+        <div class="canvas-wrap">
+          <canvas id="metrics-canvas"></canvas>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">Measured values</span>
+        <table class="metrics-table" id="metrics-table"></table>
+      </div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> System fonts use approximate metrics derived from canvas text measurement (the browser doesn't expose exact em-square values for installed fonts). Upload an actual font file for exact ascender, descender, and unitsPerEm values straight from the font's tables.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool-specific script -->
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    }
+
+    const canvas = document.getElementById('metrics-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let mode = 'system'; // 'system' or 'upload'
+    let loadedFont = null; // opentype.js font object
+    let loadedFontName = null;
+
+    document.getElementById('source-system-btn').addEventListener('click', () => {
+      mode = 'system';
+      document.getElementById('source-system-btn').classList.add('active');
+      document.getElementById('source-upload-btn').classList.remove('active');
+      document.getElementById('system-font-group').style.display = 'flex';
+      document.getElementById('upload-font-group').style.display = 'none';
+      render();
+    });
+
+    document.getElementById('source-upload-btn').addEventListener('click', () => {
+      mode = 'upload';
+      document.getElementById('source-upload-btn').classList.add('active');
+      document.getElementById('source-system-btn').classList.remove('active');
+      document.getElementById('upload-font-group').style.display = 'flex';
+      document.getElementById('system-font-group').style.display = 'none';
+      render();
+    });
+
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file) loadFontFile(file);
+    });
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) loadFontFile(file);
+    });
+
+    function loadFontFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          loadedFont = opentype.parse(e.target.result);
+          loadedFontName = file.name;
+          document.getElementById('font-name-display').textContent = `Loaded: ${file.name}`;
+          showStatus('Font loaded.', 'success');
+          render();
+        } catch (err) {
+          showStatus('Could not parse font file: ' + err.message, 'error');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function renderSystem() {
+      const fontFamily = document.getElementById('system-font-input').value || 'sans-serif';
+      const text = document.getElementById('text-input').value || 'Typography';
+      const size = parseInt(document.getElementById('size-slider').value, 10);
+
+      const padding = 40;
+      const width = 600;
+      const height = size * 2.2;
+      canvas.width = width;
+      canvas.height = height;
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.font = `${size}px ${fontFamily}`;
+
+      const metrics = ctx.measureText(text);
+      const ascent = metrics.actualBoundingBoxAscent || size * 0.75;
+      const descent = metrics.actualBoundingBoxDescent || size * 0.2;
+
+      const capMetrics = ctx.measureText('H');
+      const capHeight = capMetrics.actualBoundingBoxAscent || size * 0.7;
+
+      const xMetrics = ctx.measureText('x');
+      const xHeight = xMetrics.actualBoundingBoxAscent || size * 0.5;
+
+      const baseline = padding + ascent;
+
+      drawGuides(width, baseline, ascent, descent, capHeight, xHeight, 0);
+
+      ctx.fillStyle = '#000000';
+      ctx.font = `${size}px ${fontFamily}`;
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(text, padding, baseline);
+
+      updateTable([
+        ['Font family', fontFamily],
+        ['Sample text', text],
+        ['Font size', size + 'px'],
+        ['Ascent (measured)', Math.round(ascent) + 'px'],
+        ['Descent (measured)', Math.round(descent) + 'px'],
+        ['Cap height (≈ "H")', Math.round(capHeight) + 'px'],
+        ['x-height (≈ "x")', Math.round(xHeight) + 'px'],
+        ['Total text width', Math.round(metrics.width) + 'px']
+      ]);
+    }
+
+    function renderUploaded() {
+      if (!loadedFont) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.width = 600;
+        canvas.height = 100;
+        ctx.fillStyle = '#888888';
+        ctx.font = '14px monospace';
+        ctx.fillText('Upload a font file to see exact metrics.', 20, 50);
+        document.getElementById('metrics-table').innerHTML = '';
+        return;
+      }
+
+      const text = document.getElementById('text-input').value || 'Typography';
+      const size = parseInt(document.getElementById('size-slider').value, 10);
+      const unitsPerEm = loadedFont.unitsPerEm;
+      const scale = size / unitsPerEm;
+
+      const ascender = loadedFont.ascender * scale;
+      const descender = Math.abs(loadedFont.descender * scale);
+
+      let capHeight = (loadedFont.tables.os2 && loadedFont.tables.os2.sCapHeight)
+        ? loadedFont.tables.os2.sCapHeight * scale
+        : ascender * 0.7;
+      let xHeight = (loadedFont.tables.os2 && loadedFont.tables.os2.sxHeight)
+        ? loadedFont.tables.os2.sxHeight * scale
+        : ascender * 0.5;
+
+      const padding = 40;
+      const width = 600;
+      const height = size * 2.2;
+      canvas.width = width;
+      canvas.height = height;
+      ctx.clearRect(0, 0, width, height);
+
+      const baseline = padding + ascender;
+      drawGuides(width, baseline, ascender, descender, capHeight, xHeight, 0);
+
+      ctx.fillStyle = '#000000';
+      try {
+        const path = loadedFont.getPath(text, padding, baseline, size);
+        path.fill = '#000000';
+        const pathData = path.toPathData(2);
+        const path2d = new Path2D(pathData);
+        ctx.fill(path2d);
+      } catch (err) {
+        ctx.font = `${size}px sans-serif`;
+        ctx.fillText(text, padding, baseline);
+      }
+
+      const textWidth = loadedFont.getAdvanceWidth(text, size);
+
+      updateTable([
+        ['Font name', loadedFontName || 'uploaded font'],
+        ['Sample text', text],
+        ['Font size', size + 'px'],
+        ['Units per em', unitsPerEm],
+        ['Ascender', Math.round(ascender) + 'px'],
+        ['Descender', Math.round(descender) + 'px'],
+        ['Cap height', Math.round(capHeight) + 'px'],
+        ['x-height', Math.round(xHeight) + 'px'],
+        ['Advance width', Math.round(textWidth) + 'px']
+      ]);
+    }
+
+    function drawGuides(width, baseline, ascent, descent, capHeight, xHeight, leftPad) {
+      const guides = [
+        { y: baseline - ascent, label: 'ascender', color: '#0ea5e9' },
+        { y: baseline - capHeight, label: 'cap height', color: '#22c55e' },
+        { y: baseline - xHeight, label: 'x-height', color: '#a855f7' },
+        { y: baseline, label: 'baseline', color: '#ff6600' },
+        { y: baseline + descent, label: 'descender', color: '#ef4444' }
+      ];
+
+      guides.forEach((g) => {
+        ctx.strokeStyle = g.color;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath();
+        ctx.moveTo(0, g.y);
+        ctx.lineTo(width, g.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = g.color;
+        ctx.font = '11px monospace';
+        ctx.fillText(g.label, width - ctx.measureText(g.label).width - 4, g.y - 3);
+      });
+    }
+
+    function updateTable(rows) {
+      const table = document.getElementById('metrics-table');
+      table.innerHTML = rows.map(([label, value]) => `<tr><td>${label}</td><td>${value}</td></tr>`).join('');
+    }
+
+    function render() {
+      if (mode === 'system') {
+        renderSystem();
+      } else {
+        renderUploaded();
+      }
+    }
+
+    document.getElementById('system-font-input').addEventListener('input', render);
+    document.getElementById('text-input').addEventListener('input', render);
+    document.getElementById('size-slider').addEventListener('input', (e) => {
+      document.getElementById('size-value').textContent = e.target.value;
+      render();
+    });
+
+    // wait for fonts to be ready before first render
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(render);
+    } else {
+      render();
+    }
+  </script>
+</body>
+</html>

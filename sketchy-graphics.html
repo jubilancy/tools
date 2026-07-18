@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sketchy Graphics | tools.eliana.lol</title>
+  <link rel="stylesheet" href="../global.css" />
+  <link rel="icon" type="image/x-icon" href="../favicon.svg" />
+  <style>
+    .tool-layout { display: flex; flex-direction: column; gap: 20px; }
+    .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    label { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 5px; }
+    #canvas-wrap { border: 1px solid var(--puny); background: var(--bg); }
+    canvas { display: block; }
+    .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; }
+    input[type=range] { width: 100px; accent-color: var(--accent); }
+    input[type=color] { width: 40px; height: 28px; padding: 2px; border: 1px solid var(--puny); background: var(--bg); cursor: pointer; }
+    select { background: var(--bg); color: var(--text); border: 1px solid var(--puny); font-family: monospace; padding: 4px 8px; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left"><a href="../index.html">home</a> | <a href="../extra.html">extra</a> | <a href="../credits.html">credits</a> | <a href="../changelog.html">logs</a></div>
+    <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+  </nav>
+  <main>
+    <h1>Sketchy Graphics</h1>
+    <p class="puny">Hand-drawn style shapes using Rough.js. Click the canvas to place shapes.</p>
+    <div class="tool-layout">
+      <div class="controls">
+        <div class="control-group"><label>Shape</label><select id="shape"><option>rectangle</option><option>circle</option><option>ellipse</option><option>line</option><option>arrow</option></select></div>
+        <div class="control-group"><label>Stroke</label><input type="color" id="stroke" value="#000000" /></div>
+        <div class="control-group"><label>Fill</label><input type="color" id="fill" value="#ffff99" /></div>
+        <div class="control-group"><label>Roughness <span id="rough-val">1</span></label><input type="range" id="roughness" min="0" max="5" step="0.5" value="1" oninput="document.getElementById('rough-val').textContent=this.value" /></div>
+        <div class="control-group"><label>Size <span id="size-val">80</span></label><input type="range" id="size" min="20" max="200" value="80" oninput="document.getElementById('size-val').textContent=this.value" /></div>
+      </div>
+      <div class="action-bar">
+        <button onclick="undoLast()">Undo</button>
+        <button onclick="clearCanvas()">Clear</button>
+        <button onclick="downloadPNG()">Download PNG</button>
+      </div>
+      <div id="canvas-wrap"><canvas id="rc" width="860" height="420"></canvas></div>
+    </div>
+  </main>
+  <footer style="margin-top: 4rem; text-align: center" class="puny">© 2026 eliana.lol • <a href="../credits.html">credits</a></footer>
+  <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.min.js"></script>
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => { const now = htmlEl.getAttribute('data-theme'); const next = now === 'dark' ? 'light' : 'dark'; htmlEl.setAttribute('data-theme', next); localStorage.setItem('theme', next); toggle.innerText = next === 'dark' ? '[light]' : '[dark]'; };
+
+    const canvas = document.getElementById('rc');
+    const rc = rough.canvas(canvas);
+    const ctx = canvas.getContext('2d');
+    let shapes = [];
+
+    canvas.onclick = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const shape = document.getElementById('shape').value;
+      const stroke = document.getElementById('stroke').value;
+      const fill = document.getElementById('fill').value;
+      const roughness = parseFloat(document.getElementById('roughness').value);
+      const size = parseInt(document.getElementById('size').value);
+      shapes.push({ shape, x, y, stroke, fill, roughness, size });
+      redraw();
+    };
+
+    function redraw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      shapes.forEach(s => {
+        const opts = { stroke: s.stroke, fill: s.fill, roughness: s.roughness, fillStyle: 'hachure' };
+        if (s.shape === 'rectangle') rc.rectangle(s.x - s.size/2, s.y - s.size/2, s.size, s.size * 0.65, opts);
+        else if (s.shape === 'circle') rc.circle(s.x, s.y, s.size, opts);
+        else if (s.shape === 'ellipse') rc.ellipse(s.x, s.y, s.size, s.size * 0.6, opts);
+        else if (s.shape === 'line') rc.line(s.x - s.size/2, s.y, s.x + s.size/2, s.y, opts);
+        else if (s.shape === 'arrow') {
+          rc.line(s.x - s.size/2, s.y, s.x + s.size/2, s.y, opts);
+          rc.line(s.x + s.size/2, s.y, s.x + s.size/2 - 15, s.y - 12, opts);
+          rc.line(s.x + s.size/2, s.y, s.x + s.size/2 - 15, s.y + 12, opts);
+        }
+      });
+    }
+
+    function undoLast() { shapes.pop(); redraw(); }
+    function clearCanvas() { shapes = []; redraw(); }
+    function downloadPNG() {
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = 'sketch.png';
+      a.click();
+    }
+  </script>
+</body>
+</html>

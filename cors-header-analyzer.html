@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CORS Header Analyzer | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea,
+    input[type="text"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 180px;
+      resize: vertical;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+      .origin-row {
+        flex-direction: column;
+        align-items: stretch !important;
+      }
+    }
+
+    /* Tool-specific styles */
+    .origin-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .origin-row input {
+      flex: 1;
+    }
+
+    .verdict-card {
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      padding: 12px 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .verdict-card.pass {
+      border-left: 4px solid var(--accent);
+    }
+
+    .verdict-card.fail {
+      border-left: 4px solid #ef4444;
+    }
+
+    .verdict-icon {
+      font-weight: bold;
+      font-size: 1.2rem;
+      line-height: 1.2;
+    }
+
+    .verdict-card.pass .verdict-icon { color: var(--accent); }
+    .verdict-card.fail .verdict-icon { color: #ef4444; }
+
+    .verdict-text {
+      font-size: 0.9rem;
+    }
+
+    .breakdown-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .breakdown-item {
+      display: flex;
+      gap: 10px;
+      font-size: 0.85rem;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--hover);
+    }
+
+    .breakdown-item .header-name {
+      font-family: monospace;
+      font-weight: bold;
+      min-width: 220px;
+    }
+
+    .breakdown-item .header-explain {
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>CORS Header Analyzer</h1>
+    <p class="puny">Paste response headers and get a plain-English breakdown of what the CORS policy allows and blocks.</p>
+
+    <div class="container">
+      <div class="input-group">
+        <span class="input-label">Response headers</span>
+        <textarea id="headers-input" placeholder="Access-Control-Allow-Origin: https://example.com
+Access-Control-Allow-Methods: GET, POST
+Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Allow-Credentials: true">Access-Control-Allow-Origin: https://myapp.com
+Access-Control-Allow-Methods: GET, POST, PUT
+Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Allow-Credentials: true
+Access-Control-Max-Age: 3600</textarea>
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">Simulate a request from</span>
+        <div class="origin-row">
+          <input type="text" id="origin-input" value="https://myapp.com" placeholder="https://your-frontend.com" />
+          <span class="puny">using</span>
+          <select id="method-select" style="width: auto; font-family: monospace; padding: 8px; border: 1px solid var(--puny); background: var(--bg); color: var(--text); border-radius: 4px;">
+            <option>GET</option>
+            <option>POST</option>
+            <option>PUT</option>
+            <option>DELETE</option>
+            <option>PATCH</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">Verdict</span>
+        <div id="verdict-wrap"></div>
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">Header-by-header breakdown</span>
+        <div class="breakdown-list" id="breakdown-list"></div>
+      </div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> The browser — not the server — enforces CORS. These headers only matter for cross-origin requests; same-origin requests are never blocked regardless of what's set here.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool-specific script -->
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    }
+
+    function parseHeaders(text) {
+      const headers = {};
+      text.split('\n').forEach((line) => {
+        const idx = line.indexOf(':');
+        if (idx === -1) return;
+        const key = line.slice(0, idx).trim().toLowerCase();
+        const value = line.slice(idx + 1).trim();
+        if (key) headers[key] = value;
+      });
+      return headers;
+    }
+
+    function explainHeader(key, value) {
+      switch (key) {
+        case 'access-control-allow-origin':
+          if (value === '*') return 'Allows requests from any origin. Cannot be combined with credentials: true — browsers will reject that combination.';
+          return `Allows cross-origin requests only from the origin "${value}". Requests from any other origin will be blocked by the browser.`;
+        case 'access-control-allow-methods':
+          return `Permits these HTTP methods on cross-origin requests: ${value}. Any method not listed here will fail preflight for non-simple requests.`;
+        case 'access-control-allow-headers':
+          return `Permits these request headers to be sent cross-origin: ${value}. Custom headers not listed here will be blocked during preflight.`;
+        case 'access-control-allow-credentials':
+          return value.toLowerCase() === 'true'
+            ? 'Allows cookies and HTTP auth credentials to be sent with cross-origin requests. Requires Allow-Origin to be a specific origin, not "*".'
+            : 'Credentials (cookies, auth headers) will not be included in cross-origin requests.';
+        case 'access-control-expose-headers':
+          return `Makes these response headers readable by client-side JavaScript: ${value}. Without this, only a small default set of headers is visible to scripts.`;
+        case 'access-control-max-age':
+          return `Caches the preflight (OPTIONS) response for ${value} seconds, reducing repeated preflight requests during that window.`;
+        case 'vary':
+          return `Tells caches that the response varies by this header (commonly "Origin") — important so cached CORS responses aren't served to the wrong origin.`;
+        default:
+          return 'Not a standard CORS header — included here for reference only.';
+      }
+    }
+
+    function analyze() {
+      const headersText = document.getElementById('headers-input').value;
+      const origin = document.getElementById('origin-input').value.trim();
+      const method = document.getElementById('method-select').value;
+
+      const headers = parseHeaders(headersText);
+      const verdictWrap = document.getElementById('verdict-wrap');
+      const breakdownList = document.getElementById('breakdown-list');
+
+      const allowOrigin = headers['access-control-allow-origin'];
+      const allowMethods = headers['access-control-allow-methods'];
+      const allowCredentials = headers['access-control-allow-credentials'];
+
+      const issues = [];
+      const passes = [];
+
+      if (!allowOrigin) {
+        issues.push('No Access-Control-Allow-Origin header is present, so the browser will block this cross-origin request entirely.');
+      } else if (allowOrigin === '*') {
+        if (allowCredentials && allowCredentials.toLowerCase() === 'true') {
+          issues.push('Allow-Origin is "*" combined with Allow-Credentials: true — browsers reject this exact combination, so credentialed requests will fail regardless of origin.');
+        } else {
+          passes.push(`Any origin (including "${origin || 'your origin'}") is allowed to read the response.`);
+        }
+      } else if (origin && allowOrigin.toLowerCase() !== origin.toLowerCase()) {
+        issues.push(`Allow-Origin is set to "${allowOrigin}", which does not match the simulated origin "${origin}" — this request would be blocked.`);
+      } else if (origin) {
+        passes.push(`Origin "${origin}" matches the allowed origin exactly.`);
+      }
+
+      if (allowMethods) {
+        const methodsList = allowMethods.split(',').map((m) => m.trim().toUpperCase());
+        if (!methodsList.includes(method)) {
+          issues.push(`Method "${method}" is not in the allowed methods list (${allowMethods}) — a preflight request would fail for this method.`);
+        } else {
+          passes.push(`Method "${method}" is explicitly allowed.`);
+        }
+      } else if (!['GET', 'HEAD', 'POST'].includes(method)) {
+        issues.push(`No Access-Control-Allow-Methods header found, and "${method}" is not a CORS-safelisted method — preflight will likely fail.`);
+      }
+
+      verdictWrap.innerHTML = '';
+      if (issues.length === 0) {
+        const card = document.createElement('div');
+        card.className = 'verdict-card pass';
+        card.innerHTML = `<span class="verdict-icon">✓</span><span class="verdict-text">This request would likely succeed. ${passes.join(' ')}</span>`;
+        verdictWrap.appendChild(card);
+      } else {
+        issues.forEach((issue) => {
+          const card = document.createElement('div');
+          card.className = 'verdict-card fail';
+          card.innerHTML = `<span class="verdict-icon">✕</span><span class="verdict-text">${issue}</span>`;
+          verdictWrap.appendChild(card);
+        });
+        if (passes.length > 0) {
+          const card = document.createElement('div');
+          card.className = 'verdict-card pass';
+          card.innerHTML = `<span class="verdict-icon">✓</span><span class="verdict-text">${passes.join(' ')}</span>`;
+          verdictWrap.appendChild(card);
+        }
+      }
+
+      breakdownList.innerHTML = '';
+      const knownOrder = [
+        'access-control-allow-origin',
+        'access-control-allow-methods',
+        'access-control-allow-headers',
+        'access-control-allow-credentials',
+        'access-control-expose-headers',
+        'access-control-max-age',
+        'vary'
+      ];
+
+      const allKeys = Object.keys(headers).sort((a, b) => {
+        const ai = knownOrder.indexOf(a);
+        const bi = knownOrder.indexOf(b);
+        if (ai === -1 && bi === -1) return a.localeCompare(b);
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
+
+      if (allKeys.length === 0) {
+        breakdownList.innerHTML = '<p class="puny">Paste headers above to see a breakdown.</p>';
+        return;
+      }
+
+      allKeys.forEach((key) => {
+        const item = document.createElement('div');
+        item.className = 'breakdown-item';
+        item.innerHTML = `
+          <span class="header-name">${key}</span>
+          <span class="header-explain">${explainHeader(key, headers[key])}</span>
+        `;
+        breakdownList.appendChild(item);
+      });
+    }
+
+    document.getElementById('headers-input').addEventListener('input', analyze);
+    document.getElementById('origin-input').addEventListener('input', analyze);
+    document.getElementById('method-select').addEventListener('change', analyze);
+
+    analyze();
+  </script>
+</body>
+</html>

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Text Processing Toolkit | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+      min-height: 200px;
+      resize: vertical;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .operations-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+    }
+
+    .operations-panel button {
+      min-width: 100px;
+      font-size: 0.85rem;
+      padding: 8px 12px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .stats {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px dashed var(--puny);
+    }
+
+    .stat-row:last-child {
+      border-bottom: none;
+    }
+
+    .stat-value {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      .operations-panel {
+        flex-direction: column;
+      }
+
+      .operations-panel button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Text Processing Toolkit</h1>
+    <p class="puny">Transform text with case conversion, sorting, deduplication, and more utilities.</p>
+
+    <div class="container">
+
+      <!-- OPERATIONS -->
+      <div class="input-group">
+        <span class="input-label">Text Operations</span>
+        <div class="operations-panel">
+          <button onclick="processText('uppercase')">UPPERCASE</button>
+          <button onclick="processText('lowercase')">lowercase</button>
+          <button onclick="processText('title')">Title Case</button>
+          <button onclick="processText('capitalize')">Capitalize</button>
+          <button onclick="processText('reverse')">Reverse</button>
+          <button onclick="processText('removeDuplicates')">No Dupes</button>
+          <button onclick="processText('removeDuplicateLines')">Unique Lines</button>
+          <button onclick="processText('trim')">Trim Lines</button>
+          <button onclick="processText('removeLineBreaks')">No Breaks</button>
+          <button onclick="processText('sortLines')">Sort Lines</button>
+          <button onclick="processText('removeExtraSpaces')">Clean Spaces</button>
+          <button onclick="processText('htmlEncode')">HTML Encode</button>
+        </div>
+      </div>
+
+      <!-- EDITOR -->
+      <div class="two-col">
+        <div class="input-group">
+          <span class="input-label">Input Text</span>
+          <textarea id="inputText" placeholder="Enter text to process..."></textarea>
+        </div>
+        <div class="input-group">
+          <span class="input-label">Output Text</span>
+          <textarea id="outputText" readonly></textarea>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats" id="stats">
+        <div class="stat-row">
+          <span>Input Characters</span>
+          <span class="stat-value" id="inputChars">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Output Characters</span>
+          <span class="stat-value" id="outputChars">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Input Lines</span>
+          <span class="stat-value" id="inputLines">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Output Lines</span>
+          <span class="stat-value" id="outputLines">0</span>
+        </div>
+      </div>
+
+      <!-- BUTTONS -->
+      <div class="button-group">
+        <button class="primary" id="copyBtn">Copy Output</button>
+        <button id="downloadBtn">Download</button>
+        <button id="clearBtn">Clear All</button>
+      </div>
+
+      <div class="info-box">
+        <strong>Text Processing Toolkit:</strong> Quick transformations for text manipulation. Click any operation button to apply it. Stats update automatically as you type or process.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    &copy; 2026 eliana.lol &bull; <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Text Processing Logic -->
+  <script>
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status show ' + (type || 'success');
+      setTimeout(() => status.classList.remove('show'), 3000);
+    }
+
+    function updateStats() {
+      const input = document.getElementById('inputText').value;
+      const output = document.getElementById('outputText').value;
+
+      document.getElementById('inputChars').textContent = input.length;
+      document.getElementById('outputChars').textContent = output.length;
+      document.getElementById('inputLines').textContent = input ? input.split('\n').length : 0;
+      document.getElementById('outputLines').textContent = output ? output.split('\n').length : 0;
+    }
+
+    function processText(operation) {
+      const input = document.getElementById('inputText').value;
+      let output = '';
+
+      switch (operation) {
+        case 'uppercase':
+          output = input.toUpperCase();
+          break;
+        case 'lowercase':
+          output = input.toLowerCase();
+          break;
+        case 'title':
+          output = input
+            .split(' ')
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+          break;
+        case 'capitalize':
+          output = input.charAt(0).toUpperCase() + input.slice(1);
+          break;
+        case 'reverse':
+          output = input.split('').reverse().join('');
+          break;
+        case 'removeDuplicates':
+          output = [...new Set(input.split(''))].join('');
+          break;
+        case 'removeDuplicateLines':
+          output = [...new Set(input.split('\n'))].join('\n');
+          break;
+        case 'trim':
+          output = input.split('\n').map((line) => line.trim()).join('\n');
+          break;
+        case 'removeLineBreaks':
+          output = input.replace(/\n/g, ' ');
+          break;
+        case 'sortLines':
+          output = input.split('\n').sort().join('\n');
+          break;
+        case 'removeExtraSpaces':
+          output = input.replace(/\s+/g, ' ').trim();
+          break;
+        case 'htmlEncode':
+          const div = document.createElement('div');
+          div.textContent = input;
+          output = div.innerHTML;
+          break;
+        default:
+          output = input;
+      }
+
+      document.getElementById('outputText').value = output;
+      updateStats();
+      showStatus('Text processed: ' + operation, 'success');
+    }
+
+    function copyOutput() {
+      const output = document.getElementById('outputText').value;
+      if (!output) {
+        showStatus('Nothing to copy', 'error');
+        return;
+      }
+      navigator.clipboard.writeText(output);
+      showStatus('Copied to clipboard', 'success');
+    }
+
+    function downloadOutput() {
+      const output = document.getElementById('outputText').value;
+      if (!output) {
+        showStatus('Nothing to download', 'error');
+        return;
+      }
+      const blob = new Blob([output], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'processed.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+      showStatus('Downloaded processed.txt', 'success');
+    }
+
+    function clearAll() {
+      document.getElementById('inputText').value = '';
+      document.getElementById('outputText').value = '';
+      updateStats();
+      showStatus('Cleared', 'success');
+    }
+
+    // Initial stats
+    updateStats();
+
+    // Wire copy/download buttons
+    document.getElementById('copyBtn').addEventListener('click', copyOutput);
+    document.getElementById('downloadBtn').addEventListener('click', downloadOutput);
+    document.getElementById('clearBtn').addEventListener('click', clearAll);
+  </script>
+</body>
+</html>

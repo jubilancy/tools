@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hash & Crypto | tools.eliana.lol</title>
+  <link rel="stylesheet" href="../global.css" />
+  <link rel="icon" type="image/x-icon" href="../favicon.svg" />
+  <style>
+    .tool-layout { display: flex; flex-direction: column; gap: 24px; }
+    .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    label { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 5px; }
+    .card { border: 1px solid var(--puny); padding: 14px; }
+    .card h2 { font-size: 0.9rem; text-transform: uppercase; margin: 0 0 12px 0; padding-bottom: 6px; border-bottom: 1px solid var(--puny); }
+    .hash-row { display: flex; gap: 8px; align-items: center; font-size: 0.85rem; margin-bottom: 6px; }
+    .hash-label { width: 80px; color: var(--puny); flex-shrink: 0; font-family: monospace; }
+    .hash-val { font-family: monospace; word-break: break-all; flex: 1; font-size: 0.8rem; }
+    .copy-btn { font-size: 0.7rem; padding: 2px 6px; flex-shrink: 0; }
+    #uuid-list { font-family: monospace; font-size: 0.85rem; }
+    #uuid-list div { padding: 4px 0; border-bottom: 1px solid var(--puny); display: flex; justify-content: space-between; align-items: center; }
+    select { background: var(--bg); color: var(--text); border: 1px solid var(--puny); font-family: monospace; padding: 4px 8px; }
+    #enc-out, #dec-out { font-family: monospace; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left"><a href="../index.html">home</a> | <a href="../extra.html">extra</a> | <a href="../credits.html">credits</a> | <a href="../changelog.html">logs</a></div>
+    <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+  </nav>
+  <main>
+    <h1>Hash & Crypto</h1>
+    <p class="puny">Hash text, generate UUIDs, encode/decode base64, and encrypt with AES — all client-side.</p>
+    <div class="tool-layout">
+
+      <div class="card">
+        <h2>Hash text</h2>
+        <label>Input</label>
+        <textarea id="hash-input" rows="3" oninput="hashAll()" placeholder="Type something to hash…"></textarea>
+        <div style="margin-top:12px">
+          <div class="hash-row"><span class="hash-label">MD5</span><span class="hash-val" id="h-md5"></span><button class="copy-btn" onclick="copyEl('h-md5')">copy</button></div>
+          <div class="hash-row"><span class="hash-label">SHA-1</span><span class="hash-val" id="h-sha1"></span><button class="copy-btn" onclick="copyEl('h-sha1')">copy</button></div>
+          <div class="hash-row"><span class="hash-label">SHA-256</span><span class="hash-val" id="h-sha256"></span><button class="copy-btn" onclick="copyEl('h-sha256')">copy</button></div>
+          <div class="hash-row"><span class="hash-label">SHA-512</span><span class="hash-val" id="h-sha512"></span><button class="copy-btn" onclick="copyEl('h-sha512')">copy</button></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>UUID / ULID generator</h2>
+        <div class="action-bar">
+          <button onclick="genUUIDs()">Generate 5 UUIDs</button>
+          <button onclick="copyEl('uuid-list-text')">Copy all</button>
+        </div>
+        <div id="uuid-list"></div>
+        <span id="uuid-list-text" style="display:none"></span>
+      </div>
+
+      <div class="card">
+        <h2>Base64 encode / decode</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label>Plain text → Base64</label>
+            <textarea id="b64-in" rows="4" placeholder="Hello, world!"></textarea>
+            <div class="action-bar"><button onclick="encodeB64()">Encode</button></div>
+            <label>Result</label>
+            <textarea id="b64-out" rows="3" readonly id="enc-out"></textarea>
+          </div>
+          <div>
+            <label>Base64 → Plain text</label>
+            <textarea id="b64-dec-in" rows="4" placeholder="SGVsbG8sIHdvcmxkIQ=="></textarea>
+            <div class="action-bar"><button onclick="decodeB64()">Decode</button></div>
+            <label>Result</label>
+            <textarea id="b64-dec-out" rows="3" readonly id="dec-out"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>AES encrypt / decrypt</h2>
+        <label>Passphrase</label>
+        <input type="password" id="aes-key" placeholder="Secret passphrase" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+          <div>
+            <label>Plaintext</label>
+            <textarea id="aes-plain" rows="5" placeholder="Text to encrypt…"></textarea>
+            <div class="action-bar"><button onclick="aesEncrypt()">Encrypt</button></div>
+            <textarea id="aes-cipher" rows="4" readonly placeholder="Ciphertext…"></textarea>
+          </div>
+          <div>
+            <label>Ciphertext</label>
+            <textarea id="aes-cipher-in" rows="5" placeholder="Paste ciphertext…"></textarea>
+            <div class="action-bar"><button onclick="aesDecrypt()">Decrypt</button></div>
+            <textarea id="aes-plain-out" rows="4" readonly placeholder="Plaintext…"></textarea>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+  <footer style="margin-top:4rem;text-align:center" class="puny">© 2026 eliana.lol • <a href="../credits.html">credits</a></footer>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => { const now = htmlEl.getAttribute('data-theme'); const next = now==='dark'?'light':'dark'; htmlEl.setAttribute('data-theme',next); localStorage.setItem('theme',next); toggle.innerText=next==='dark'?'[light]':'[dark]'; };
+
+    function hashAll() {
+      const msg = document.getElementById('hash-input').value;
+      document.getElementById('h-md5').textContent    = CryptoJS.MD5(msg).toString();
+      document.getElementById('h-sha1').textContent   = CryptoJS.SHA1(msg).toString();
+      document.getElementById('h-sha256').textContent = CryptoJS.SHA256(msg).toString();
+      document.getElementById('h-sha512').textContent = CryptoJS.SHA512(msg).toString();
+    }
+
+    function copyEl(id) {
+      const el = document.getElementById(id);
+      const text = el.textContent || el.value;
+      navigator.clipboard.writeText(text);
+    }
+
+    function genUUIDs() {
+      const ids = Array.from({length:5}, () => {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+          const r = Math.random()*16|0, v = c==='x'?r:(r&0x3|0x8);
+          return v.toString(16);
+        });
+      });
+      const ul = document.getElementById('uuid-list');
+      ul.innerHTML = ids.map(id => `<div><span>${id}</span><button class="copy-btn" onclick="navigator.clipboard.writeText('${id}')">copy</button></div>`).join('');
+      document.getElementById('uuid-list-text').textContent = ids.join('\n');
+    }
+
+    function encodeB64() {
+      try { document.getElementById('b64-out').value = btoa(unescape(encodeURIComponent(document.getElementById('b64-in').value))); }
+      catch(e) { document.getElementById('b64-out').value = 'Error: '+e.message; }
+    }
+    function decodeB64() {
+      try { document.getElementById('b64-dec-out').value = decodeURIComponent(escape(atob(document.getElementById('b64-dec-in').value.trim()))); }
+      catch(e) { document.getElementById('b64-dec-out').value = 'Error: '+e.message; }
+    }
+
+    function aesEncrypt() {
+      const key = document.getElementById('aes-key').value;
+      const plain = document.getElementById('aes-plain').value;
+      if (!key) return;
+      document.getElementById('aes-cipher').value = CryptoJS.AES.encrypt(plain, key).toString();
+    }
+    function aesDecrypt() {
+      const key = document.getElementById('aes-key').value;
+      const cipher = document.getElementById('aes-cipher-in').value.trim();
+      if (!key || !cipher) return;
+      try {
+        const bytes = CryptoJS.AES.decrypt(cipher, key);
+        document.getElementById('aes-plain-out').value = bytes.toString(CryptoJS.enc.Utf8) || 'Decryption failed (wrong key?)';
+      } catch(e) { document.getElementById('aes-plain-out').value = 'Error: '+e.message; }
+    }
+
+    hashAll();
+    genUUIDs();
+  </script>
+</body>
+</html>

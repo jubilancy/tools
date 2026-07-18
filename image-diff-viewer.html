@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image Diff Viewer | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pixelmatch/5.3.0/index.js"></script>
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    button.danger {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+      .upload-pair {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+    /* Tool-specific styles */
+    .upload-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .dropzone {
+      border: 2px dashed var(--puny);
+      border-radius: 4px;
+      padding: 1.5rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 150ms;
+    }
+
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: var(--accent);
+      background-color: var(--hover);
+    }
+
+    .dropzone input {
+      display: none;
+    }
+
+    .dropzone img {
+      max-width: 100%;
+      max-height: 120px;
+      margin-top: 0.5rem;
+      border-radius: 4px;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .slider-row input[type="range"] {
+      flex: 1;
+      width: auto;
+      padding: 0;
+      border: none;
+      accent-color: var(--accent);
+    }
+
+    .slider-value {
+      min-width: 3.5rem;
+      text-align: right;
+      font-size: 0.9rem;
+      color: var(--puny);
+    }
+
+    #preview-wrap {
+      display: none;
+    }
+
+    #preview-wrap.show {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .slider-compare {
+      position: relative;
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      cursor: ew-resize;
+      user-select: none;
+    }
+
+    .slider-compare canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .slider-compare .top-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .slider-compare .top-layer canvas {
+      height: 100%;
+    }
+
+    .slider-handle {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--accent);
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    .slider-handle::after {
+      content: '⟷';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--accent);
+      color: var(--bg);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    .diff-canvas-wrap {
+      width: 100%;
+      overflow: auto;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      background: repeating-conic-gradient(var(--hover) 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+    }
+
+    #diff-canvas {
+      display: block;
+      max-width: 100%;
+    }
+
+    canvas.hidden {
+      display: none;
+    }
+
+    .stat-row {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      font-size: 0.9rem;
+    }
+
+    .stat .num {
+      font-weight: bold;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Image Diff Viewer</h1>
+    <p class="puny">Compare two images side-by-side with a draggable split slider and highlight pixel-level differences.</p>
+
+    <div class="container">
+      <div class="upload-pair">
+        <div class="input-group">
+          <span class="input-label">Image A (before)</span>
+          <div class="dropzone" id="dropzone-a">
+            <p>Drop or click to upload</p>
+            <img id="preview-a" style="display:none" alt="Image A preview" />
+            <input type="file" id="file-input-a" accept="image/*" />
+          </div>
+        </div>
+        <div class="input-group">
+          <span class="input-label">Image B (after)</span>
+          <div class="dropzone" id="dropzone-b">
+            <p>Drop or click to upload</p>
+            <img id="preview-b" style="display:none" alt="Image B preview" />
+            <input type="file" id="file-input-b" accept="image/*" />
+          </div>
+        </div>
+      </div>
+
+      <div id="preview-wrap">
+        <div class="input-group">
+          <span class="input-label">Split slider comparison</span>
+          <div class="slider-compare" id="slider-compare">
+            <canvas id="canvas-bottom"></canvas>
+            <div class="top-layer" id="top-layer">
+              <canvas id="canvas-top"></canvas>
+            </div>
+            <div class="slider-handle" id="slider-handle"></div>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">Sensitivity</span>
+          <div class="slider-row">
+            <input type="range" id="sensitivity-slider" min="0" max="1" value="0.1" step="0.01" />
+            <span class="slider-value" id="sensitivity-value">0.10</span>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">Pixel diff map</span>
+          <div class="diff-canvas-wrap">
+            <canvas id="diff-canvas"></canvas>
+          </div>
+          <div class="stat-row">
+            <span class="stat">Different pixels: <span class="num" id="diff-count">—</span></span>
+            <span class="stat">Difference: <span class="num" id="diff-percent">—</span></span>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="recompute-btn">Recompute diff</button>
+          <button id="download-btn">Download diff PNG</button>
+          <button class="danger" id="reset-btn">Reset</button>
+        </div>
+      </div>
+
+      <canvas id="hidden-a" class="hidden"></canvas>
+      <canvas id="hidden-b" class="hidden"></canvas>
+
+      <div class="info-box">
+        <strong>Tip:</strong> Drag the handle on the split slider to reveal each version. Images must be the same dimensions for pixel diffing — they'll be auto-resized to match image A if not. Lower sensitivity catches more subtle changes.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool-specific script -->
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    }
+
+    const MAX_DIM = 800;
+    let imgA = null, imgB = null;
+
+    function setupDropzone(zoneId, inputId, previewId, onLoad) {
+      const zone = document.getElementById(zoneId);
+      const input = document.getElementById(inputId);
+      const preview = document.getElementById(previewId);
+
+      zone.addEventListener('click', () => input.click());
+      zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) loadFile(file);
+      });
+      input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) loadFile(file);
+      });
+
+      function loadFile(file) {
+        if (!file.type.startsWith('image/')) {
+          showStatus('Please upload an image file.', 'error');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            onLoad(img);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    setupDropzone('dropzone-a', 'file-input-a', 'preview-a', (img) => {
+      imgA = img;
+      maybeRender();
+    });
+    setupDropzone('dropzone-b', 'file-input-b', 'preview-b', (img) => {
+      imgB = img;
+      maybeRender();
+    });
+
+    const canvasTop = document.getElementById('canvas-top');
+    const canvasBottom = document.getElementById('canvas-bottom');
+    const topLayer = document.getElementById('top-layer');
+    const sliderCompare = document.getElementById('slider-compare');
+    const sliderHandle = document.getElementById('slider-handle');
+    const diffCanvas = document.getElementById('diff-canvas');
+    const hiddenA = document.getElementById('hidden-a');
+    const hiddenB = document.getElementById('hidden-b');
+
+    function maybeRender() {
+      if (!imgA || !imgB) return;
+      let w = imgA.width, h = imgA.height;
+      if (w > MAX_DIM || h > MAX_DIM) {
+        const scale = MAX_DIM / Math.max(w, h);
+        w = Math.round(w * scale);
+        h = Math.round(h * scale);
+      }
+
+      [canvasTop, canvasBottom, diffCanvas, hiddenA, hiddenB].forEach((c) => {
+        c.width = w;
+        c.height = h;
+      });
+
+      const ctxBottom = canvasBottom.getContext('2d');
+      const ctxTop = canvasTop.getContext('2d');
+      ctxBottom.drawImage(imgA, 0, 0, w, h);
+      ctxTop.drawImage(imgB, 0, 0, w, h);
+
+      topLayer.style.width = '50%';
+      sliderHandle.style.left = '50%';
+
+      document.getElementById('preview-wrap').classList.add('show');
+      computeDiff();
+      showStatus('Both images loaded.', 'success');
+    }
+
+    let isDragging = false;
+    sliderCompare.addEventListener('mousedown', () => { isDragging = true; });
+    window.addEventListener('mouseup', () => { isDragging = false; });
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      updateSlider(e.clientX);
+    });
+    sliderCompare.addEventListener('touchstart', () => { isDragging = true; });
+    window.addEventListener('touchend', () => { isDragging = false; });
+    sliderCompare.addEventListener('touchmove', (e) => {
+      if (e.touches[0]) updateSlider(e.touches[0].clientX);
+    });
+    sliderCompare.addEventListener('click', (e) => updateSlider(e.clientX));
+
+    function updateSlider(clientX) {
+      const rect = sliderCompare.getBoundingClientRect();
+      let pct = ((clientX - rect.left) / rect.width) * 100;
+      pct = Math.max(0, Math.min(100, pct));
+      topLayer.style.width = pct + '%';
+      sliderHandle.style.left = pct + '%';
+    }
+
+    function computeDiff() {
+      if (!imgA || !imgB) return;
+      const w = canvasBottom.width, h = canvasBottom.height;
+      const ctxA = hiddenA.getContext('2d', { willReadFrequently: true });
+      const ctxB = hiddenB.getContext('2d', { willReadFrequently: true });
+      ctxA.drawImage(imgA, 0, 0, w, h);
+      ctxB.drawImage(imgB, 0, 0, w, h);
+
+      const dataA = ctxA.getImageData(0, 0, w, h);
+      const dataB = ctxB.getImageData(0, 0, w, h);
+      const diffCtx = diffCanvas.getContext('2d');
+      const diffData = diffCtx.createImageData(w, h);
+
+      const threshold = parseFloat(document.getElementById('sensitivity-slider').value);
+      const numDiff = pixelmatch(dataA.data, dataB.data, diffData.data, w, h, { threshold, diffColor: [255, 0, 100] });
+
+      diffCtx.putImageData(diffData, 0, 0);
+      document.getElementById('diff-count').textContent = numDiff.toLocaleString();
+      document.getElementById('diff-percent').textContent = ((numDiff / (w * h)) * 100).toFixed(2) + '%';
+    }
+
+    document.getElementById('sensitivity-slider').addEventListener('input', (e) => {
+      document.getElementById('sensitivity-value').textContent = parseFloat(e.target.value).toFixed(2);
+    });
+
+    document.getElementById('recompute-btn').addEventListener('click', () => {
+      if (!imgA || !imgB) {
+        showStatus('Upload both images first.', 'error');
+        return;
+      }
+      computeDiff();
+      showStatus('Diff recomputed.', 'success');
+    });
+
+    document.getElementById('download-btn').addEventListener('click', () => {
+      if (!imgA || !imgB) {
+        showStatus('Upload both images first.', 'error');
+        return;
+      }
+      diffCanvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'image-diff.png';
+        a.click();
+        URL.revokeObjectURL(url);
+        showStatus('Downloaded image-diff.png', 'success');
+      });
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      imgA = null;
+      imgB = null;
+      document.getElementById('preview-wrap').classList.remove('show');
+      document.getElementById('preview-a').style.display = 'none';
+      document.getElementById('preview-b').style.display = 'none';
+      document.getElementById('file-input-a').value = '';
+      document.getElementById('file-input-b').value = '';
+      showStatus('Reset.', 'success');
+    });
+  </script>
+</body>
+</html>

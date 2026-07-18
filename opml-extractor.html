@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OPML Extractor | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea, input[type="text"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea { min-height: 180px; resize: vertical; }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show { display: block; }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--puny);
+      border-radius: 4px;
+      padding: 2rem;
+      text-align: center;
+      color: var(--puny);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 150ms;
+    }
+
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--highlight);
+    }
+
+    #output-section { display: none; }
+    #output-urls { min-height: 200px; font-size: 0.85rem; }
+
+    .step { display: none; }
+    .step.active { display: block; }
+
+    @media (max-width: 600px) {
+      .button-group { flex-direction: column; }
+      button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>OPML Extractor</h1>
+    <p class="puny">extract all feed URLs from an OPML file into a plain text list</p>
+
+    <div class="container">
+
+      <!-- Step 1: Input -->
+      <div id="step-input" class="step active">
+        <div class="input-group">
+          <label class="input-label">upload opml file</label>
+          <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+            drop an .opml file here, or click to browse
+          </div>
+          <input type="file" id="file-input" accept=".opml,.xml" style="display:none" />
+        </div>
+
+        <div style="margin: 1rem 0; color: var(--puny); font-size: 0.85rem;">— or paste raw XML —</div>
+
+        <div class="input-group">
+          <textarea id="raw-input" placeholder="paste OPML XML here..."></textarea>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" onclick="extract()">extract URLs</button>
+          <button onclick="clearAll()">clear</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Output -->
+      <div id="step-output" class="step">
+        <p class="puny" id="extract-count"></p>
+        <div class="input-group">
+          <label class="input-label">extracted URLs (one per line)</label>
+          <textarea id="output-urls" readonly></textarea>
+        </div>
+        <div class="button-group">
+          <button class="primary" onclick="copyURLs()">copy to clipboard</button>
+          <button onclick="downloadTxt()">download .txt</button>
+          <button onclick="openInGenerator()">open in generator →</button>
+          <button onclick="goBack()">← back to input</button>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>tip:</strong> extracted URLs are one per line, ready to paste into the <a href="opml-generator.html">generator</a> or a text editor.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 3000);
+    }
+
+    // Drag and drop
+    const dropZone = document.getElementById('drop-zone');
+
+    dropZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) readFile(file);
+    });
+
+    document.getElementById('file-input').addEventListener('change', e => {
+      if (e.target.files[0]) readFile(e.target.files[0]);
+      e.target.value = '';
+    });
+
+    function readFile(file) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        document.getElementById('raw-input').value = ev.target.result;
+        extract();
+      };
+      reader.readAsText(file);
+    }
+
+    function extract() {
+      const raw = document.getElementById('raw-input').value.trim();
+      if (!raw) {
+        showStatus('nothing to extract — upload a file or paste XML', 'error');
+        return;
+      }
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(raw, 'text/xml');
+      const outlines = doc.querySelectorAll('outline[xmlUrl]');
+
+      if (outlines.length === 0) {
+        showStatus('no feed URLs found in this OPML', 'error');
+        return;
+      }
+
+      const urls = [...new Set(Array.from(outlines).map(o => o.getAttribute('xmlUrl')))];
+      document.getElementById('output-urls').value = urls.join('\n');
+      document.getElementById('extract-count').textContent = `${urls.length} URL(s) extracted`;
+
+      document.getElementById('step-input').classList.remove('active');
+      document.getElementById('step-output').classList.add('active');
+      showStatus(`extracted ${urls.length} URL(s)`);
+    }
+
+    function goBack() {
+      document.getElementById('step-output').classList.remove('active');
+      document.getElementById('step-input').classList.add('active');
+    }
+
+    function clearAll() {
+      document.getElementById('raw-input').value = '';
+      document.getElementById('output-urls').value = '';
+      goBack();
+    }
+
+    function copyURLs() {
+      const content = document.getElementById('output-urls').value;
+      navigator.clipboard.writeText(content).then(() => {
+        showStatus('copied to clipboard');
+      });
+    }
+
+    function downloadTxt() {
+      const content = document.getElementById('output-urls').value;
+      const blob = new Blob([content], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'feed-urls.txt';
+      a.click();
+      showStatus('downloaded as feed-urls.txt');
+    }
+
+    function openInGenerator() {
+      const content = document.getElementById('output-urls').value;
+      sessionStorage.setItem('opml-urls-transfer', content);
+      window.location.href = 'opml-generator.html';
+    }
+  </script>
+</body>
+</html>

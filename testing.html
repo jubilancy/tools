@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Test Page | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container { max-width: 900px; margin: 0 auto; }
+    .test-section { padding: 1.5rem; background: var(--hover); border-left: 3px solid var(--accent); border-radius: 4px; margin: 1.5rem 0; }
+    .test-title { font-weight: bold; font-size: 1.05rem; color: var(--accent); margin-bottom: 1rem; }
+    .test-item { margin: 0.75rem 0; padding: 0.75rem; background: var(--bg); border: 1px solid var(--puny); border-radius: 4px; }
+    .test-result { font-size: 0.85rem; margin-top: 0.5rem; }
+    .test-pass { color: #10b981; }
+    .test-fail { color: #ef4444; }
+    .button-group { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 1rem 0; }
+    button { padding: 10px 15px; cursor: pointer; font-family: monospace; border: 1px solid var(--text); background: var(--bg); color: var(--text); border-radius: 4px; transition: all 150ms; }
+    button:hover { background-color: var(--hover); border-color: var(--accent); }
+    button.primary { border-color: var(--accent); font-weight: bold; color: var(--accent); }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> | <a href="credits.html">credits</a> | <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+      <h1>Testing Page</h1>
+      <p class="puny">Test various features and functionality.</p>
+
+      <div class="test-section">
+        <div class="test-title">🎨 Theme Toggle</div>
+        <div class="test-item">
+          Click the [theme] button in the top-right to toggle between light and dark modes.
+          <div class="test-result pass">✓ Current theme: <span id="currentTheme"></span></div>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <div class="test-title">📋 Copy to Clipboard</div>
+        <div class="test-item">
+          <button onclick="testCopy()">Test Copy</button>
+          <div class="test-result" id="copyResult"></div>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <div class="test-title">🔗 Browser Features</div>
+        <div class="test-item">
+          <strong>localStorage:</strong>
+          <button onclick="testLocalStorage()">Test localStorage</button>
+          <div class="test-result" id="storageResult"></div>
+        </div>
+        <div class="test-item">
+          <strong>Fetch API:</strong>
+          <button onclick="testFetch()">Test Fetch</button>
+          <div class="test-result" id="fetchResult"></div>
+        </div>
+        <div class="test-item">
+          <strong>DOMParser:</strong>
+          <button onclick="testParser()">Test XML Parse</button>
+          <div class="test-result" id="parserResult"></div>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <div class="test-title">🧪 Tool Features</div>
+        <div class="test-item">
+          <strong>Text Processing:</strong>
+          <button onclick="testTextProcessing()">Test Text Split</button>
+          <div class="test-result" id="textResult"></div>
+        </div>
+        <div class="test-item">
+          <strong>URL Processing:</strong>
+          <button onclick="testURLProcessing()">Test URL Parse</button>
+          <div class="test-result" id="urlResult"></div>
+        </div>
+        <div class="test-item">
+          <strong>Color Conversion:</strong>
+          <button onclick="testColorConversion()">Test Hex Convert</button>
+          <div class="test-result" id="colorResult"></div>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <div class="test-title">📊 CSS Variables</div>
+        <div class="test-item">
+          <button onclick="testCSSVars()">Test CSS Variables</button>
+          <div class="test-result" id="cssResult"></div>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <div class="test-title">🔄 Overall Status</div>
+        <div class="test-item">
+          <button onclick="runAllTests()" class="primary">Run All Tests</button>
+          <div class="test-result" id="overallResult"></div>
+        </div>
+      </div>
+
+      <hr style="margin: 2rem 0; border: none; border-top: 1px dashed var(--puny);" />
+
+      <h2>Test Results Log</h2>
+      <textarea id="log" readonly style="width: 100%; height: 200px; font-family: monospace; font-size: 0.85rem; padding: 1rem; border: 1px solid var(--puny); background: var(--bg); color: var(--text); border-radius: 4px; box-sizing: border-box;"></textarea>
+
+      <p class="puny" style="text-align: center; margin-top: 2rem;">
+        This page helps verify that all features are working correctly in your browser.
+      </p>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+
+    // Update current theme display
+    document.getElementById('currentTheme').textContent = saved;
+
+    const logEl = document.getElementById('log');
+    function log(message) {
+      logEl.value += message + '\n';
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function testCopy() {
+      const testText = 'This is a test copy!';
+      navigator.clipboard.writeText(testText).then(() => {
+        document.getElementById('copyResult').innerHTML = '<span class="test-pass">✓ Copy works! Check your clipboard.</span>';
+        log('[PASS] Clipboard API works');
+      }).catch(e => {
+        document.getElementById('copyResult').innerHTML = '<span class="test-fail">✗ Copy failed: ' + e.message + '</span>';
+        log('[FAIL] Clipboard API: ' + e.message);
+      });
+    }
+
+    function testLocalStorage() {
+      try {
+        localStorage.setItem('test', 'works');
+        const value = localStorage.getItem('test');
+        if (value === 'works') {
+          document.getElementById('storageResult').innerHTML = '<span class="test-pass">✓ localStorage works</span>';
+          log('[PASS] localStorage API works');
+          localStorage.removeItem('test');
+        } else {
+          throw new Error('Value mismatch');
+        }
+      } catch (e) {
+        document.getElementById('storageResult').innerHTML = '<span class="test-fail">✗ localStorage failed</span>';
+        log('[FAIL] localStorage: ' + e.message);
+      }
+    }
+
+    function testFetch() {
+      fetch('https://api.github.com')
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById('fetchResult').innerHTML = '<span class="test-pass">✓ Fetch works (got GitHub API)</span>';
+          log('[PASS] Fetch API works');
+        })
+        .catch(e => {
+          document.getElementById('fetchResult').innerHTML = '<span class="test-fail">✗ Fetch failed</span>';
+          log('[FAIL] Fetch: ' + e.message);
+        });
+    }
+
+    function testParser() {
+      try {
+        const xmlString = '<root><item>test</item></root>';
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(xmlString, 'text/xml');
+        const item = doc.querySelector('item');
+        if (item && item.textContent === 'test') {
+          document.getElementById('parserResult').innerHTML = '<span class="test-pass">✓ DOMParser works</span>';
+          log('[PASS] DOMParser XML parsing works');
+        } else {
+          throw new Error('Parse mismatch');
+        }
+      } catch (e) {
+        document.getElementById('parserResult').innerHTML = '<span class="test-fail">✗ Parser failed</span>';
+        log('[FAIL] DOMParser: ' + e.message);
+      }
+    }
+
+    function testTextProcessing() {
+      try {
+        const text = 'line1\nline2\nline3';
+        const lines = text.split('\n');
+        if (lines.length === 3) {
+          document.getElementById('textResult').innerHTML = '<span class="test-pass">✓ Text split works (3 lines)</span>';
+          log('[PASS] Text processing works');
+        } else {
+          throw new Error('Line count mismatch');
+        }
+      } catch (e) {
+        document.getElementById('textResult').innerHTML = '<span class="test-fail">✗ Text processing failed</span>';
+        log('[FAIL] Text processing: ' + e.message);
+      }
+    }
+
+    function testURLProcessing() {
+      try {
+        const url = 'https://example.com/path?query=value';
+        const urlObj = new URL(url);
+        if (urlObj.hostname === 'example.com') {
+          document.getElementById('urlResult').innerHTML = '<span class="test-pass">✓ URL parsing works</span>';
+          log('[PASS] URL parsing works');
+        } else {
+          throw new Error('URL mismatch');
+        }
+      } catch (e) {
+        document.getElementById('urlResult').innerHTML = '<span class="test-fail">✗ URL parsing failed</span>';
+        log('[FAIL] URL parsing: ' + e.message);
+      }
+    }
+
+    function testColorConversion() {
+      try {
+        const hex = '#ff6600';
+        const match = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (match && parseInt(match[1], 16) === 255) {
+          document.getElementById('colorResult').innerHTML = '<span class="test-pass">✓ Color conversion works</span>';
+          log('[PASS] Color conversion works');
+        } else {
+          throw new Error('Conversion mismatch');
+        }
+      } catch (e) {
+        document.getElementById('colorResult').innerHTML = '<span class="test-fail">✗ Color conversion failed</span>';
+        log('[FAIL] Color conversion: ' + e.message);
+      }
+    }
+
+    function testCSSVars() {
+      try {
+        const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--bg');
+        const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+        if (bgColor && accentColor) {
+          document.getElementById('cssResult').innerHTML = '<span class="test-pass">✓ CSS variables loaded</span>';
+          log('[PASS] CSS variables work (--bg, --accent, etc)');
+        } else {
+          throw new Error('Variable not found');
+        }
+      } catch (e) {
+        document.getElementById('cssResult').innerHTML = '<span class="test-fail">✗ CSS variables failed</span>';
+        log('[FAIL] CSS variables: ' + e.message);
+      }
+    }
+
+    function runAllTests() {
+      log('\n--- Running All Tests ---');
+      testCopy();
+      testLocalStorage();
+      testFetch();
+      testParser();
+      testTextProcessing();
+      testURLProcessing();
+      testColorConversion();
+      testCSSVars();
+      setTimeout(() => {
+        document.getElementById('overallResult').innerHTML = '<span class="test-pass">✓ Test suite completed! Check log below.</span>';
+        log('--- Test Suite Complete ---\n');
+      }, 1000);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>toolbox | tools.eliana.lol</title>
+    <link rel="stylesheet" href="global.css">
+    <link rel="icon" type="image/x-icon" href="favicon.svg">
+    <style>
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 8px;
+            margin-top: 1rem;
+        }
+        .tool-grid a {
+            border: 1px solid var(--puny);
+            padding: 8px 10px;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--puny);
+            display: block;
+        }
+        .tool-grid a:hover {
+            border-color: var(--text);
+            background: var(--hover);
+        }
+        .section-title {
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="left">
+            <a href="index.html">home</a> |
+            <a href="extra.html">extra</a> |
+            <a href="credits.html">credits</a> |
+            <a href="changelog.html">logs</a>
+        </div>
+        <div class="right">
+            <button id="theme-toggle">[theme]</button> |
+            <a href="https://eliana.lol">site</a>
+        </div>
+    </nav>
+
+    <main>
+        <h1>Toolbox</h1>
+        <p class="puny">A collection of single-purpose utilities for the small web.</p>
+
+        <div class="changelog-marquee">
+            <strong>DIRECTORY:</strong> All tools and assets currently hosted at tools.eliana.lol.
+        </div>
+
+        <span class="section-title">📊 Data &amp; Text</span>
+        <div class="tool-grid">
+            <a href="batch-isbn-finder.html">Batch ISBN Finder</a>
+            <a href="book-list-cleaner.html">Book List Cleaner</a>
+            <a href="clean-text.html">Clean Text</a>
+            <a href="clean-text-test-1.html">Clean Text (test 1)</a>
+            <a href="csv-parser.html">CSV Parser</a>
+            <a href="csv-to-json.html">CSV to JSON</a>
+            <a href="diff-viewer.html">Diff Viewer</a>
+            <a href="full-text-search.html">Full-Text Search</a>
+            <a href="json5-validator.html">JSON5 Validator</a>
+            <a href="link-splitter.html">Link Splitter</a>
+            <a href="metadata-extractor.html">Metadata Extractor</a>
+            <a href="password-generator-test-1.html">Password Generator (test 1)</a>
+            <a href="regex-tester.html">Regex Tester</a>
+            <a href="Strip HTML & Formatting.html">Strip HTML &amp; Formatting</a>
+            <a href="toc-generator.html">TOC Generator</a>
+            <a href="url-categorizer-test-1.html">URL Categorizer (test 1)</a>
+            <a href="url-cleaner.html">URL Cleaner</a>
+            <a href="url-cleaner-test-1.html">URL Cleaner (test 1)</a>
+            <a href="yaml-json.html">YAML ↔ JSON</a>
+        </div>
+
+        <span class="section-title">🔗 URLs &amp; Feeds</span>
+        <div class="tool-grid">
+            <a href="Bulk-Hyperlink-Generator.html">Bulk Hyperlink Generator</a>
+            <a href="bulk-rss-finder.html">Bulk RSS Finder</a>
+            <a href="bulk-url.html">Bulk URL</a>
+            <a href="Feed Finder.html">Feed Finder</a>
+            <a href="OPML-Converter.html">OPML Converter</a>
+            <a href="rss-reader.html">RSS Reader</a>
+            <a href="rss-to-markdown.html">RSS to Markdown</a>
+            <a href="sitemap-explorer.html">Sitemap Explorer</a>
+        </div>
+
+        <span class="section-title">📝 Writing &amp; Markdown</span>
+        <div class="tool-grid">
+            <a href="ascii-art.html">ASCII Art Generator</a>
+            <a href="code-cleaner.html">Code Cleaner</a>
+            <a href="code-editor.html">Code Editor</a>
+            <a href="code-formatter.html">Code Formatter</a>
+            <a href="html-template.html">HTML Template Engine</a>
+            <a href="markdown-preview.html">Markdown Preview</a>
+            <a href="paste-markdown.html">Paste Markdown</a>
+            <a href="turndown.html">Turndown</a>
+            <a href="widget-generator.html">Widget Generator</a>
+            <a href="demo/claude-markdown-it.html">Claude Markdown It</a>
+            <a href="demo/Convert URL to MarkDown.html">Convert URL to Markdown</a>
+            <a href="demo/jinja-markdown-it.html">Jinja Markdown It</a>
+            <a href="demo/markdown-it.html">Markdown It</a>
+        </div>
+
+        <span class="section-title">📈 Visualization &amp; Diagrams</span>
+        <div class="tool-grid">
+            <a href="color-palette.html">Color Palette</a>
+            <a href="data-charts.html">Data Charts</a>
+            <a href="diagram-editor.html">Diagram Editor</a>
+            <a href="hex-visualizer.html">Hex Visualizer</a>
+            <a href="hex-visualizer-test-1.html">Hex Visualizer (test 1)</a>
+            <a href="sketchy-graphics.html">Sketchy Graphics</a>
+        </div>
+
+        <span class="section-title">🖼️ Image Tools</span>
+        <div class="tool-grid">
+            <a href="ascii-art-converter.html">ASCII Art Converter</a>
+            <a href="Bulk_Image_Formatter.html">Bulk Image Formatter</a>
+            <a href="chromatic-aberration-fx.html">Chromatic Aberration FX</a>
+            <a href="dithering-engine.html">Dithering Engine</a>
+            <a href="halftone-generator.html">Halftone Generator</a>
+            <a href="image-diff-viewer.html">Image Diff Viewer</a>
+            <a href="image-grid-generator.html">Image Grid Generator</a>
+            <a href="image-histogram-analyzer.html">Image Histogram Analyzer</a>
+            <a href="image-palette-extractor.html">Image Palette Extractor</a>
+            <a href="image-to-svg-tracer.html">Image to SVG Tracer</a>
+            <a href="image-tools.html">Image Tools</a>
+            <a href="mosaic-tile-maker.html">Mosaic / Tile Maker</a>
+            <a href="pixel-sort-glitch.html">Pixel Sort Glitch</a>
+            <a href="sprite-sheet-packer.html">Sprite Sheet Packer</a>
+            <a href="steganography-encoder.html">Steganography Encoder</a>
+        </div>
+
+        <span class="section-title">📦 Files &amp; Media</span>
+        <div class="tool-grid">
+            <a href="barcode.html">Barcode Generator</a>
+            <a href="ocr.html">OCR / Text Recognition</a>
+            <a href="qr-generator.html">QR Generator</a>
+            <a href="zip-files.html">ZIP Files</a>
+        </div>
+
+        <span class="section-title">⚡ Interactive &amp; Utility</span>
+        <div class="tool-grid">
+            <a href="animation-playground.html">Animation Playground</a>
+            <a href="canvas-playground.html">Canvas Playground</a>
+            <a href="confetti.html">Confetti</a>
+            <a href="css-units.html">CSS Units</a>
+            <a href="dates.html">Date Tools</a>
+            <a href="drag-drop.html">Drag &amp; Drop Lists</a>
+            <a href="emoji-organizer.html">Emoji Organizer</a>
+            <a href="hash-crypto.html">Hash &amp; Crypto</a>
+            <a href="maps-playground.html">Maps Playground</a>
+            <a href="math.html">Advanced Math</a>
+            <a href="offline-dictionary.html">Dictionary &amp; Thesaurus</a>
+            <a href="reactive.html">Reactive Components</a>
+            <a href="unit-converter.html">Unit Converter</a>
+        </div>
+
+        <span class="section-title">📁 Site pages</span>
+        <div class="tool-grid">
+            <a href="changelog.html">Changelog</a>
+            <a href="credits.html">Credits</a>
+            <a href="extra.html">Extra</a>
+            <a href="guestbook-idea.html">Guestbook Idea</a>
+            <a href="guestbook-idea2.html">Guestbook Idea 2</a>
+            <a href="test.html">Test Page</a>
+        </div>
+
+        <span class="section-title">more!</span>
+        <div class="tool-grid">
+            <a href="https://tools.eliana.lol/AI_Chat_Exporter.html">Ai_Chat_Exporter</a>
+<a href="https://tools.eliana.lol/Bits_and_Bobs.html">Bits_And_Bobs</a>
+<a href="https://tools.eliana.lol/Convert%20URL%20to%20MarkDown.html">Convert Url To Markdown</a>
+<a href="https://tools.eliana.lol/README.md">Readme.Md</a>
+<a href="https://tools.eliana.lol/Strip%20HTML%20%26%20Formatting.html">Strip Html %26 Formatting</a>
+<a href="https://tools.eliana.lol/XSLT_Viewer.html">Xslt_Viewer</a>
+<a href="https://tools.eliana.lol/ar-marker-viewer.html">Ar Marker Viewer</a>
+<a href="https://tools.eliana.lol/browser-synth.html">Browser Synth</a>
+<a href="https://tools.eliana.lol/claude-markdown-it.html">Claude Markdown It</a>
+<a href="https://tools.eliana.lol/codemirror.html">Codemirror</a>
+<a href="https://tools.eliana.lol/face-detector.html">Face Detector</a>
+<a href="https://tools.eliana.lol/faq.html">Faq</a>
+<a href="https://tools.eliana.lol/favicon.svg">Favicon.Svg</a>
+<a href="https://tools.eliana.lol/github-stars.html">Github Stars</a>
+<a href="https://tools.eliana.lol/global.css">Global.Css</a>
+<a href="https://tools.eliana.lol/goodreads-widget.html">Goodreads Widget</a>
+<a href="https://tools.eliana.lol/image-vision-lab.html">Image Vision Lab</a>
+<a href="https://tools.eliana.lol/imagestitch.html">Imagestitch</a>
+<a href="https://tools.eliana.lol/index.html">Index</a>
+<a href="https://tools.eliana.lol/jinja-markdown-it.html">Jinja Markdown It</a>
+<a href="https://tools.eliana.lol/letterboxd-widget.html">Letterboxd Widget</a>
+<a href="https://tools.eliana.lol/markdown-it.html">Markdown It</a>
+<a href="https://tools.eliana.lol/music-embeds.html">Music Embeds</a>
+<a href="https://tools.eliana.lol/ocr-image-to-text.html">Ocr Image To Text</a>
+<a href="https://tools.eliana.lol/particle-launcher.html">Particle Launcher</a>
+<a href="https://tools.eliana.lol/pixel-size-calculator.html">Pixel Size Calculator</a>
+<a href="https://tools.eliana.lol/rich-text-editor.html">Rich Text Editor</a>
+<a href="https://tools.eliana.lol/rough-sketch.html">Rough Sketch</a>
+<a href="https://tools.eliana.lol/rss-widget-generator.html">Rss Widget Generator</a>
+<a href="https://tools.eliana.lol/soundboard.html">Soundboard</a>
+<a href="https://tools.eliana.lol/stackedit-embed.html">Stackedit Embed</a>
+<a href="https://tools.eliana.lol/svelte-jsoneditor.html">Svelte Jsoneditor</a>
+<a href="https://tools.eliana.lol/syntax-highlighter.html">Syntax Highlighter</a>
+<a href="https://tools.eliana.lol/testing.html">Testing</a>
+<a href="https://tools.eliana.lol/url-parser.html">Url Parser</a>
+<a href="https://tools.eliana.lol/vanta-backgrounds.html">Vanta Backgrounds</a>
+<a href="https://tools.eliana.lol/voice-to-text.html">Voice To Text</a>
+<a href="https://tools.eliana.lol/vr-scene-builder.html">Vr Scene Builder</a>
+<a href="https://tools.eliana.lol/websocket-message-inspector.html">Websocket Message Inspector</a>
+<a href="https://tools.eliana.lol/zindex-stacking-visualizer.html">Zindex Stacking Visualizer</a>
+            
+        </div>
+    </main>
+
+    <footer style="margin-top: 4rem; text-align: center;" class="puny">
+        © 2026 eliana.lol • built with intent
+    </footer>
+
+    <script>
+        const html = document.documentElement;
+        const toggle = document.getElementById('theme-toggle');
+        const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        html.setAttribute('data-theme', saved);
+        if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+        if (toggle) {
+            toggle.onclick = () => {
+                const now = html.getAttribute('data-theme');
+                const next = now === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+                toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+            };
+        }
+    </script>
+</body>
+</html>

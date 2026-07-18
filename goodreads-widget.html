@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Goodreads Widget Builder | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.5/purify.min.js"></script>
+  <style>
+    .container { display: flex; flex-direction: column; gap: 1.5rem; }
+    .input-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .input-label { font-size: 0.85rem; font-weight: bold; text-transform: uppercase; color: var(--puny); letter-spacing: 0.05em; }
+    .button-group { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    button { padding: 8px 14px; cursor: pointer; font-family: monospace; font-size: 0.9rem; border: 1px solid var(--text); background: var(--bg); color: var(--text); transition: all 100ms; }
+    button:hover { background-color: var(--hover); border-color: var(--accent); }
+    button.primary { border-color: var(--accent); font-weight: bold; color: var(--accent); }
+    textarea, input[type="text"], input[type="number"], select {
+      width: 100%; font-family: monospace; padding: 8px 10px;
+      border: 1px solid var(--puny); background: var(--bg); color: var(--text);
+      box-sizing: border-box; font-size: 0.9rem;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+    .status { padding: 0.6rem 1rem; display: none; font-size: 0.85rem; }
+    .status.show { display: block; }
+    .status.success { background: rgba(16,185,129,0.1); border-left: 3px solid var(--accent); color: var(--accent); }
+    .status.error { background: rgba(239,68,68,0.1); border-left: 3px solid #ef4444; color: #ef4444; }
+    .info-box { padding: 0.75rem 1rem; background-color: var(--highlight); border-left: 3px solid var(--accent); font-size: 0.85rem; line-height: 1.6; }
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 600px) { .options-grid { grid-template-columns: 1fr; } }
+    .option-row { display: flex; flex-direction: column; gap: 0.3rem; }
+    .color-row { display: flex; align-items: center; gap: 0.5rem; }
+    .color-row input[type="text"] { flex: 1; }
+    input[type="color"] { width: 40px; height: 30px; padding: 1px; border: 1px solid var(--puny); background: none; cursor: pointer; }
+    .range-row { display: flex; align-items: center; gap: 0.5rem; }
+    .range-row input[type=range] { flex: 1; width: auto; padding: 0; border: none; accent-color: var(--accent); }
+    .range-val { font-size: 0.8rem; color: var(--puny); min-width: 2rem; text-align: right; }
+    .preview-wrap { border: 1px solid var(--puny); padding: 1rem; }
+    .preview-label { font-size: 0.75rem; color: var(--puny); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
+    .tabs { display: flex; border-bottom: 1px solid var(--puny); margin-bottom: 1.5rem; }
+    .tab { padding: 6px 16px; font-family: monospace; font-size: 0.85rem; cursor: pointer; border: 1px solid transparent; border-bottom: none; background: none; color: var(--puny); margin: 0; min-width: unset; }
+    .tab:hover { color: var(--text); background: var(--hover); border-color: transparent; }
+    .tab.active { color: var(--text); border-color: var(--puny); background: var(--bg); margin-bottom: -1px; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .code-output { font-family: monospace; font-size: 0.78rem; background: var(--highlight); padding: 1rem; overflow: auto; white-space: pre; border: 1px solid var(--puny); max-height: 380px; }
+
+    /* Shelf tabs inside widget */
+    .gr-shelf-tabs { display: flex; gap: 0; margin-bottom: 0.75em; flex-wrap: wrap; }
+    .gr-shelf-tab { font-family: inherit; font-size: 0.78em; padding: 3px 10px; cursor: pointer; border: 1px solid; margin: 0 2px 2px 0; }
+
+    /* Book cards */
+    .gr-grid { display: grid; gap: 0.75em; }
+    .gr-grid.layout-covers { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
+    .gr-grid.layout-list { grid-template-columns: 1fr; }
+    .gr-grid.layout-compact { grid-template-columns: 1fr; gap: 0.3em; }
+
+    .gr-card-cover { display: flex; flex-direction: column; gap: 0.3em; }
+    .gr-card-cover img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
+    .gr-card-cover .gr-title { font-size: 0.72em; font-weight: bold; line-height: 1.3; }
+    .gr-card-cover .gr-author { font-size: 0.65em; opacity: 0.5; }
+    .gr-card-cover .gr-stars { font-size: 0.78em; }
+    .gr-card-cover .gr-date { font-size: 0.62em; opacity: 0.4; }
+
+    .gr-card-list { display: flex; gap: 0.75em; align-items: flex-start; padding-bottom: 0.6em; }
+    .gr-card-list img { width: 56px; min-width: 56px; aspect-ratio: 2/3; object-fit: cover; }
+    .gr-card-list .gr-meta { flex: 1; }
+    .gr-card-list .gr-title { font-weight: bold; font-size: 0.9em; }
+    .gr-card-list .gr-author { font-size: 0.78em; opacity: 0.6; }
+    .gr-card-list .gr-stars { font-size: 0.85em; margin-top: 0.15em; }
+    .gr-card-list .gr-desc { font-size: 0.77em; opacity: 0.65; margin-top: 0.25em; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .gr-card-list .gr-shelf-badge { display: inline-block; font-size: 0.65em; padding: 1px 6px; margin-top: 0.2em; border: 1px solid; }
+
+    .gr-card-compact { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.85em; padding-bottom: 0.2em; }
+    .gr-card-compact .gr-title { font-weight: bold; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-right: 0.5em; }
+    .gr-card-compact .gr-right { display: flex; gap: 0.4em; align-items: baseline; white-space: nowrap; }
+    .gr-no-cover { background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 0.6em; color: #888; text-align: center; padding: 4px; }
+    .gr-footer { font-size: 0.7em; opacity: 0.4; text-align: right; margin-top: 0.75em; }
+    .gr-footer a { color: inherit; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> | <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Goodreads Widget Builder</h1>
+    <p class="puny">Import multiple Goodreads RSS shelves (currently-reading, read, to-read), fetch covers via Open Library, style the widget, download as a self-contained HTML file.</p>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('setup')">1. setup</button>
+      <button class="tab" onclick="switchTab('style')">2. style</button>
+      <button class="tab" onclick="switchTab('preview')">3. preview</button>
+      <button class="tab" onclick="switchTab('export')">4. export</button>
+    </div>
+
+    <!-- TAB 1: SETUP -->
+    <div class="tab-panel active" id="tab-setup">
+      <div class="container">
+
+        <div class="info-box">
+          Find your Goodreads user ID by going to your profile — the number in the URL (<code>goodreads.com/user/show/<strong>12345678</strong></code>). Your shelves must be set to <strong>public</strong> in your Goodreads privacy settings. Covers come from <strong>Open Library</strong> — completely free, no key.
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">Goodreads User ID</span>
+          <input type="text" id="gr-userid" placeholder="e.g. 12345678" oninput="updateURLs()" />
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">Shelves to include</span>
+          <div style="display:flex;flex-direction:column;gap:0.4rem;margin-top:0.25rem;">
+            <label style="font-size:0.85rem;display:flex;align-items:center;gap:0.5rem;">
+              <input type="checkbox" id="shelf-reading" checked onchange="updateURLs()" />
+              Currently reading
+              <span style="color:var(--puny);font-size:0.8rem;" id="url-reading"></span>
+            </label>
+            <label style="font-size:0.85rem;display:flex;align-items:center;gap:0.5rem;">
+              <input type="checkbox" id="shelf-read" onchange="updateURLs()" />
+              Read (recent)
+              <span style="color:var(--puny);font-size:0.8rem;" id="url-read"></span>
+            </label>
+            <label style="font-size:0.85rem;display:flex;align-items:center;gap:0.5rem;">
+              <input type="checkbox" id="shelf-toread" onchange="updateURLs()" />
+              Want to read
+              <span style="color:var(--puny);font-size:0.8rem;" id="url-toread"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">Books per shelf</span>
+          <div class="range-row">
+            <input type="range" id="opt-count" min="1" max="20" value="6"
+              oninput="this.nextElementSibling.textContent=this.value" />
+            <span class="range-val">6</span>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" onclick="fetchShelves()">[▶ fetch shelves]</button>
+          <button onclick="loadSampleData()">[load sample data]</button>
+        </div>
+        <div class="status" id="status-setup"></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: STYLE -->
+    <div class="tab-panel" id="tab-style">
+      <div class="container">
+        <div class="options-grid">
+
+          <div class="option-row">
+            <span class="input-label">Widget title</span>
+            <input type="text" id="opt-title" value="my bookshelf" oninput="renderPreview()" />
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Layout</span>
+            <select id="opt-layout" onchange="renderPreview()">
+              <option value="covers">Cover grid</option>
+              <option value="list">List with cover + details</option>
+              <option value="compact">Compact list</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Multi-shelf display</span>
+            <select id="opt-shelfdisplay" onchange="renderPreview()">
+              <option value="tabs">Tabs (switch between shelves)</option>
+              <option value="sections">Sections (stacked)</option>
+              <option value="merged">Merged (all together)</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Show author</span>
+            <select id="opt-author" onchange="renderPreview()">
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Show rating stars</span>
+            <select id="opt-stars" onchange="renderPreview()">
+              <option value="unicode">★★★★☆ (unicode)</option>
+              <option value="number">4 / 5</option>
+              <option value="none">None</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Show date added</span>
+            <select id="opt-dates" onchange="renderPreview()">
+              <option value="relative">Relative (3d ago)</option>
+              <option value="short">Short (Jun 23)</option>
+              <option value="none">None</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Show description</span>
+            <select id="opt-desc" onchange="renderPreview()">
+              <option value="yes">Yes (list layout only)</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Cover source</span>
+            <select id="opt-coversrc" onchange="renderPreview()">
+              <option value="openlibrary">Open Library (free, no key)</option>
+              <option value="rss">From RSS (if available)</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Font</span>
+            <select id="opt-font" onchange="renderPreview()">
+              <option value="monospace">Monospace</option>
+              <option value="sans-serif">Sans-serif</option>
+              <option value="serif">Serif</option>
+              <option value="'Georgia', serif">Georgia</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Max width</span>
+            <select id="opt-width" onchange="renderPreview()">
+              <option value="100%">Full width</option>
+              <option value="640px">640px</option>
+              <option value="480px">480px</option>
+              <option value="360px">360px (sidebar)</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Accent color</span>
+            <div class="color-row">
+              <input type="color" id="opt-accent-pick" value="#8B5E3C"
+                oninput="document.getElementById('opt-accent').value=this.value;renderPreview()" />
+              <input type="text" id="opt-accent" value="#8B5E3C"
+                oninput="document.getElementById('opt-accent-pick').value=this.value;renderPreview()" />
+            </div>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Background</span>
+            <div class="color-row">
+              <input type="color" id="opt-bg-pick" value="#faf8f5"
+                oninput="document.getElementById('opt-bg').value=this.value;renderPreview()" />
+              <input type="text" id="opt-bg" value="#faf8f5"
+                oninput="document.getElementById('opt-bg-pick').value=this.value;renderPreview()" />
+            </div>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Text color</span>
+            <div class="color-row">
+              <input type="color" id="opt-text-pick" value="#2c2c2c"
+                oninput="document.getElementById('opt-text').value=this.value;renderPreview()" />
+              <input type="text" id="opt-text" value="#2c2c2c"
+                oninput="document.getElementById('opt-text-pick').value=this.value;renderPreview()" />
+            </div>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Link books to Goodreads</span>
+            <select id="opt-link" onchange="renderPreview()">
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="button-group">
+          <button onclick="switchTab('setup')">[ ← back]</button>
+          <button class="primary" onclick="switchTab('preview')">[next: preview →]</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: PREVIEW -->
+    <div class="tab-panel" id="tab-preview">
+      <div class="container">
+        <div class="info-box">
+          Covers load from Open Library by ISBN or title. Some books may not have covers available.
+        </div>
+        <div class="button-group">
+          <button class="primary" onclick="renderPreview()">[↻ refresh preview]</button>
+          <button onclick="fetchShelves()">[↺ re-fetch shelves]</button>
+          <button onclick="switchTab('export')">[next: export →]</button>
+        </div>
+        <div class="preview-wrap">
+          <div class="preview-label">preview</div>
+          <div id="widget-preview">
+            <span style="color:var(--puny);font-size:0.85rem;">Fetch your shelves first in the Setup tab.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: EXPORT -->
+    <div class="tab-panel" id="tab-export">
+      <div class="container">
+        <div class="info-box">
+          Self-contained HTML file — fetches your Goodreads RSS live on every page load. Drop it anywhere or embed via iframe. All covers served free from Open Library.
+        </div>
+        <div class="button-group">
+          <button class="primary" onclick="downloadWidget()">[↓ download widget.html]</button>
+          <button onclick="copyCode()">[copy code]</button>
+        </div>
+        <div class="input-group">
+          <span class="input-label">Generated code</span>
+          <div class="code-output" id="code-output"><!-- generate first --></div>
+        </div>
+        <div class="status" id="status"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    // ── Theme toggle ──────────────────────────────────────────────
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+    };
+
+    // ── State ─────────────────────────────────────────────────────
+    // shelves: { reading: [...], read: [...], toread: [...] }
+    let shelves = {};
+    let activeShelf = 'reading';
+
+    // ── Tabs ──────────────────────────────────────────────────────
+    function switchTab(name) {
+      const names = ['setup','style','preview','export'];
+      document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', names[i] === name));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-'+name));
+      if (name === 'export') generateCode();
+    }
+
+    // ── URL preview ───────────────────────────────────────────────
+    function updateURLs() {
+      const id = document.getElementById('gr-userid').value.trim();
+      const shelvesDef = [
+        { id: 'reading', shelf: 'currently-reading', label: 'currently-reading' },
+        { id: 'read',    shelf: 'read',              label: 'read' },
+        { id: 'toread',  shelf: 'to-read',           label: 'to-read' },
+      ];
+      shelvesDef.forEach(s => {
+        const el = document.getElementById('url-' + s.id);
+        if (el) el.textContent = id ? `→ goodreads.com/review/list_rss/${id}?shelf=${s.shelf}` : '';
+      });
+    }
+
+    // ── Fetch all enabled shelves ─────────────────────────────────
+    async function fetchShelves() {
+      const id = document.getElementById('gr-userid').value.trim();
+      if (!id) { showStatus('Enter your Goodreads user ID.', 'error', 'status-setup'); return; }
+
+      const enabled = [
+        { key: 'reading', shelf: 'currently-reading', checked: document.getElementById('shelf-reading').checked },
+        { key: 'read',    shelf: 'read',              checked: document.getElementById('shelf-read').checked },
+        { key: 'toread',  shelf: 'to-read',           checked: document.getElementById('shelf-toread').checked },
+      ].filter(s => s.checked);
+
+      if (!enabled.length) { showStatus('Select at least one shelf.', 'error', 'status-setup'); return; }
+
+      const count = parseInt(document.getElementById('opt-count').value);
+      showStatus('Fetching shelves...', 'success', 'status-setup');
+      shelves = {};
+
+      await Promise.all(enabled.map(async s => {
+        try {
+          const rssUrl = `https://www.goodreads.com/review/list_rss/${id}?shelf=${s.shelf}`;
+          // rss2json.com — free, no key, handles CORS
+          const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=${count}`;
+          const res = await fetch(apiUrl);
+          const data = await res.json();
+          if (data.status !== 'ok') throw new Error(data.message || 'RSS failed');
+          shelves[s.key] = await Promise.all(data.items.slice(0, count).map(item => parseBook(item)));
+        } catch(e) {
+          shelves[s.key] = [];
+          console.warn('Shelf fetch error:', s.key, e.message);
+        }
+      }));
+
+      const total = Object.values(shelves).reduce((a,b) => a + b.length, 0);
+      if (!total) {
+        showStatus('No books found. Check your user ID and that shelves are public.', 'error', 'status-setup');
+        return;
+      }
+      showStatus(`Fetched ${total} books across ${Object.keys(shelves).length} shelf(ves)!`, 'success', 'status-setup');
+      activeShelf = Object.keys(shelves)[0];
+      renderPreview();
+      switchTab('style');
+    }
+
+    // ── Parse a book from RSS item ────────────────────────────────
+    async function parseBook(item) {
+      const clean = DOMPurify.sanitize(item.description || '');
+      const div = document.createElement('div');
+      div.innerHTML = clean;
+
+      const title = item.title || '';
+      const author = item.author || extractMeta(div, 'author') || '';
+      const isbn = extractMeta(div, 'isbn') || extractMeta(div, 'isbn13') || '';
+      const rating = parseInt(extractMeta(div, 'user_rating') || '0');
+      const avgRating = extractMeta(div, 'average_rating') || '';
+      const desc = extractMeta(div, 'book_description') || '';
+      const shelftag = extractMeta(div, 'user_shelves') || '';
+
+      // Cover: prefer Open Library by ISBN, fallback to RSS thumbnail, fallback to title search
+      let cover = null;
+      const opts = getOpts();
+      if (opts.coversrc === 'rss' && item.thumbnail) {
+        cover = item.thumbnail;
+      } else if (isbn) {
+        cover = `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`;
+      } else {
+        // Open Library title search — returns JSON
+        try {
+          const searchUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(title)}&limit=1&fields=cover_i,isbn`;
+          const r = await fetch(searchUrl);
+          const d = await r.json();
+          const doc = d.docs?.[0];
+          if (doc?.cover_i) cover = `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`;
+          else if (doc?.isbn?.[0]) cover = `https://covers.openlibrary.org/b/isbn/${doc.isbn[0]}-M.jpg`;
+        } catch(e) {}
+      }
+
+      return { title, author, isbn, rating, avgRating, desc: stripTags(desc).slice(0, 300), cover, link: item.link || '#', date: item.pubDate || '', shelftag };
+    }
+
+    function extractMeta(div, field) {
+      // Goodreads RSS description contains <![CDATA[ with structured text like "author: Name"
+      const text = div.textContent || '';
+      const match = text.match(new RegExp(field + '[:\\s]+([^\\n]+)', 'i'));
+      return match ? match[1].trim() : '';
+    }
+
+    function stripTags(s) {
+      const d = document.createElement('div');
+      d.innerHTML = s;
+      return d.textContent || '';
+    }
+
+    // ── Sample data (so you can see the widget without a real account) ──
+    function loadSampleData() {
+      shelves = {
+        reading: [
+          { title: 'The Dawn of Everything', author: 'David Graeber & David Wengrow', rating: 0, avgRating: '4.12', desc: 'A new history of humanity challenging long-held assumptions about inequality and the origins of civilization.', cover: 'https://covers.openlibrary.org/b/isbn/9781250858801-M.jpg', link: '#', date: new Date().toISOString(), isbn: '9781250858801' },
+          { title: 'Piranesi', author: 'Susanna Clarke', rating: 5, avgRating: '4.18', desc: 'A man lives in a labyrinthine house with endless halls, statues, and a tidal sea. He is mostly content.', cover: 'https://covers.openlibrary.org/b/isbn/9781635575644-M.jpg', link: '#', date: new Date(Date.now()-86400000*2).toISOString(), isbn: '9781635575644' },
+          { title: 'Braiding Sweetgrass', author: 'Robin Wall Kimmerer', rating: 0, avgRating: '4.42', desc: 'Indigenous wisdom, scientific knowledge, and the teachings of plants weave together in this stunning book.', cover: 'https://covers.openlibrary.org/b/isbn/9781571313560-M.jpg', link: '#', date: new Date(Date.now()-86400000*5).toISOString(), isbn: '9781571313560' },
+        ],
+        read: [
+          { title: 'Normal People', author: 'Sally Rooney', rating: 4, avgRating: '3.93', desc: 'An intimate portrayal of two Irish teenagers navigating love, class, and identity.', cover: 'https://covers.openlibrary.org/b/isbn/9780571334650-M.jpg', link: '#', date: new Date(Date.now()-86400000*14).toISOString(), isbn: '9780571334650' },
+          { title: 'Flowers for Algernon', author: 'Daniel Keyes', rating: 5, avgRating: '4.11', desc: 'Charlie Gordon, a man with an intellectual disability, undergoes an experimental procedure to increase his intelligence.', cover: 'https://covers.openlibrary.org/b/isbn/9780156030304-M.jpg', link: '#', date: new Date(Date.now()-86400000*21).toISOString(), isbn: '9780156030304' },
+        ],
+      };
+      showStatus('Sample data loaded!', 'success', 'status-setup');
+      activeShelf = 'reading';
+      renderPreview();
+      switchTab('style');
+    }
+
+    // ── Get options ───────────────────────────────────────────────
+    function getOpts() {
+      return {
+        title:        document.getElementById('opt-title').value,
+        layout:       document.getElementById('opt-layout').value,
+        shelfdisplay: document.getElementById('opt-shelfdisplay').value,
+        author:       document.getElementById('opt-author').value,
+        stars:        document.getElementById('opt-stars').value,
+        dates:        document.getElementById('opt-dates').value,
+        desc:         document.getElementById('opt-desc').value,
+        coversrc:     document.getElementById('opt-coversrc').value,
+        font:         document.getElementById('opt-font').value,
+        width:        document.getElementById('opt-width').value,
+        accent:       document.getElementById('opt-accent').value,
+        bg:           document.getElementById('opt-bg').value,
+        textCol:      document.getElementById('opt-text').value,
+        link:         document.getElementById('opt-link').value,
+        count:        parseInt(document.getElementById('opt-count').value),
+        userid:       document.getElementById('gr-userid').value.trim(),
+        shelves: {
+          reading: document.getElementById('shelf-reading').checked,
+          read:    document.getElementById('shelf-read').checked,
+          toread:  document.getElementById('shelf-toread').checked,
+        },
+      };
+    }
+
+    // ── Render stars ──────────────────────────────────────────────
+    function renderStars(rating, mode) {
+      if (mode === 'none' || !rating) return '';
+      if (mode === 'number') return rating + '/5';
+      return '★'.repeat(rating) + '☆'.repeat(5 - rating);
+    }
+
+    // ── Format date ───────────────────────────────────────────────
+    function fmtDate(s, mode) {
+      if (mode === 'none' || !s) return '';
+      try {
+        const d = new Date(s); if (isNaN(d)) return '';
+        if (mode === 'relative') {
+          const days = Math.floor((Date.now() - d) / 86400000);
+          if (days < 1) return 'today';
+          if (days < 7) return days + 'd ago';
+          if (days < 30) return Math.floor(days/7) + 'w ago';
+          return Math.floor(days/30) + 'mo ago';
+        }
+        return d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+      } catch(e) { return ''; }
+    }
+
+    const SHELF_LABELS = { reading: 'currently reading', read: 'read', toread: 'want to read' };
+
+    // ── Render preview ────────────────────────────────────────────
+    function renderPreview() {
+      const container = document.getElementById('widget-preview');
+      const keys = Object.keys(shelves);
+      if (!keys.length) {
+        container.innerHTML = '<span style="color:var(--puny);font-size:0.85rem;">Fetch your shelves first in the Setup tab.</span>';
+        return;
+      }
+      const opts = getOpts();
+      container.innerHTML = '';
+      container.appendChild(buildWidgetDOM(opts));
+    }
+
+    function buildWidgetDOM(opts) {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = `font-family:${opts.font};background:${opts.bg};color:${opts.textCol};max-width:${opts.width};padding:1em;box-sizing:border-box;`;
+
+      // Header
+      if (opts.title) {
+        const hdr = document.createElement('div');
+        hdr.style.cssText = `font-weight:bold;font-size:1em;border-bottom:2px solid ${opts.accent};padding-bottom:0.4em;margin-bottom:1em;display:flex;justify-content:space-between;align-items:baseline;`;
+        hdr.innerHTML = `<span>${esc(opts.title)}</span>
+          ${opts.userid ? `<span style="font-size:0.75em;opacity:0.5;"><a href="https://www.goodreads.com/user/show/${esc(opts.userid)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">goodreads</a></span>` : ''}`;
+        wrap.appendChild(hdr);
+      }
+
+      const shelfKeys = Object.keys(shelves);
+
+      if (opts.shelfdisplay === 'tabs' && shelfKeys.length > 1) {
+        // Shelf tab buttons
+        const tabBar = document.createElement('div');
+        tabBar.className = 'gr-shelf-tabs';
+        shelfKeys.forEach((key, i) => {
+          const btn = document.createElement('button');
+          btn.className = 'gr-shelf-tab';
+          btn.textContent = SHELF_LABELS[key] || key;
+          btn.style.cssText = `border-color:${opts.accent};font-family:${opts.font};color:${i===0?opts.bg:opts.textCol};background:${i===0?opts.accent:'transparent'};`;
+          btn.onclick = () => {
+            wrap.querySelectorAll('.gr-shelf-tab').forEach((b,j) => {
+              b.style.background = j === shelfKeys.indexOf(key) ? opts.accent : 'transparent';
+              b.style.color = j === shelfKeys.indexOf(key) ? opts.bg : opts.textCol;
+            });
+            wrap.querySelectorAll('.gr-shelf-panel').forEach(p => p.style.display = 'none');
+            wrap.querySelector(`#grp-${key}`).style.display = 'block';
+          };
+          tabBar.appendChild(btn);
+        });
+        wrap.appendChild(tabBar);
+
+        shelfKeys.forEach((key, i) => {
+          const panel = document.createElement('div');
+          panel.className = 'gr-shelf-panel';
+          panel.id = `grp-${key}`;
+          panel.style.display = i === 0 ? 'block' : 'none';
+          panel.appendChild(buildBookGrid(shelves[key], opts));
+          wrap.appendChild(panel);
+        });
+
+      } else if (opts.shelfdisplay === 'sections') {
+        shelfKeys.forEach(key => {
+          if (!shelves[key]?.length) return;
+          const section = document.createElement('div');
+          section.style.marginBottom = '1.5em';
+          const label = document.createElement('div');
+          label.style.cssText = `font-size:0.75em;text-transform:uppercase;letter-spacing:0.05em;color:${opts.accent};margin-bottom:0.5em;font-weight:bold;`;
+          label.textContent = SHELF_LABELS[key] || key;
+          section.appendChild(label);
+          section.appendChild(buildBookGrid(shelves[key], opts));
+          wrap.appendChild(section);
+        });
+
+      } else {
+        // merged
+        const all = shelfKeys.flatMap(k => shelves[k] || []);
+        wrap.appendChild(buildBookGrid(all, opts));
+      }
+
+      // Footer
+      const footer = document.createElement('div');
+      footer.className = 'gr-footer';
+      footer.innerHTML = opts.userid
+        ? `<a href="https://www.goodreads.com/user/show/${esc(opts.userid)}" target="_blank" rel="noopener" style="color:inherit;">goodreads.com</a>`
+        : 'powered by goodreads rss';
+      wrap.appendChild(footer);
+
+      return wrap;
+    }
+
+    function buildBookGrid(books, opts) {
+      const grid = document.createElement('div');
+      grid.className = `gr-grid layout-${opts.layout}`;
+      if (opts.layout === 'covers') grid.style.gridTemplateColumns = 'repeat(auto-fill,minmax(80px,1fr))';
+
+      books.forEach(book => {
+        const card = document.createElement('div');
+        const lnk = opts.link === 'yes' && book.link && book.link !== '#';
+        const starsHTML = renderStars(book.rating, opts.stars);
+        const dateHTML = fmtDate(book.date, opts.dates);
+
+        const coverEl = book.cover
+          ? `<img src="${esc(book.cover)}" alt="${esc(book.title)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><div class="gr-no-cover" style="display:none;aspect-ratio:2/3;">${esc(book.title)}</div>`
+          : `<div class="gr-no-cover" style="aspect-ratio:2/3;">${esc(book.title)}</div>`;
+
+        const titleEl = lnk
+          ? `<a href="${esc(book.link)}" target="_blank" rel="noopener" style="color:${opts.textCol};text-decoration:none;">${esc(book.title)}</a>`
+          : esc(book.title);
+
+        if (opts.layout === 'covers') {
+          card.className = 'gr-card-cover';
+          card.innerHTML = `
+            ${lnk ? `<a href="${esc(book.link)}" target="_blank" rel="noopener" style="display:block;">${coverEl}</a>` : `<div>${coverEl}</div>`}
+            <div class="gr-title">${titleEl}</div>
+            ${opts.author === 'yes' && book.author ? `<div class="gr-author">${esc(book.author)}</div>` : ''}
+            ${starsHTML ? `<div class="gr-stars" style="color:${opts.accent};">${starsHTML}</div>` : ''}
+            ${dateHTML ? `<div class="gr-date">${dateHTML}</div>` : ''}
+          `;
+
+        } else if (opts.layout === 'list') {
+          card.className = 'gr-card-list';
+          card.style.borderBottom = `1px solid ${opts.accent}22`;
+          card.innerHTML = `
+            <div style="width:56px;min-width:56px;">${lnk ? `<a href="${esc(book.link)}" target="_blank" rel="noopener">${coverEl}</a>` : coverEl}</div>
+            <div class="gr-meta">
+              <div class="gr-title">${titleEl}</div>
+              ${opts.author === 'yes' && book.author ? `<div class="gr-author">${esc(book.author)}</div>` : ''}
+              <div style="display:flex;gap:0.4em;align-items:baseline;margin-top:0.1em;">
+                ${starsHTML ? `<span class="gr-stars" style="color:${opts.accent};">${starsHTML}</span>` : ''}
+                ${dateHTML ? `<span style="font-size:0.72em;opacity:0.4;">${dateHTML}</span>` : ''}
+              </div>
+              ${opts.desc === 'yes' && book.desc ? `<div class="gr-desc">${esc(book.desc)}</div>` : ''}
+            </div>
+          `;
+
+        } else { // compact
+          card.className = 'gr-card-compact';
+          card.style.borderBottom = `1px solid ${opts.accent}22`;
+          card.innerHTML = `
+            <span class="gr-title">${titleEl}</span>
+            <span class="gr-right">
+              ${starsHTML ? `<span style="color:${opts.accent};font-size:0.85em;">${starsHTML}</span>` : ''}
+              ${opts.author === 'yes' && book.author ? `<span style="opacity:0.45;font-size:0.78em;">${esc(book.author)}</span>` : ''}
+              ${dateHTML ? `<span style="opacity:0.4;font-size:0.75em;">${dateHTML}</span>` : ''}
+            </span>
+          `;
+        }
+
+        grid.appendChild(card);
+      });
+
+      return grid;
+    }
+
+    // ── Code generation ───────────────────────────────────────────
+    function generateCode() {
+      const opts = getOpts();
+      const shelfConfig = Object.entries(opts.shelves)
+        .filter(([,v]) => v)
+        .map(([k]) => {
+          const shelfMap = { reading: 'currently-reading', read: 'read', toread: 'to-read' };
+          return { key: k, shelf: shelfMap[k], label: SHELF_LABELS[k] };
+        });
+
+      const code = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${esc(opts.title)}</title>
+  <style>
+    *{box-sizing:border-box;}
+    body{margin:0;padding:1em;font-family:${opts.font};background:${opts.bg};color:${opts.textCol};}
+    a{text-decoration:none;}a:hover{opacity:0.8;}
+    .gr-grid-covers{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:0.75em;}
+    .gr-grid-list,.gr-grid-compact{display:flex;flex-direction:column;gap:${opts.layout==='compact'?'0.3em':'0.75em'};}
+    .gr-no-cover{background:#2a2a2a;display:flex;align-items:center;justify-content:center;font-size:0.6em;color:#888;text-align:center;padding:4px;}
+    img{display:block;width:100%;}
+    .gr-tabs{display:flex;gap:0;margin-bottom:0.75em;flex-wrap:wrap;}
+    .gr-tab{font-family:${opts.font};font-size:0.78em;padding:3px 10px;cursor:pointer;border:1px solid ${opts.accent};margin:0 2px 2px 0;}
+    .gr-panel{display:none;}.gr-panel.active{display:block;}
+  </style>
+</head>
+<body>
+<div id="grw"><p style="color:#999;font-size:0.85em;">Loading your shelves...</p></div>
+<script>
+const OPTS=${JSON.stringify(opts)};
+const USER_ID="${opts.userid}";
+const SHELVES=${JSON.stringify(shelfConfig)};
+const SHELF_LABELS={reading:'currently reading',read:'read',toread:'want to read'};
+
+async function init(){
+  const el=document.getElementById('grw');
+  try{
+    const results={};
+    await Promise.all(SHELVES.map(async s=>{
+      const rssUrl="https://www.goodreads.com/review/list_rss/"+USER_ID+"?shelf="+s.shelf;
+      const api="https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(rssUrl)+"&count="+OPTS.count;
+      const res=await fetch(api);
+      const data=await res.json();
+      if(data.status!=='ok') throw new Error(data.message);
+      results[s.key]=await Promise.all(data.items.slice(0,OPTS.count).map(parseBook));
+    }));
+    render(results,el);
+  }catch(e){el.innerHTML='<p style="color:#f44;">Error: '+e.message+'</p>';}
+}
+
+async function parseBook(item){
+  const div=document.createElement('div');
+  div.innerHTML=item.description||'';
+  const title=item.title||'';
+  const author=item.author||extractMeta(div,'author')||'';
+  const isbn=extractMeta(div,'isbn')||extractMeta(div,'isbn13')||'';
+  const rating=parseInt(extractMeta(div,'user_rating')||'0');
+  const desc=extractMeta(div,'book_description')||'';
+  let cover=null;
+  if(OPTS.coversrc==='rss'&&item.thumbnail){
+    cover=item.thumbnail;
+  } else if(isbn){
+    cover='https://covers.openlibrary.org/b/isbn/'+isbn+'-M.jpg';
+  } else {
+    try{
+      const r=await fetch('https://openlibrary.org/search.json?title='+encodeURIComponent(title)+'&limit=1&fields=cover_i,isbn');
+      const d=await r.json();
+      const doc=d.docs?.[0];
+      if(doc?.cover_i) cover='https://covers.openlibrary.org/b/id/'+doc.cover_i+'-M.jpg';
+      else if(doc?.isbn?.[0]) cover='https://covers.openlibrary.org/b/isbn/'+doc.isbn[0]+'-M.jpg';
+    }catch(e){}
+  }
+  const d2=document.createElement('div');d2.innerHTML=desc;
+  return{title,author,isbn,rating,desc:(d2.textContent||'').slice(0,300),cover,link:item.link||'#',date:item.pubDate||''};
+}
+
+function extractMeta(div,field){
+  const text=div.textContent||'';
+  const m=text.match(new RegExp(field+'[:\\\\s]+([^\\\\n]+)','i'));
+  return m?m[1].trim():'';
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function fmtDate(s){
+  if(OPTS.dates==='none'||!s)return '';
+  try{const d=new Date(s);if(isNaN(d))return '';
+    if(OPTS.dates==='relative'){const days=Math.floor((Date.now()-d)/86400000);if(days<1)return 'today';if(days<7)return days+'d ago';if(days<30)return Math.floor(days/7)+'w ago';return Math.floor(days/30)+'mo ago';}
+    return d.toLocaleDateString('en',{month:'short',day:'numeric'});
+  }catch(e){return '';}
+}
+
+function stars(r){
+  if(OPTS.stars==='none'||!r)return '';
+  if(OPTS.stars==='number')return r+'/5';
+  return '★'.repeat(r)+'☆'.repeat(5-r);
+}
+
+function coverHTML(book){
+  return book.cover
+    ?'<img src="'+esc(book.cover)+'" alt="'+esc(book.title)+'" loading="lazy" onerror="this.style.display=\\'none\\';this.nextElementSibling.style.display=\\'flex\\';" /><div class="gr-no-cover" style="display:none;aspect-ratio:2/3;">'+esc(book.title)+'</div>'
+    :'<div class="gr-no-cover" style="aspect-ratio:2/3;">'+esc(book.title)+'</div>';
+}
+
+function bookGrid(books){
+  const lnk=OPTS.link==='yes';
+  let html='<div class="gr-grid-'+OPTS.layout+'">';
+  books.forEach(b=>{
+    const s=stars(b.rating),dt=fmtDate(b.date);
+    const titleEl=lnk&&b.link&&b.link!=='#'?'<a href="'+esc(b.link)+'" target="_blank" style="color:'+OPTS.textCol+';">'+esc(b.title)+'</a>':esc(b.title);
+    if(OPTS.layout==='covers'){
+      html+='<div style="display:flex;flex-direction:column;gap:0.3em;">';
+      html+=lnk&&b.link?'<a href="'+esc(b.link)+'" target="_blank" style="display:block;">'+coverHTML(b)+'</a>':coverHTML(b);
+      html+='<div style="font-size:0.72em;font-weight:bold;line-height:1.3;">'+titleEl+'</div>';
+      if(OPTS.author==='yes'&&b.author) html+='<div style="font-size:0.65em;opacity:0.5;">'+esc(b.author)+'</div>';
+      if(s) html+='<div style="font-size:0.78em;color:'+OPTS.accent+';">'+s+'</div>';
+      if(dt) html+='<div style="font-size:0.62em;opacity:0.4;">'+dt+'</div>';
+      html+='</div>';
+    } else if(OPTS.layout==='list'){
+      html+='<div style="display:flex;gap:0.75em;border-bottom:1px solid '+OPTS.accent+'22;padding-bottom:0.6em;">';
+      html+='<div style="width:56px;min-width:56px;">'+(lnk&&b.link?'<a href="'+esc(b.link)+'" target="_blank">'+coverHTML(b)+'</a>':coverHTML(b))+'</div>';
+      html+='<div style="flex:1;"><div style="font-weight:bold;font-size:0.9em;">'+titleEl+'</div>';
+      if(OPTS.author==='yes'&&b.author) html+='<div style="font-size:0.78em;opacity:0.6;">'+esc(b.author)+'</div>';
+      if(s||dt) html+='<div style="display:flex;gap:0.4em;margin-top:0.1em;">'+(s?'<span style="color:'+OPTS.accent+';">'+s+'</span>':'')+(dt?'<span style="font-size:0.72em;opacity:0.4;">'+dt+'</span>':'')+'</div>';
+      if(OPTS.desc==='yes'&&b.desc) html+='<div style="font-size:0.77em;opacity:0.65;margin-top:0.25em;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">'+esc(b.desc)+'</div>';
+      html+='</div></div>';
+    } else {
+      html+='<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid '+OPTS.accent+'22;padding-bottom:0.2em;font-size:0.85em;">';
+      html+='<span style="font-weight:bold;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-right:0.5em;">'+titleEl+'</span>';
+      html+='<span style="display:flex;gap:0.4em;white-space:nowrap;">';
+      if(s) html+='<span style="color:'+OPTS.accent+';">'+s+'</span>';
+      if(OPTS.author==='yes'&&b.author) html+='<span style="opacity:0.45;font-size:0.78em;">'+esc(b.author)+'</span>';
+      if(dt) html+='<span style="opacity:0.4;font-size:0.75em;">'+dt+'</span>';
+      html+='</span></div>';
+    }
+  });
+  return html+'</div>';
+}
+
+function render(results,el){
+  const keys=Object.keys(results);
+  let html='<div style="font-family:'+OPTS.font+';max-width:'+OPTS.width+';padding:0;">';
+  if(OPTS.title) html+='<div style="font-weight:bold;border-bottom:2px solid '+OPTS.accent+';padding-bottom:0.4em;margin-bottom:1em;display:flex;justify-content:space-between;align-items:baseline;"><span>'+esc(OPTS.title)+'</span>'+(USER_ID?'<span style="font-size:0.75em;opacity:0.5;"><a href="https://www.goodreads.com/user/show/'+esc(USER_ID)+'" target="_blank" style="color:inherit;">goodreads</a></span>':'')+'</div>';
+
+  if(OPTS.shelfdisplay==='tabs'&&keys.length>1){
+    html+='<div class="gr-tabs">';
+    keys.forEach((k,i)=>html+='<button class="gr-tab" style="background:'+(i===0?OPTS.accent:'transparent')+';color:'+(i===0?OPTS.bg:OPTS.textCol)+';" onclick="grTab(this,\\'grp-'+k+'\\',\\''+OPTS.accent+'\\',\\''+OPTS.bg+'\\',\\''+OPTS.textCol+'\\')">'+esc(SHELF_LABELS[k]||k)+'</button>');
+    html+='</div>';
+    keys.forEach((k,i)=>html+='<div id="grp-'+k+'" class="gr-panel'+(i===0?' active':'')+'">'+bookGrid(results[k]||[])+'</div>');
+  } else if(OPTS.shelfdisplay==='sections'){
+    keys.forEach(k=>{if(!(results[k]?.length))return;html+='<div style="margin-bottom:1.5em;"><div style="font-size:0.75em;text-transform:uppercase;letter-spacing:0.05em;color:'+OPTS.accent+';margin-bottom:0.5em;font-weight:bold;">'+esc(SHELF_LABELS[k]||k)+'</div>'+bookGrid(results[k])+'</div>';});
+  } else {
+    const all=keys.flatMap(k=>results[k]||[]);
+    html+=bookGrid(all);
+  }
+  html+='<div style="font-size:0.7em;opacity:0.4;text-align:right;margin-top:0.75em;">'+(USER_ID?'<a href="https://www.goodreads.com/user/show/'+esc(USER_ID)+'" target="_blank" style="color:inherit;">goodreads.com</a>':'goodreads rss')+'</div></div>';
+  el.innerHTML=html;
+}
+
+function grTab(btn,panelId,ac,bg,tc){
+  document.querySelectorAll('.gr-tab').forEach(b=>{b.style.background='transparent';b.style.color=tc;});
+  btn.style.background=ac;btn.style.color=bg;
+  document.querySelectorAll('.gr-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+}
+
+init();
+<\/script>
+</body>
+</html>`;
+
+      document.getElementById('code-output').textContent = code;
+      return code;
+    }
+
+    function downloadWidget() {
+      const code = generateCode();
+      const blob = new Blob([code], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      const id = document.getElementById('gr-userid').value.trim() || 'goodreads';
+      a.download = id + '-books-widget.html';
+      a.click();
+      showStatus('Downloaded!', 'success', 'status');
+    }
+
+    function copyCode() {
+      navigator.clipboard.writeText(generateCode())
+        .then(() => showStatus('Copied!', 'success', 'status'));
+    }
+
+    function esc(s) {
+      return String(s || '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function showStatus(msg, type, id = 'status') {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = msg;
+      el.className = `status show ${type}`;
+      setTimeout(() => el.classList.remove('show'), 3000);
+    }
+  </script>
+</body>
+</html>

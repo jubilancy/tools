@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Letterboxd Widget Builder | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.5/purify.min.js"></script>
+  <style>
+    .container { display: flex; flex-direction: column; gap: 1.5rem; }
+    .input-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .input-label {
+      font-size: 0.85rem; font-weight: bold; text-transform: uppercase;
+      color: var(--puny); letter-spacing: 0.05em;
+    }
+    .button-group { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    button {
+      padding: 8px 14px; cursor: pointer; font-family: monospace; font-size: 0.9rem;
+      border: 1px solid var(--text); background: var(--bg); color: var(--text); transition: all 100ms;
+    }
+    button:hover { background-color: var(--hover); border-color: var(--accent); }
+    button.primary { border-color: var(--accent); font-weight: bold; color: var(--accent); }
+    textarea, input[type="text"], input[type="password"], select, input[type="number"] {
+      width: 100%; font-family: monospace; padding: 8px 10px;
+      border: 1px solid var(--puny); background: var(--bg); color: var(--text);
+      box-sizing: border-box; font-size: 0.9rem;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+    .status { padding: 0.6rem 1rem; display: none; font-size: 0.85rem; }
+    .status.show { display: block; }
+    .status.success { background: rgba(16,185,129,0.1); border-left: 3px solid var(--accent); color: var(--accent); }
+    .status.error { background: rgba(239,68,68,0.1); border-left: 3px solid #ef4444; color: #ef4444; }
+    .info-box {
+      padding: 0.75rem 1rem; background-color: var(--highlight);
+      border-left: 3px solid var(--accent); font-size: 0.85rem; line-height: 1.6;
+    }
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 600px) { .options-grid { grid-template-columns: 1fr; } }
+    .option-row { display: flex; flex-direction: column; gap: 0.3rem; }
+    .color-row { display: flex; align-items: center; gap: 0.5rem; }
+    .color-row input[type="text"] { flex: 1; }
+    input[type="color"] { width: 40px; height: 30px; padding: 1px; border: 1px solid var(--puny); background: none; cursor: pointer; }
+    .range-row { display: flex; align-items: center; gap: 0.5rem; }
+    .range-row input[type=range] { flex: 1; width: auto; padding: 0; border: none; accent-color: var(--accent); }
+    .range-val { font-size: 0.8rem; color: var(--puny); min-width: 2rem; text-align: right; }
+
+    /* Preview */
+    .preview-wrap { border: 1px solid var(--puny); padding: 1rem; }
+    .preview-label { font-size: 0.75rem; color: var(--puny); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
+
+    /* Tabs */
+    .tabs { display: flex; border-bottom: 1px solid var(--puny); margin-bottom: 1.5rem; }
+    .tab { padding: 6px 16px; font-family: monospace; font-size: 0.85rem; cursor: pointer; border: 1px solid transparent; border-bottom: none; background: none; color: var(--puny); margin: 0; min-width: unset; }
+    .tab:hover { color: var(--text); background: var(--hover); border-color: transparent; }
+    .tab.active { color: var(--text); border-color: var(--puny); background: var(--bg); margin-bottom: -1px; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Code output */
+    .code-output {
+      font-family: monospace; font-size: 0.78rem; background: var(--highlight);
+      padding: 1rem; overflow: auto; white-space: pre; border: 1px solid var(--puny);
+      max-height: 380px;
+    }
+
+    /* ── Widget styles (used in preview) ── */
+    .lb-widget { font-family: monospace; }
+    .lb-header {
+      display: flex; align-items: baseline; justify-content: space-between;
+      border-bottom: 2px solid currentColor; padding-bottom: 0.4em; margin-bottom: 1em;
+    }
+    .lb-header-title { font-weight: bold; font-size: 1em; }
+    .lb-header-sub { font-size: 0.75em; opacity: 0.5; }
+    .lb-grid { display: grid; gap: 0.75em; }
+    .lb-grid.layout-poster { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+    .lb-grid.layout-list { grid-template-columns: 1fr; }
+    .lb-grid.layout-compact { grid-template-columns: 1fr; gap: 0.35em; }
+
+    .lb-card-poster { display: flex; flex-direction: column; gap: 0.3em; }
+    .lb-card-poster img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; background: #222; }
+    .lb-card-poster .lb-title { font-size: 0.72em; font-weight: bold; line-height: 1.3; }
+    .lb-card-poster .lb-stars { font-size: 0.8em; color: #f90; }
+    .lb-card-poster .lb-date { font-size: 0.65em; opacity: 0.5; }
+
+    .lb-card-list { display: flex; gap: 0.6em; align-items: flex-start; padding: 0.5em 0; }
+    .lb-card-list img { width: 52px; min-width: 52px; aspect-ratio: 2/3; object-fit: cover; background: #222; }
+    .lb-card-list .lb-meta { flex: 1; }
+    .lb-card-list .lb-title { font-size: 0.9em; font-weight: bold; }
+    .lb-card-list .lb-year { font-size: 0.75em; opacity: 0.5; }
+    .lb-card-list .lb-stars { font-size: 0.9em; color: #f90; }
+    .lb-card-list .lb-review { font-size: 0.78em; opacity: 0.7; margin-top: 0.2em; line-height: 1.4;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    .lb-card-compact { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.85em; }
+    .lb-card-compact .lb-title { font-weight: bold; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-right: 0.5em; }
+    .lb-card-compact .lb-right { display: flex; gap: 0.5em; align-items: baseline; white-space: nowrap; }
+    .lb-card-compact .lb-stars { color: #f90; font-size: 0.85em; }
+    .lb-card-compact .lb-year { opacity: 0.4; font-size: 0.8em; }
+
+    .lb-footer { font-size: 0.7em; opacity: 0.4; text-align: right; margin-top: 0.75em; }
+    .lb-footer a { color: inherit; }
+    .lb-no-poster { background: #333; width: 100%; aspect-ratio: 2/3; display: flex; align-items: center; justify-content: center; font-size: 0.65em; color: #888; text-align: center; padding: 0.25em; }
+    .lb-liked::after { content: ' ♥'; color: #e0384b; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> | <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Letterboxd Widget Builder</h1>
+    <p class="puny">Pull your Letterboxd diary via RSS, match posters via TMDB, style the widget, download a self-contained HTML file.</p>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('setup')">1. setup</button>
+      <button class="tab" onclick="switchTab('style')">2. style</button>
+      <button class="tab" onclick="switchTab('preview')">3. preview</button>
+      <button class="tab" onclick="switchTab('export')">4. export</button>
+    </div>
+
+    <!-- TAB 1: SETUP -->
+    <div class="tab-panel active" id="tab-setup">
+      <div class="container">
+        <div class="info-box">
+          Letterboxd makes your diary public as an RSS feed at <strong>letterboxd.com/<em>username</em>/rss/</strong> — no login or API key needed. Posters are fetched from TMDB (free key required, takes 2 minutes to get).
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">Letterboxd Username</span>
+          <input type="text" id="lb-username" placeholder="e.g. eliana" oninput="updateRSSUrl()" />
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">RSS URL (auto-generated)</span>
+          <input type="text" id="lb-rss-url" readonly style="opacity:0.6;" value="https://letterboxd.com/USERNAME/rss/" />
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">TMDB API Key <span style="color:var(--puny);font-weight:normal;">(for posters — <a href="https://www.themoviedb.org/settings/api" target="_blank">get one free here</a>)</span></span>
+          <input type="password" id="tmdb-key" placeholder="Paste your TMDB v3 API key" />
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">Number of films to show</span>
+          <div class="range-row">
+            <input type="range" id="opt-count" min="1" max="24" value="8"
+              oninput="this.nextElementSibling.textContent=this.value" />
+            <span class="range-val">8</span>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" onclick="fetchAndPreview()">[▶ fetch diary]</button>
+          <button onclick="switchTab('style')">[next: style →]</button>
+        </div>
+        <div class="status" id="status-setup"></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: STYLE -->
+    <div class="tab-panel" id="tab-style">
+      <div class="container">
+        <div class="options-grid">
+
+          <div class="option-row">
+            <span class="input-label">Widget title</span>
+            <input type="text" id="opt-title" value="recently watched" oninput="renderPreview()" />
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Layout</span>
+            <select id="opt-layout" onchange="renderPreview()">
+              <option value="poster">Poster grid</option>
+              <option value="list">List with poster + review</option>
+              <option value="compact">Compact list</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Show stars</span>
+            <select id="opt-stars" onchange="renderPreview()">
+              <option value="unicode">★★★★½ (unicode)</option>
+              <option value="number">4.5 / 5</option>
+              <option value="none">None</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Show dates</span>
+            <select id="opt-dates" onchange="renderPreview()">
+              <option value="relative">Relative (3d ago)</option>
+              <option value="short">Short (Jun 23)</option>
+              <option value="none">None</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Show review snippet</span>
+            <select id="opt-review" onchange="renderPreview()">
+              <option value="yes">Yes (list layout only)</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Show liked heart ♥</span>
+            <select id="opt-liked" onchange="renderPreview()">
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Font</span>
+            <select id="opt-font" onchange="renderPreview()">
+              <option value="monospace">Monospace</option>
+              <option value="sans-serif">Sans-serif</option>
+              <option value="serif">Serif</option>
+              <option value="'Georgia', serif">Georgia</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Max width</span>
+            <select id="opt-width" onchange="renderPreview()">
+              <option value="100%">Full width</option>
+              <option value="640px">640px</option>
+              <option value="480px">480px</option>
+              <option value="360px">360px (sidebar)</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Accent color</span>
+            <div class="color-row">
+              <input type="color" id="opt-accent-pick" value="#00c030"
+                oninput="document.getElementById('opt-accent').value=this.value;renderPreview()" />
+              <input type="text" id="opt-accent" value="#00c030"
+                oninput="document.getElementById('opt-accent-pick').value=this.value;renderPreview()" />
+            </div>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Background</span>
+            <div class="color-row">
+              <input type="color" id="opt-bg-pick" value="#14181c"
+                oninput="document.getElementById('opt-bg').value=this.value;renderPreview()" />
+              <input type="text" id="opt-bg" value="#14181c"
+                oninput="document.getElementById('opt-bg-pick').value=this.value;renderPreview()" />
+            </div>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Text color</span>
+            <div class="color-row">
+              <input type="color" id="opt-text-pick" value="#cbd5e1"
+                oninput="document.getElementById('opt-text').value=this.value;renderPreview()" />
+              <input type="text" id="opt-text" value="#cbd5e1"
+                oninput="document.getElementById('opt-text-pick').value=this.value;renderPreview()" />
+            </div>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Link to Letterboxd</span>
+            <select id="opt-link" onchange="renderPreview()">
+              <option value="yes">Yes — items link to Letterboxd</option>
+              <option value="no">No links</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="button-group">
+          <button onclick="switchTab('setup')">[ ← back]</button>
+          <button class="primary" onclick="switchTab('preview')">[next: preview →]</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: PREVIEW -->
+    <div class="tab-panel" id="tab-preview">
+      <div class="container">
+        <div class="info-box">
+          Live preview of your widget. If posters are missing, check your TMDB key in the Setup tab.
+        </div>
+        <div class="button-group">
+          <button class="primary" onclick="renderPreview()">[↻ refresh preview]</button>
+          <button onclick="fetchAndPreview()">[↺ re-fetch diary]</button>
+          <button onclick="switchTab('export')">[next: export →]</button>
+        </div>
+        <div class="preview-wrap">
+          <div class="preview-label">preview</div>
+          <div id="widget-preview">
+            <span style="color:var(--puny);font-size:0.85rem;">Fetch your diary first in the Setup tab.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: EXPORT -->
+    <div class="tab-panel" id="tab-export">
+      <div class="container">
+        <div class="info-box">
+          Downloads a <strong>self-contained HTML file</strong> that fetches your Letterboxd RSS live on every load. Drop it anywhere or embed via iframe.
+        </div>
+        <div class="button-group">
+          <button class="primary" onclick="downloadWidget()">[↓ download widget.html]</button>
+          <button onclick="copyCode()">[copy code]</button>
+        </div>
+        <div class="input-group">
+          <span class="input-label">Generated code</span>
+          <div class="code-output" id="code-output"><!-- generate first --></div>
+        </div>
+        <div class="status" id="status"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    // ── Theme toggle ──────────────────────────────────────────────
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+    };
+
+    // ── State ─────────────────────────────────────────────────────
+    let diary = []; // parsed film entries
+
+    // ── Tabs ──────────────────────────────────────────────────────
+    function switchTab(name) {
+      const names = ['setup','style','preview','export'];
+      document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', names[i] === name));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-'+name));
+      if (name === 'export') generateCode();
+    }
+
+    // ── RSS URL ───────────────────────────────────────────────────
+    function updateRSSUrl() {
+      const u = document.getElementById('lb-username').value.trim();
+      document.getElementById('lb-rss-url').value = u
+        ? `https://letterboxd.com/${u}/rss/`
+        : 'https://letterboxd.com/USERNAME/rss/';
+    }
+
+    // ── Fetch diary ───────────────────────────────────────────────
+    async function fetchAndPreview() {
+      const username = document.getElementById('lb-username').value.trim();
+      if (!username) { showStatus('Enter your Letterboxd username.', 'error', 'status-setup'); return; }
+      const rssUrl = `https://letterboxd.com/${username}/rss/`;
+      const count = parseInt(document.getElementById('opt-count').value);
+      showStatus('Fetching diary...', 'success', 'status-setup');
+
+      try {
+        // rss2json.com — free RSS to JSON, no key needed
+        const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=${count}`;
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+
+        if (data.status !== 'ok') throw new Error(data.message || 'RSS fetch failed');
+
+        const tmdbKey = document.getElementById('tmdb-key').value.trim();
+        diary = await Promise.all(data.items.slice(0, count).map(item => parseEntry(item, tmdbKey)));
+
+        showStatus(`Fetched ${diary.length} entries!`, 'success', 'status-setup');
+        renderPreview();
+        switchTab('style');
+      } catch(e) {
+        showStatus('Error: ' + e.message, 'error', 'status-setup');
+      }
+    }
+
+    // ── Parse a single RSS entry ──────────────────────────────────
+    async function parseEntry(item, tmdbKey) {
+      // Letterboxd RSS description contains structured HTML
+      const clean = DOMPurify.sanitize(item.description || '');
+      const div = document.createElement('div');
+      div.innerHTML = clean;
+
+      // Extract film title and year from title field: "Film Name, YYYY - ★★★½"
+      const titleRaw = item.title || '';
+      const titleMatch = titleRaw.match(/^(.+?),\s*(\d{4})\s*[-–]?\s*(★[★½]*)?\s*(liked)?/i);
+      const filmTitle = titleMatch ? titleMatch[1].trim() : titleRaw.replace(/[-–].*$/, '').trim();
+      const year = titleMatch ? titleMatch[2] : '';
+      const starsRaw = titleMatch ? (titleMatch[3] || '') : '';
+      const liked = /liked/.test(titleRaw.toLowerCase()) || item.description?.includes('❤') || false;
+
+      // Rating from stars
+      const starCount = (starsRaw.match(/★/g)||[]).length + (starsRaw.includes('½') ? 0.5 : 0);
+
+      // Review text — strip image and structured fields
+      const reviewEl = div.querySelector('p:last-of-type');
+      const reviewText = reviewEl ? reviewEl.textContent.trim() : '';
+
+      // Poster from TMDB
+      let poster = null;
+      if (tmdbKey && filmTitle) {
+        try {
+          const q = `https://api.themoviedb.org/3/search/movie?api_key=${tmdbKey}&query=${encodeURIComponent(filmTitle)}${year ? '&year='+year : ''}`;
+          const r = await fetch(q);
+          const d = await r.json();
+          const movie = d.results?.[0];
+          if (movie?.poster_path) poster = `https://image.tmdb.org/t/p/w200${movie.poster_path}`;
+        } catch(e) { /* silently skip */ }
+      }
+
+      return {
+        title: filmTitle,
+        year,
+        stars: starCount,
+        starsRaw,
+        liked,
+        review: reviewText,
+        poster,
+        link: item.link || '#',
+        date: item.pubDate || '',
+      };
+    }
+
+    // ── Render stars ──────────────────────────────────────────────
+    function renderStars(entry, mode) {
+      if (mode === 'none' || !entry.stars) return '';
+      if (mode === 'number') return entry.stars + '/5';
+      // Unicode stars
+      const full = Math.floor(entry.stars);
+      const half = entry.stars % 1 >= 0.5;
+      return '★'.repeat(full) + (half ? '½' : '');
+    }
+
+    // ── Format date ───────────────────────────────────────────────
+    function fmtDate(s, mode) {
+      if (mode === 'none' || !s) return '';
+      try {
+        const d = new Date(s);
+        if (isNaN(d)) return '';
+        if (mode === 'relative') {
+          const diff = Date.now() - d;
+          const days = Math.floor(diff / 86400000);
+          if (days < 1) return 'today';
+          if (days < 7) return days + 'd ago';
+          if (days < 30) return Math.floor(days/7) + 'w ago';
+          return Math.floor(days/30) + 'mo ago';
+        }
+        return d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+      } catch(e) { return ''; }
+    }
+
+    // ── Get options ───────────────────────────────────────────────
+    function getOpts() {
+      return {
+        title:   document.getElementById('opt-title').value,
+        layout:  document.getElementById('opt-layout').value,
+        stars:   document.getElementById('opt-stars').value,
+        dates:   document.getElementById('opt-dates').value,
+        review:  document.getElementById('opt-review').value,
+        liked:   document.getElementById('opt-liked').value,
+        font:    document.getElementById('opt-font').value,
+        width:   document.getElementById('opt-width').value,
+        accent:  document.getElementById('opt-accent').value,
+        bg:      document.getElementById('opt-bg').value,
+        textCol: document.getElementById('opt-text').value,
+        link:    document.getElementById('opt-link').value,
+        count:   parseInt(document.getElementById('opt-count').value),
+        username: document.getElementById('lb-username').value.trim(),
+        tmdbKey: document.getElementById('tmdb-key').value.trim(),
+      };
+    }
+
+    // ── Build widget DOM ──────────────────────────────────────────
+    function buildWidget(entries, opts, container) {
+      container.innerHTML = '';
+      const w = document.createElement('div');
+      w.className = 'lb-widget';
+      w.style.cssText = `font-family:${opts.font};background:${opts.bg};color:${opts.textCol};max-width:${opts.width};padding:1em;box-sizing:border-box;`;
+
+      // Header
+      if (opts.title) {
+        const hdr = document.createElement('div');
+        hdr.className = 'lb-header';
+        hdr.style.borderBottomColor = opts.accent;
+        hdr.innerHTML = `<span class="lb-header-title">${esc(opts.title)}</span>
+          <span class="lb-header-sub"><a href="https://letterboxd.com/${esc(opts.username)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">@${esc(opts.username)}</a></span>`;
+        w.appendChild(hdr);
+      }
+
+      // Grid
+      const grid = document.createElement('div');
+      grid.className = `lb-grid layout-${opts.layout}`;
+      if (opts.layout === 'poster') {
+        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(90px, 1fr))';
+      }
+
+      entries.forEach(entry => {
+        const card = document.createElement('div');
+        const linkUrl = opts.link === 'yes' ? entry.link : null;
+        const likedClass = (opts.liked === 'yes' && entry.liked) ? ' lb-liked' : '';
+
+        if (opts.layout === 'poster') {
+          card.className = 'lb-card-poster';
+          const imgWrap = linkUrl ? `<a href="${esc(entry.link)}" target="_blank" rel="noopener" style="display:block;">` : '<span style="display:block;">';
+          const imgClose = linkUrl ? '</a>' : '</span>';
+          const starsHTML = renderStars(entry, opts.stars)
+            ? `<div class="lb-stars">${renderStars(entry, opts.stars)}</div>` : '';
+          const dateHTML = fmtDate(entry.date, opts.dates)
+            ? `<div class="lb-date">${fmtDate(entry.date, opts.dates)}</div>` : '';
+          card.innerHTML = `
+            ${imgWrap}
+              ${entry.poster
+                ? `<img src="${esc(entry.poster)}" alt="${esc(entry.title)}" loading="lazy" />`
+                : `<div class="lb-no-poster">${esc(entry.title)}</div>`}
+            ${imgClose}
+            <div class="lb-title${likedClass}">${linkUrl ? `<a href="${esc(entry.link)}" target="_blank" rel="noopener" style="color:${opts.textCol};text-decoration:none;">${esc(entry.title)}</a>` : esc(entry.title)}</div>
+            ${starsHTML}${dateHTML}
+          `;
+
+        } else if (opts.layout === 'list') {
+          card.className = 'lb-card-list';
+          card.style.borderBottom = `1px solid ${opts.accent}22`;
+          const starsHTML = renderStars(entry, opts.stars);
+          const dateHTML = fmtDate(entry.date, opts.dates);
+          const reviewHTML = (opts.review === 'yes' && entry.review)
+            ? `<div class="lb-review">${esc(entry.review)}</div>` : '';
+          card.innerHTML = `
+            ${entry.poster
+              ? `<img src="${esc(entry.poster)}" alt="${esc(entry.title)}" loading="lazy" style="width:52px;min-width:52px;aspect-ratio:2/3;object-fit:cover;" />`
+              : `<div style="width:52px;min-width:52px;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:0.6em;color:#666;text-align:center;padding:2px;">${esc(entry.title)}</div>`}
+            <div class="lb-meta">
+              <div class="lb-title${likedClass}">
+                ${linkUrl ? `<a href="${esc(entry.link)}" target="_blank" rel="noopener" style="color:${opts.textCol};text-decoration:none;">${esc(entry.title)}</a>` : esc(entry.title)}
+                ${entry.year ? `<span class="lb-year"> ${esc(entry.year)}</span>` : ''}
+              </div>
+              <div style="display:flex;gap:0.5em;align-items:baseline;margin-top:0.1em;">
+                ${starsHTML ? `<span class="lb-stars">${starsHTML}</span>` : ''}
+                ${dateHTML ? `<span style="font-size:0.72em;opacity:0.4;">${dateHTML}</span>` : ''}
+              </div>
+              ${reviewHTML}
+            </div>
+          `;
+
+        } else { // compact
+          card.className = 'lb-card-compact';
+          card.style.borderBottom = `1px solid ${opts.accent}22`;
+          card.style.paddingBottom = '0.3em';
+          const starsHTML = renderStars(entry, opts.stars);
+          const dateHTML = fmtDate(entry.date, opts.dates);
+          card.innerHTML = `
+            <span class="lb-title${likedClass}">
+              ${linkUrl ? `<a href="${esc(entry.link)}" target="_blank" rel="noopener" style="color:${opts.textCol};text-decoration:none;">${esc(entry.title)}</a>` : esc(entry.title)}
+            </span>
+            <span class="lb-right">
+              ${starsHTML ? `<span class="lb-stars">${starsHTML}</span>` : ''}
+              ${entry.year ? `<span class="lb-year">${esc(entry.year)}</span>` : ''}
+              ${dateHTML ? `<span style="font-size:0.75em;opacity:0.4;">${dateHTML}</span>` : ''}
+            </span>
+          `;
+        }
+
+        grid.appendChild(card);
+      });
+
+      w.appendChild(grid);
+
+      // Footer
+      const footer = document.createElement('div');
+      footer.className = 'lb-footer';
+      footer.innerHTML = `<a href="https://letterboxd.com/${esc(opts.username)}" target="_blank" rel="noopener" style="color:inherit;">letterboxd.com/${esc(opts.username)}</a>`;
+      w.appendChild(footer);
+
+      container.appendChild(w);
+    }
+
+    // ── Render preview ────────────────────────────────────────────
+    function renderPreview() {
+      const container = document.getElementById('widget-preview');
+      if (!diary.length) {
+        container.innerHTML = '<span style="color:var(--puny);font-size:0.85rem;">Fetch your diary first in the Setup tab.</span>';
+        return;
+      }
+      buildWidget(diary, getOpts(), container);
+    }
+
+    // ── Code generation ───────────────────────────────────────────
+    function generateCode() {
+      const opts = getOpts();
+      const code = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${esc(opts.title)} | Letterboxd</title>
+  <style>
+    *{box-sizing:border-box;}
+    body{margin:0;padding:1em;font-family:${opts.font};background:${opts.bg};color:${opts.textCol};}
+    .lb-widget a{text-decoration:none;}
+    .lb-widget a:hover{opacity:0.8;}
+    .lb-grid-poster{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:0.75em;}
+    .lb-grid-list,.lb-grid-compact{display:flex;flex-direction:column;gap:${opts.layout==='compact'?'0.35em':'0.75em'};}
+    img{display:block;width:100%;}
+    .lb-no-poster{background:#222;aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;font-size:0.65em;color:#666;text-align:center;padding:4px;}
+    .lb-liked::after{content:' ♥';color:#e0384b;}
+  </style>
+</head>
+<body>
+<div id="lbw"><p style="color:#666;font-size:0.85em;">Loading...</p></div>
+<script>
+const OPTS=${JSON.stringify(opts)};
+const RSS_URL="https://letterboxd.com/${opts.username}/rss/";
+const TMDB_KEY="${opts.tmdbKey}";
+
+async function init(){
+  const el=document.getElementById('lbw');
+  try{
+    const api="https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(RSS_URL)+"&count="+OPTS.count;
+    const res=await fetch(api);
+    const data=await res.json();
+    if(data.status!=='ok') throw new Error(data.message);
+    const entries=await Promise.all(data.items.slice(0,OPTS.count).map(parseEntry));
+    render(entries,el);
+  }catch(e){el.innerHTML='<p style="color:#f44;">Error: '+e.message+'</p>';}
+}
+
+async function parseEntry(item){
+  const div=document.createElement('div');
+  div.innerHTML=item.description||'';
+  const titleRaw=item.title||'';
+  const m=titleRaw.match(/^(.+?),\\s*(\\d{4})\\s*[-–]?\\s*(★[★½]*)?/i);
+  const title=m?m[1].trim():titleRaw.replace(/[-–].*$/,'').trim();
+  const year=m?m[2]:'';
+  const starsRaw=m?(m[3]||')':'';
+  const stars=(starsRaw.match(/★/g)||[]).length+(starsRaw.includes('½')?0.5:0);
+  const liked=item.description?.includes('❤')||false;
+  const reviewEl=div.querySelector('p:last-of-type');
+  const review=reviewEl?reviewEl.textContent.trim():'';
+  let poster=null;
+  if(TMDB_KEY&&title){
+    try{
+      const q="https://api.themoviedb.org/3/search/movie?api_key="+TMDB_KEY+"&query="+encodeURIComponent(title)+(year?"&year="+year:"");
+      const r=await fetch(q);
+      const d=await r.json();
+      if(d.results?.[0]?.poster_path) poster="https://image.tmdb.org/t/p/w200"+d.results[0].poster_path;
+    }catch(e){}
+  }
+  return{title,year,stars,starsRaw,liked,review,poster,link:item.link||'#',date:item.pubDate||''};
+}
+
+function stars(e){
+  if(OPTS.stars==='none'||!e.stars) return '';
+  if(OPTS.stars==='number') return e.stars+'/5';
+  return '★'.repeat(Math.floor(e.stars))+(e.stars%1>=0.5?'½':'');
+}
+
+function fmtDate(s){
+  if(OPTS.dates==='none'||!s) return '';
+  try{
+    const d=new Date(s);if(isNaN(d))return '';
+    if(OPTS.dates==='relative'){
+      const days=Math.floor((Date.now()-d)/86400000);
+      if(days<1)return 'today';if(days<7)return days+'d ago';
+      if(days<30)return Math.floor(days/7)+'w ago';return Math.floor(days/30)+'mo ago';
+    }
+    return d.toLocaleDateString('en',{month:'short',day:'numeric'});
+  }catch(e){return '';}
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function render(entries,el){
+  const lnk=OPTS.link==='yes';
+  const ac=OPTS.accent;
+  let html='<div style="font-family:'+OPTS.font+';max-width:'+OPTS.width+';padding:0;">';
+  if(OPTS.title) html+='<div style="font-weight:bold;border-bottom:2px solid '+ac+';padding-bottom:0.4em;margin-bottom:1em;display:flex;justify-content:space-between;align-items:baseline;"><span>'+esc(OPTS.title)+'</span><span style="font-size:0.75em;opacity:0.5;"><a href="https://letterboxd.com/'+esc(OPTS.username)+'" target="_blank" style="color:inherit;">@'+esc(OPTS.username)+'</a></span></div>';
+
+  if(OPTS.layout==='poster'){
+    html+='<div class="lb-grid-poster">';
+    entries.forEach(e=>{
+      const liked=OPTS.liked==='yes'&&e.liked?' lb-liked':'';
+      html+='<div>';
+      const imgHTML=e.poster?'<img src="'+esc(e.poster)+'" alt="'+esc(e.title)+'" loading="lazy" style="aspect-ratio:2/3;object-fit:cover;" />':'<div class="lb-no-poster">'+esc(e.title)+'</div>';
+      html+=lnk?'<a href="'+esc(e.link)+'" target="_blank" style="display:block;color:inherit;">'+imgHTML+'</a>':imgHTML;
+      html+='<div style="font-size:0.72em;font-weight:bold;margin-top:0.25em;line-height:1.3;" class="'+liked.trim()+'">'+esc(e.title)+'</div>';
+      if(stars(e)) html+='<div style="font-size:0.8em;color:#f90;">'+stars(e)+'</div>';
+      if(fmtDate(e.date)) html+='<div style="font-size:0.65em;opacity:0.5;">'+fmtDate(e.date)+'</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  } else if(OPTS.layout==='list'){
+    html+='<div class="lb-grid-list">';
+    entries.forEach(e=>{
+      const liked=OPTS.liked==='yes'&&e.liked?' lb-liked':'';
+      html+='<div style="display:flex;gap:0.6em;border-bottom:1px solid '+ac+'22;padding-bottom:0.5em;">';
+      const imgHTML=e.poster?'<img src="'+esc(e.poster)+'" alt="'+esc(e.title)+'" loading="lazy" style="width:52px;min-width:52px;aspect-ratio:2/3;object-fit:cover;" />':'<div style="width:52px;min-width:52px;aspect-ratio:2/3;background:#222;display:flex;align-items:center;justify-content:center;font-size:0.6em;color:#666;text-align:center;padding:2px;">'+esc(e.title)+'</div>';
+      html+=imgHTML;
+      html+='<div style="flex:1;"><div style="font-weight:bold;" class="'+liked.trim()+'">'+(lnk?'<a href="'+esc(e.link)+'" target="_blank" style="color:'+OPTS.textCol+';text-decoration:none;">'+esc(e.title)+'</a>':esc(e.title))+(e.year?' <span style="opacity:0.4;font-size:0.8em;">'+esc(e.year)+'</span>':'')+'</div>';
+      html+='<div style="display:flex;gap:0.4em;align-items:baseline;margin-top:0.1em;">';
+      if(stars(e)) html+='<span style="color:#f90;">'+stars(e)+'</span>';
+      if(fmtDate(e.date)) html+='<span style="font-size:0.72em;opacity:0.4;">'+fmtDate(e.date)+'</span>';
+      html+='</div>';
+      if(OPTS.review==='yes'&&e.review) html+='<div style="font-size:0.78em;opacity:0.7;margin-top:0.2em;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">'+esc(e.review)+'</div>';
+      html+='</div></div>';
+    });
+    html+='</div>';
+  } else {
+    html+='<div class="lb-grid-compact">';
+    entries.forEach(e=>{
+      const liked=OPTS.liked==='yes'&&e.liked?' lb-liked':'';
+      html+='<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid '+ac+'22;padding-bottom:0.25em;font-size:0.85em;">';
+      html+='<span style="font-weight:bold;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-right:0.5em;" class="'+liked.trim()+'">'+(lnk?'<a href="'+esc(e.link)+'" target="_blank" style="color:'+OPTS.textCol+';text-decoration:none;">'+esc(e.title)+'</a>':esc(e.title))+'</span>';
+      html+='<span style="display:flex;gap:0.4em;white-space:nowrap;">';
+      if(stars(e)) html+='<span style="color:#f90;font-size:0.85em;">'+stars(e)+'</span>';
+      if(e.year) html+='<span style="opacity:0.4;font-size:0.8em;">'+esc(e.year)+'</span>';
+      if(fmtDate(e.date)) html+='<span style="opacity:0.4;font-size:0.75em;">'+fmtDate(e.date)+'</span>';
+      html+='</span></div>';
+    });
+    html+='</div>';
+  }
+
+  html+='<div style="font-size:0.7em;opacity:0.4;text-align:right;margin-top:0.75em;"><a href="https://letterboxd.com/'+esc(OPTS.username)+'" target="_blank" style="color:inherit;">letterboxd.com/'+esc(OPTS.username)+'</a></div>';
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+init();
+<\/script>
+</body>
+</html>`;
+      document.getElementById('code-output').textContent = code;
+      return code;
+    }
+
+    function downloadWidget() {
+      const code = generateCode();
+      const blob = new Blob([code], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      const u = document.getElementById('lb-username').value.trim() || 'letterboxd';
+      a.download = u + '-widget.html';
+      a.click();
+      showStatus('Downloaded!', 'success', 'status');
+    }
+
+    function copyCode() {
+      navigator.clipboard.writeText(generateCode())
+        .then(() => showStatus('Copied!', 'success', 'status'));
+    }
+
+    function esc(s) {
+      return String(s || '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function showStatus(msg, type, id = 'status') {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = msg;
+      el.className = `status show ${type}`;
+      setTimeout(() => el.classList.remove('show'), 3000);
+    }
+  </script>
+</body>
+</html>

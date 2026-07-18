@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Text File Merger | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea,
+    input[type="text"],
+    input[type="file"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea {
+      min-height: 180px;
+      resize: vertical;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .files-list {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      border: 1px solid var(--puny);
+      min-height: 150px;
+      overflow-y: auto;
+    }
+
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem;
+      background-color: var(--bg);
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .file-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .file-name {
+      flex: 1;
+      word-break: break-all;
+      color: var(--text);
+    }
+
+    .file-size {
+      color: var(--puny);
+      font-size: 0.85rem;
+      margin: 0 0.75rem;
+    }
+
+    .file-remove {
+      background: none;
+      border: 1px dashed #ef4444;
+      color: #ef4444;
+      padding: 4px 8px;
+      min-width: auto;
+      font-size: 0.85rem;
+    }
+
+    .file-remove:hover {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-color: #ef4444;
+    }
+
+    .options-panel {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+    }
+
+    .option-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .option-row:last-child {
+      margin-bottom: 0;
+    }
+
+    input[type="checkbox"] {
+      cursor: pointer;
+      width: auto;
+    }
+
+    input[type="text"] {
+      max-width: 200px;
+    }
+
+    .stats {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px dashed var(--puny);
+    }
+
+    .stat-row:last-child {
+      border-bottom: none;
+    }
+
+    .stat-value {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .file-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .file-size {
+        margin: 0.5rem 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Text File Merger</h1>
+    <p class="puny">Merge multiple text files with customizable separators and settings.</p>
+
+    <div class="container">
+
+      <!-- FILE UPLOAD -->
+      <div class="input-group">
+        <span class="input-label">Upload Text Files</span>
+        <button id="uploadBtn">Choose Files</button>
+        <input type="file" id="fileInput" multiple accept=".txt,.md,.html,.csv,.json" />
+      </div>
+
+      <!-- FILES LIST -->
+      <div class="input-group">
+        <span class="input-label">Files to Merge</span>
+        <div class="files-list" id="filesList">No files selected yet</div>
+      </div>
+
+      <!-- OPTIONS -->
+      <div class="options-panel">
+        <span class="input-label" style="color: var(--accent); margin-bottom: 0.75rem; display: block;">Merge Options</span>
+        
+        <div class="option-row">
+          <input type="checkbox" id="addSeparator" checked />
+          <label for="addSeparator">Add separator between files</label>
+        </div>
+
+        <div class="option-row">
+          <label for="separatorText">Separator Text:</label>
+          <input type="text" id="separatorText" value="---" />
+        </div>
+
+        <div class="option-row">
+          <input type="checkbox" id="addFilenames" checked />
+          <label for="addFilenames">Add filenames as headers</label>
+        </div>
+
+        <div class="option-row">
+          <input type="checkbox" id="trimWhitespace" />
+          <label for="trimWhitespace">Trim extra whitespace between files</label>
+        </div>
+      </div>
+
+      <!-- MERGE BUTTON -->
+      <div class="button-group">
+        <button class="primary" id="mergeBtn">Merge Files</button>
+      </div>
+
+      <!-- OUTPUT -->
+      <div class="input-group">
+        <span class="input-label">Merged Output</span>
+        <textarea id="output" readonly placeholder="Merged file content will appear here..."></textarea>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats">
+        <div class="stat-row">
+          <span>Files Loaded</span>
+          <span class="stat-value" id="fileCount">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Total Characters</span>
+          <span class="stat-value" id="charCount">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Total Lines</span>
+          <span class="stat-value" id="lineCount">0</span>
+        </div>
+      </div>
+
+      <!-- BUTTONS -->
+      <div class="button-group">
+        <button id="copyBtn">Copy Output</button>
+        <button id="downloadBtn">Download Merged</button>
+        <button id="clearBtn">Clear All</button>
+      </div>
+
+      <div class="info-box">
+        <strong>Text File Merger:</strong> Upload multiple text files and merge them into a single document. Configure separators, add file headers, and trim whitespace. The merged output can be copied or downloaded as a text file.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    &copy; 2026 eliana.lol &bull; <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Text File Merger Logic -->
+  <script>
+    let selectedFiles = [];
+
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status show ' + (type || 'success');
+      setTimeout(() => status.classList.remove('show'), 3000);
+    }
+
+    function updateStats() {
+      document.getElementById('fileCount').textContent = selectedFiles.length;
+      const output = document.getElementById('output').value;
+      document.getElementById('charCount').textContent = output.length;
+      document.getElementById('lineCount').textContent = output ? output.split('\n').length : 0;
+    }
+
+    function renderFilesList() {
+      const list = document.getElementById('filesList');
+      if (selectedFiles.length === 0) {
+        list.textContent = 'No files selected yet';
+        return;
+      }
+      list.innerHTML = selectedFiles
+        .map(
+          (file, idx) =>
+            `<div class="file-item">
+              <span class="file-name">${file.name}</span>
+              <span class="file-size">${(file.size / 1024).toFixed(1)} KB</span>
+              <button class="file-remove" onclick="removeFile(${idx})">Remove</button>
+            </div>`
+        )
+        .join('');
+    }
+
+    function removeFile(idx) {
+      selectedFiles.splice(idx, 1);
+      renderFilesList();
+      updateStats();
+    }
+
+    document.getElementById('uploadBtn').addEventListener('click', () => {
+      document.getElementById('fileInput').click();
+    });
+
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      selectedFiles = Array.from(e.target.files);
+      renderFilesList();
+      showStatus(selectedFiles.length + ' file(s) selected', 'success');
+    });
+
+    document.getElementById('mergeBtn').addEventListener('click', async () => {
+      if (selectedFiles.length === 0) {
+        showStatus('Select files first', 'error');
+        return;
+      }
+
+      const addSeparator = document.getElementById('addSeparator').checked;
+      const separatorText = document.getElementById('separatorText').value;
+      const addFilenames = document.getElementById('addFilenames').checked;
+      const trimWhitespace = document.getElementById('trimWhitespace').checked;
+
+      let merged = '';
+
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        const text = await file.text();
+
+        if (addFilenames) {
+          merged += '--- ' + file.name + ' ---\n';
+        }
+
+        merged += text;
+
+        if (addSeparator && i < selectedFiles.length - 1) {
+          merged += '\n' + separatorText + '\n';
+        } else if (i < selectedFiles.length - 1) {
+          merged += '\n';
+        }
+      }
+
+      if (trimWhitespace) {
+        merged = merged
+          .split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0)
+          .join('\n');
+      }
+
+      document.getElementById('output').value = merged;
+      updateStats();
+      showStatus('Files merged', 'success');
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      const output = document.getElementById('output').value;
+      if (!output) {
+        showStatus('Nothing to copy', 'error');
+        return;
+      }
+      navigator.clipboard.writeText(output);
+      showStatus('Copied to clipboard', 'success');
+    });
+
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      const output = document.getElementById('output').value;
+      if (!output) {
+        showStatus('Nothing to download', 'error');
+        return;
+      }
+      const blob = new Blob([output], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'merged.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+      showStatus('Downloaded merged.txt', 'success');
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      selectedFiles = [];
+      document.getElementById('fileInput').value = '';
+      document.getElementById('output').value = '';
+      renderFilesList();
+      updateStats();
+      showStatus('Cleared', 'success');
+    });
+
+    updateStats();
+  </script>
+</body>
+</html>

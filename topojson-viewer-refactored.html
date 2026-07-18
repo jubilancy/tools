@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TopoJSON Viewer | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    button {
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      min-height: 300px;
+      resize: vertical;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    #canvas {
+      width: 100%;
+      height: 400px;
+      background-color: var(--bg);
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: var(--accent);
+      word-break: break-word;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--puny);
+      margin-top: 0.5rem;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    @media (max-width: 600px) {
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>TopoJSON Viewer</h1>
+    <p class="puny">Paste TopoJSON data to render its arc-based geometries on a canvas.</p>
+
+    <div class="container">
+
+      <!-- EDITOR + CANVAS -->
+      <div class="two-col">
+        <div class="input-group">
+          <span class="input-label">TopoJSON Data</span>
+          <textarea id="topojsonInput" placeholder='{"type":"Topology","objects":{...}}'>{
+  "type": "Topology",
+  "objects": {
+    "region": {
+      "type": "GeometryCollection",
+      "geometries": [
+        {
+          "type": "Polygon",
+          "arcs": [[0, 1, 2, 3]]
+        }
+      ]
+    }
+  },
+  "arcs": [
+    [[0, 0], [100, 0]],
+    [[100, 0], [100, 100]],
+    [[100, 100], [0, 100]],
+    [[0, 100], [0, 0]]
+  ],
+  "bbox": [0, 0, 100, 100]
+}</textarea>
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">Canvas Preview</span>
+          <canvas id="canvas"></canvas>
+        </div>
+      </div>
+
+      <button class="primary" id="renderBtn">Render TopoJSON</button>
+
+      <!-- STATS -->
+      <div class="stats-grid" id="stats"></div>
+
+      <div class="info-box">
+        <strong>TopoJSON Viewer:</strong> TopoJSON encodes geometries as shared arcs referenced by index, reducing redundancy compared to GeoJSON. This renders Polygon and MultiLineString geometries using delta-encoded arc coordinates.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    &copy; 2026 eliana.lol &bull; <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- TopoJSON Viewer Logic -->
+  <script>
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status show ' + (type || 'error');
+      setTimeout(() => status.classList.remove('show'), 3000);
+    }
+
+    function getAccentColor() {
+      return getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#667eea';
+    }
+
+    function renderTopoJSON() {
+      try {
+        const topojsonInput = document.getElementById('topojsonInput').value;
+        const topojson = JSON.parse(topojsonInput);
+
+        const canvas = document.getElementById('canvas');
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+
+        const ctx = canvas.getContext('2d');
+        const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#ffffff';
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Get bbox
+        const bbox = topojson.bbox || [0, 0, 100, 100];
+        const minX = bbox[0],
+          minY = bbox[1];
+        const maxX = bbox[2],
+          maxY = bbox[3];
+        const width = maxX - minX || 100;
+        const height = maxY - minY || 100;
+
+        // Draw objects
+        const accentColor = getAccentColor();
+        ctx.strokeStyle = accentColor;
+        ctx.fillStyle = accentColor + '4D'; // ~30% opacity
+        ctx.lineWidth = 2;
+
+        let objectCount = 0;
+        for (let objName in topojson.objects) {
+          const obj = topojson.objects[objName];
+          if (obj.geometries) {
+            obj.geometries.forEach((geometry) => {
+              drawTopoGeometry(ctx, geometry, topojson.arcs, minX, minY, width, height, canvas, maxY);
+              objectCount++;
+            });
+          }
+        }
+
+        // Display stats
+        const statsHtml = `
+          <div class="stat">
+            <div class="stat-value">${Object.keys(topojson.objects).length}</div>
+            <div class="stat-label">Objects</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${topojson.arcs ? topojson.arcs.length : 0}</div>
+            <div class="stat-label">Arcs</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${objectCount}</div>
+            <div class="stat-label">Geometries</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${bbox.map((v) => v.toFixed(0)).join(', ')}</div>
+            <div class="stat-label">BBox</div>
+          </div>
+        `;
+        document.getElementById('stats').innerHTML = statsHtml;
+      } catch (e) {
+        showStatus('Error: ' + e.message, 'error');
+      }
+    }
+
+    function drawTopoGeometry(ctx, geometry, arcs, minX, minY, width, height, canvas, maxY) {
+      function project(x, y) {
+        const px = ((x - minX) / width) * canvas.width;
+        const py = ((maxY - y) / height) * canvas.height;
+        return [px, py];
+      }
+
+      if (geometry.type === 'Point') {
+        const [x, y] = project(geometry.coordinates[0], geometry.coordinates[1]);
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else if (geometry.type === 'Polygon' || geometry.type === 'MultiLineString') {
+        const rings = geometry.arcs;
+        if (rings) {
+          rings.forEach((ring) => {
+            ctx.beginPath();
+            let x = 0,
+              y = 0;
+            ring.forEach((arcIdx) => {
+              const arc = arcs[Math.abs(arcIdx) - 1] || [];
+              arc.forEach((point, idx) => {
+                x += point[0];
+                y += point[1];
+                const [px, py] = project(x, y);
+                if (idx === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+              });
+            });
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+          });
+        }
+      }
+    }
+
+    document.getElementById('renderBtn').addEventListener('click', renderTopoJSON);
+
+    // Initial render
+    renderTopoJSON();
+  </script>
+</body>
+</html>

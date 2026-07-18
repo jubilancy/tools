@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Code Formatter | tools.eliana.lol</title>
+  <link rel="stylesheet" href="../global.css" />
+  <link rel="icon" type="image/x-icon" href="../favicon.svg" />
+  <style>
+    .tool-layout { display: flex; flex-direction: column; gap: 20px; }
+    .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    label { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 5px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+    #error { color: var(--accent); font-size: 0.8rem; min-height: 1.2rem; }
+    select { background: var(--bg); color: var(--text); border: 1px solid var(--puny); font-family: monospace; padding: 4px 8px; }
+    #diff-line { font-size: 0.8rem; color: var(--puny); }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left"><a href="../index.html">home</a> | <a href="../extra.html">extra</a> | <a href="../credits.html">credits</a> | <a href="../changelog.html">logs</a></div>
+    <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+  </nav>
+  <main>
+    <h1>Code Formatter</h1>
+    <p class="puny">Prettify and format code using Prettier (JS/TS/CSS/HTML/JSON/Markdown).</p>
+    <div class="tool-layout">
+      <div class="action-bar">
+        <label style="display:inline-flex;align-items:center;gap:6px;text-transform:none;font-weight:normal;color:var(--text)">
+          Language:
+          <select id="lang" onchange="updateParser()">
+            <option value="babel">JavaScript</option>
+            <option value="typescript">TypeScript</option>
+            <option value="css">CSS</option>
+            <option value="html">HTML</option>
+            <option value="json">JSON</option>
+            <option value="markdown">Markdown</option>
+          </select>
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:6px;text-transform:none;font-weight:normal;color:var(--text)">
+          Tab width:
+          <select id="tab-width">
+            <option value="2" selected>2</option>
+            <option value="4">4</option>
+          </select>
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:6px;text-transform:none;font-weight:normal;color:var(--text)">
+          <input type="checkbox" id="semi" checked /> Semicolons
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:6px;text-transform:none;font-weight:normal;color:var(--text)">
+          <input type="checkbox" id="single-quote" /> Single quotes
+        </label>
+      </div>
+      <div class="two-col">
+        <div>
+          <label>Input</label>
+          <textarea id="code-in" rows="20" placeholder="Paste code here…"></textarea>
+        </div>
+        <div>
+          <label>Formatted output</label>
+          <textarea id="code-out" rows="20" readonly></textarea>
+        </div>
+      </div>
+      <div id="error"></div>
+      <div class="action-bar">
+        <button onclick="format()">Format</button>
+        <button onclick="loadSample()">Sample</button>
+        <button onclick="copyOutput()">Copy</button>
+        <button onclick="clearAll()">Clear</button>
+      </div>
+      <div id="diff-line"></div>
+    </div>
+  </main>
+  <footer style="margin-top:4rem;text-align:center" class="puny">© 2026 eliana.lol • <a href="../credits.html">credits</a></footer>
+  <script src="https://cdn.jsdelivr.net/npm/prettier@3.2.5/standalone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prettier@3.2.5/plugins/babel.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prettier@3.2.5/plugins/estree.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prettier@3.2.5/plugins/typescript.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prettier@3.2.5/plugins/postcss.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prettier@3.2.5/plugins/html.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prettier@3.2.5/plugins/markdown.js"></script>
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => { const now = htmlEl.getAttribute('data-theme'); const next = now==='dark'?'light':'dark'; htmlEl.setAttribute('data-theme',next); localStorage.setItem('theme',next); toggle.innerText=next==='dark'?'[light]':'[dark]'; };
+
+    const samples = {
+      babel: `function   greet(name){const msg='Hello '+name;console.log(msg);return msg}\n\nconst users=[{name:'alice',age:30},{name:'bob',age:25}]\nconst names=users.filter(u=>u.age>20).map(u=>u.name)`,
+      typescript: `interface User{name:string;age:number;email?:string}\n\nfunction greet(user:User):string{return \`Hello \${user.name}\`}\n\nconst users:User[]=[{name:'alice',age:30},{name:'bob',age:25}]`,
+      css: `.container{display:flex;flex-direction:column;gap:20px;max-width:900px;margin:0 auto;padding:0 20px}a{color:var(--text);text-decoration:none;border-bottom:1px dotted var(--text)}`,
+      html: `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Test</title></head><body><nav><a href="/">home</a></nav><main><h1>Hello</h1><p>World</p></main></body></html>`,
+      json: `{"name":"eliana","tools":["csv-parser","diff-viewer","qr-generator"],"settings":{"theme":"dark","monospace":true}}`,
+      markdown: `# Hello\n\nThis is **bold** and *italic* and \`code\`.\n\n- item one\n- item two\n- item three`,
+    };
+
+    async function format() {
+      const src = document.getElementById('code-in').value;
+      const parser = document.getElementById('lang').value;
+      const tabWidth = parseInt(document.getElementById('tab-width').value);
+      const semi = document.getElementById('semi').checked;
+      const singleQuote = document.getElementById('single-quote').checked;
+      const err = document.getElementById('error');
+      try {
+        const result = await prettier.format(src, {
+          parser,
+          plugins: prettierPlugins,
+          tabWidth, semi, singleQuote,
+        });
+        document.getElementById('code-out').value = result;
+        const inLines = src.split('\n').length;
+        const outLines = result.split('\n').length;
+        document.getElementById('diff-line').textContent = `${inLines} → ${outLines} lines`;
+        err.textContent = '';
+      } catch(e) {
+        err.textContent = e.message.split('\n')[0];
+      }
+    }
+
+    function updateParser() { loadSample(); }
+    function loadSample() { const p = document.getElementById('lang').value; document.getElementById('code-in').value = samples[p] || ''; }
+    function copyOutput() { navigator.clipboard.writeText(document.getElementById('code-out').value); }
+    function clearAll() { document.getElementById('code-in').value=''; document.getElementById('code-out').value=''; document.getElementById('error').textContent=''; document.getElementById('diff-line').textContent=''; }
+
+    loadSample();
+  </script>
+</body>
+</html>

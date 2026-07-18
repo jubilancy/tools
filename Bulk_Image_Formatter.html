@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bulk Image Formatter | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea,
+    input[type="text"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    select {
+      font-family: monospace;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--puny);
+      padding: 6px 10px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      padding: 1rem;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .format-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .stats {
+      font-size: 0.75rem;
+      color: var(--puny);
+      margin-top: 0.25rem;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Bulk Image Formatter</h1>
+    <p class="puny">Paste a list of image URLs and convert them to wiki, markdown, or HTML format in bulk.</p>
+
+    <div class="container">
+
+      <div class="input-group">
+        <label class="input-label" for="input">Raw Links (one per line)</label>
+        <textarea id="input" placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"></textarea>
+      </div>
+
+      <div class="controls">
+        <div class="format-row">
+          <label class="input-label" for="format">Format:</label>
+          <select id="format">
+            <option value="wiki">Wiki (![[ ]])</option>
+            <option value="markdown">Markdown (![])</option>
+            <option value="html">HTML (&lt;img&gt;)</option>
+          </select>
+        </div>
+
+        <label class="checkbox-group">
+          <input type="checkbox" id="galleryMode">
+          Wrap in Div (Gallery Mode)
+        </label>
+
+        <label class="checkbox-group">
+          <input type="checkbox" id="gridSpacing" checked>
+          Grid Spacing (No Newlines)
+        </label>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" onclick="process()">Generate Code</button>
+        <button onclick="copyOutput()">Copy Result</button>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="output">Output</label>
+        <textarea id="output" readonly placeholder="Formatted code will appear here..."></textarea>
+        <div id="count" class="stats">0 items processed</div>
+      </div>
+
+      <div class="status" id="status"></div>
+
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    }
+
+    function process() {
+      const input = document.getElementById('input').value;
+      const format = document.getElementById('format').value;
+      const isGallery = document.getElementById('galleryMode').checked;
+      const isGridSpaced = document.getElementById('gridSpacing').checked;
+
+      const lines = input.split(/\r?\n/).filter(line => line.trim() !== '');
+
+      if (!lines.length) {
+        showStatus('No links found — paste some URLs first.', 'error');
+        return;
+      }
+
+      let formattedLines = lines.map(link => {
+        const url = link.trim();
+        if (format === 'markdown') return `![](${url})`;
+        if (format === 'wiki') return `![[${url}]]`;
+        if (format === 'html') return `<img src="${url}" />`;
+      });
+
+      const separator = isGridSpaced ? ' ' : '\n';
+      let finalOutput = formattedLines.join(separator);
+
+      if (isGallery) {
+        if (format === 'html') {
+          finalOutput = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">\n${formattedLines.join('\n')}\n</div>`;
+        } else {
+          finalOutput = `<div class="image-grid">\n\n${formattedLines.join('\n')}\n\n</div>`;
+        }
+      }
+
+      document.getElementById('output').value = finalOutput;
+      document.getElementById('count').innerText = `${lines.length} link${lines.length !== 1 ? 's' : ''} processed`;
+      showStatus(`${lines.length} link${lines.length !== 1 ? 's' : ''} formatted.`);
+    }
+
+    function copyOutput() {
+      const output = document.getElementById('output');
+      if (!output.value) {
+        showStatus('Nothing to copy yet.', 'error');
+        return;
+      }
+      output.select();
+      document.execCommand('copy');
+      showStatus('Copied to clipboard!');
+    }
+  </script>
+</body>
+</html>

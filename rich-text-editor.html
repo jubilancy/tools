@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rich Text Editor | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/quill/2.0.3/quill.snow.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quill/2.0.3/quill.js"></script>
+  <style>
+    .container { display: flex; flex-direction: column; gap: 1.5rem; }
+
+    /* Quill overrides to match site theme */
+    .ql-toolbar.ql-snow {
+      border: 1px solid var(--puny) !important;
+      background: var(--bg) !important;
+      font-family: monospace !important;
+      padding: 8px !important;
+    }
+
+    .ql-container.ql-snow {
+      border: 1px solid var(--puny) !important;
+      border-top: none !important;
+      background: var(--bg) !important;
+      color: var(--text) !important;
+      font-family: monospace !important;
+      font-size: 0.95rem !important;
+      min-height: 360px;
+    }
+
+    .ql-editor {
+      min-height: 340px;
+      line-height: 1.7 !important;
+      color: var(--text) !important;
+    }
+
+    .ql-snow .ql-stroke { stroke: var(--text) !important; }
+    .ql-snow .ql-fill { fill: var(--text) !important; }
+    .ql-snow .ql-picker { color: var(--text) !important; }
+    .ql-snow .ql-picker-options { background: var(--bg) !important; border-color: var(--puny) !important; }
+    .ql-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-label { border-color: var(--accent) !important; }
+    .ql-snow.ql-toolbar button:hover .ql-stroke,
+    .ql-snow .ql-toolbar button:hover .ql-stroke { stroke: var(--accent) !important; }
+    .ql-snow.ql-toolbar button.ql-active .ql-stroke { stroke: var(--accent) !important; }
+    .ql-snow.ql-toolbar button:hover .ql-fill { fill: var(--accent) !important; }
+
+    .ql-editor.ql-blank::before {
+      color: var(--puny) !important;
+      font-style: normal !important;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--puny);
+    }
+
+    .tab {
+      padding: 6px 14px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      border: 1px solid var(--puny);
+      border-bottom: none;
+      background: var(--bg);
+      color: var(--puny);
+      cursor: pointer;
+      margin-right: -1px;
+    }
+
+    .tab.active {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--hover);
+      z-index: 1;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    #html-output, #delta-output {
+      width: 100%;
+      min-height: 200px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      padding: 12px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      resize: vertical;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+
+    button {
+      padding: 6px 12px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+    button:hover { background: var(--hover); border-color: var(--accent); }
+    button.primary { border-color: var(--accent); color: var(--accent); font-weight: bold; }
+
+    .status { padding: 0.75rem 1rem; margin: 0.5rem 0; display: none; font-size: 0.9rem; border-left: 3px solid var(--accent); background: rgba(255,102,0,0.08); color: var(--accent); }
+    .status.show { display: block; }
+
+    .stats { font-size: 0.75rem; color: var(--puny); padding: 0.4rem 0; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Rich Text Editor</h1>
+    <p class="puny">a full-featured editor powered by quill. export as html, plain text, or json delta.</p>
+
+    <div class="container">
+      <div id="editor-wrap">
+        <div id="editor"></div>
+      </div>
+
+      <div class="stats" id="stats">0 words · 0 chars</div>
+
+      <div>
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('html')">html output</button>
+          <button class="tab" onclick="switchTab('text')">plain text</button>
+          <button class="tab" onclick="switchTab('delta')">quill delta</button>
+        </div>
+        <div class="tab-content active" id="tab-html">
+          <textarea id="html-output" readonly></textarea>
+        </div>
+        <div class="tab-content" id="tab-text">
+          <textarea id="text-output" readonly style="width:100%;min-height:200px;font-family:monospace;font-size:0.8rem;padding:12px;border:1px solid var(--puny);background:var(--bg);color:var(--text);box-sizing:border-box;resize:vertical;"></textarea>
+        </div>
+        <div class="tab-content" id="tab-delta">
+          <textarea id="delta-output" readonly></textarea>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="primary" onclick="copyOutput()">copy output</button>
+        <button onclick="downloadHtml()">download html</button>
+        <button onclick="downloadTxt()">download txt</button>
+        <button onclick="clearEditor()">clear</button>
+        <button onclick="loadExample()">load example</button>
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => {
+      const next = htmlEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      htmlEl.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+    };
+  </script>
+
+  <script>
+    const quill = new Quill('#editor', {
+      theme: 'snow',
+      placeholder: 'Start writing...',
+      modules: {
+        toolbar: [
+          [{ header: [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ color: [] }, { background: [] }],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          [{ indent: '-1' }, { indent: '+1' }],
+          [{ align: [] }],
+          ['blockquote', 'code-block'],
+          ['link'],
+          ['clean']
+        ]
+      }
+    });
+
+    let activeTab = 'html';
+
+    quill.on('text-change', () => {
+      updateOutputs();
+      updateStats();
+      localStorage.setItem('quill-draft', JSON.stringify(quill.getContents()));
+    });
+
+    function updateOutputs() {
+      document.getElementById('html-output').value = quill.getSemanticHTML();
+      document.getElementById('text-output').value = quill.getText();
+      document.getElementById('delta-output').value = JSON.stringify(quill.getContents(), null, 2);
+    }
+
+    function updateStats() {
+      const text = quill.getText().trim();
+      const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+      const chars = quill.getText().length - 1;
+      document.getElementById('stats').textContent = `${words} words · ${Math.max(0, chars)} chars`;
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['html','text','delta'][i] === tab));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.getElementById(`tab-${tab}`).classList.add('active');
+    }
+
+    function copyOutput() {
+      const map = { html: 'html-output', text: 'text-output', delta: 'delta-output' };
+      navigator.clipboard.writeText(document.getElementById(map[activeTab]).value);
+      showStatus(`${activeTab} copied!`);
+    }
+
+    function downloadHtml() {
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>export</title></head><body>${quill.getSemanticHTML()}</body></html>`;
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' })); a.download = 'export.html'; a.click();
+    }
+
+    function downloadTxt() {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([quill.getText()], { type: 'text/plain' })); a.download = 'export.txt'; a.click();
+    }
+
+    function clearEditor() { quill.setContents([]); }
+
+    function loadExample() {
+      quill.setContents([
+        { insert: 'Rich Text Editor\n', attributes: { header: 1 } },
+        { insert: 'Powered by ' },
+        { insert: 'Quill.js', attributes: { bold: true } },
+        { insert: ' — a modular, extensible editor with an elegant API.\n\n' },
+        { insert: 'Features\n', attributes: { header: 2 } },
+        { insert: 'Bold, italic, underline, strikethrough\n', attributes: { list: 'bullet' } },
+        { insert: 'Headers, lists, and blockquotes\n', attributes: { list: 'bullet' } },
+        { insert: 'Code blocks and inline code\n', attributes: { list: 'bullet' } },
+        { insert: 'Export to HTML, plain text, or Delta JSON\n', attributes: { list: 'bullet' } },
+        { insert: '\nCode Block\n', attributes: { header: 2 } },
+        { insert: "const editor = new Quill('#editor', { theme: 'snow' });\n", attributes: { 'code-block': true } },
+        { insert: '\n' },
+        { insert: 'A blockquote looks like this.\n', attributes: { blockquote: true } },
+        { insert: '\nEdits auto-save to localStorage.\n' }
+      ]);
+    }
+
+    function showStatus(msg) {
+      const s = document.getElementById('status');
+      s.textContent = msg;
+      s.classList.add('show');
+      setTimeout(() => s.classList.remove('show'), 2000);
+    }
+
+    // Restore draft
+    try {
+      const draft = localStorage.getItem('quill-draft');
+      if (draft) { quill.setContents(JSON.parse(draft)); }
+      else { loadExample(); }
+    } catch { loadExample(); }
+
+    updateOutputs();
+    updateStats();
+  </script>
+</body>
+</html>

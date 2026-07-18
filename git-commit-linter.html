@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Git Commit Message Linter | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea,
+    input[type="text"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+
+    /* Tool-specific styles */
+    .score-wrap {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .score-circle {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      border: 4px solid var(--puny);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      font-weight: bold;
+      flex: none;
+    }
+
+    .score-label {
+      font-size: 0.9rem;
+      color: var(--puny);
+    }
+
+    .check-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .check-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-size: 0.85rem;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--hover);
+    }
+
+    .check-icon {
+      font-weight: bold;
+      min-width: 18px;
+    }
+
+    .check-item.pass .check-icon { color: var(--accent); }
+    .check-item.fail .check-icon { color: #ef4444; }
+
+    .rewrite-box {
+      font-family: monospace;
+      background: var(--highlight);
+      border-left: 3px solid var(--accent);
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Git Commit Message Linter</h1>
+    <p class="puny">Paste a commit message and score it against Conventional Commits spec — suggest fixes and rewrites.</p>
+
+    <div class="container">
+      <div class="input-group">
+        <span class="input-label">Commit message</span>
+        <textarea id="commit-input" placeholder="fix: resolve null pointer in user lookup">fixed bug in login page that was causing issues for some users when they tried to log in with their email address</textarea>
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">Score</span>
+        <div class="score-wrap">
+          <div class="score-circle" id="score-circle">—</div>
+          <span class="score-label" id="score-label">Paste a commit message above.</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">Conventional Commits checklist</span>
+        <div class="check-list" id="check-list"></div>
+      </div>
+
+      <div class="input-group" id="rewrite-group" style="display:none">
+        <span class="input-label">Suggested rewrite</span>
+        <div class="rewrite-box" id="rewrite-box"></div>
+      </div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> Conventional Commits format is <code>type(scope): description</code> using lowercase types like feat, fix, docs, style, refactor, test, or chore. Keep the subject line under 72 characters and in the imperative mood ("add", not "added").
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool-specific script -->
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    }
+
+    const VALID_TYPES = ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'build', 'ci', 'chore', 'revert'];
+    const PAST_TENSE_WORDS = ['fixed', 'added', 'updated', 'removed', 'changed', 'created', 'deleted', 'resolved', 'implemented', 'refactored'];
+
+    function lintCommit(message) {
+      const lines = message.split('\n');
+      const subject = lines[0] || '';
+      const checks = [];
+
+      // 1. Conventional format
+      const conventionalRegex = /^(\w+)(\(([\w\-\/, ]+)\))?(!)?:\s(.+)$/;
+      const match = subject.match(conventionalRegex);
+      const hasConventionalFormat = !!match;
+      checks.push({
+        label: 'Uses "type(scope): description" format',
+        pass: hasConventionalFormat,
+        weight: 25
+      });
+
+      // 2. Valid type
+      let validType = false;
+      if (match) {
+        validType = VALID_TYPES.includes(match[1].toLowerCase());
+      }
+      checks.push({
+        label: `Type is one of: ${VALID_TYPES.join(', ')}`,
+        pass: validType,
+        weight: 15
+      });
+
+      // 3. Lowercase type
+      const lowercaseType = match ? match[1] === match[1].toLowerCase() : false;
+      checks.push({
+        label: 'Type is lowercase',
+        pass: match ? lowercaseType : false,
+        weight: 5
+      });
+
+      // 4. Description doesn't start with capital or end with period
+      let descriptionOk = false;
+      if (match) {
+        const desc = match[5];
+        descriptionOk = desc.length > 0 && desc[0] === desc[0].toLowerCase() && !desc.endsWith('.');
+      }
+      checks.push({
+        label: 'Description starts lowercase, no trailing period',
+        pass: descriptionOk,
+        weight: 10
+      });
+
+      // 5. Subject length <= 72
+      const lengthOk = subject.length > 0 && subject.length <= 72;
+      checks.push({
+        label: 'Subject line is 72 characters or fewer',
+        pass: lengthOk,
+        weight: 15
+      });
+
+      // 6. Imperative mood (heuristic: no past-tense verb as first word of description)
+      let imperativeOk = true;
+      if (match) {
+        const firstWord = match[5].trim().split(/\s+/)[0].toLowerCase();
+        imperativeOk = !PAST_TENSE_WORDS.includes(firstWord);
+      } else {
+        const firstWord = subject.trim().split(/\s+/)[0].toLowerCase();
+        imperativeOk = !PAST_TENSE_WORDS.includes(firstWord);
+      }
+      checks.push({
+        label: 'Written in imperative mood ("add", not "added")',
+        pass: imperativeOk,
+        weight: 15
+      });
+
+      // 7. Has a body for non-trivial changes (optional bonus, low weight)
+      const hasBody = lines.length > 1 && lines.slice(1).join('').trim().length > 0;
+      checks.push({
+        label: 'Includes a body explaining why (optional, recommended for non-trivial changes)',
+        pass: hasBody,
+        weight: 5
+      });
+
+      // 8. No trailing whitespace
+      const noTrailingWhitespace = subject === subject.trimEnd();
+      checks.push({
+        label: 'No trailing whitespace on subject line',
+        pass: noTrailingWhitespace,
+        weight: 5
+      });
+
+      // 9. Breaking change marker check (just informational, not penalized if absent)
+      const hasBreakingMarker = match ? !!match[4] : false;
+      const hasBreakingFooter = /BREAKING CHANGE:/.test(message);
+
+      const totalWeight = checks.reduce((sum, c) => sum + c.weight, 0);
+      const earnedWeight = checks.reduce((sum, c) => sum + (c.pass ? c.weight : 0), 0);
+      const score = Math.round((earnedWeight / totalWeight) * 100);
+
+      return { checks, score, match, subject, hasBreakingMarker, hasBreakingFooter };
+    }
+
+    function suggestRewrite(message, lintResult) {
+      const { match, subject } = lintResult;
+      let type = 'chore';
+      let description = subject;
+
+      if (match) {
+        type = VALID_TYPES.includes(match[1].toLowerCase()) ? match[1].toLowerCase() : 'chore';
+        description = match[5];
+      } else {
+        // try to guess type from keywords
+        const lower = subject.toLowerCase();
+        if (/\bfix(ed|es)?\b|\bbug\b|\bissue\b/.test(lower)) type = 'fix';
+        else if (/\badd(ed|s)?\b|\bnew\b|\bfeature\b/.test(lower)) type = 'feat';
+        else if (/\bdoc(s|umentation)?\b/.test(lower)) type = 'docs';
+        else if (/\btest(s|ing)?\b/.test(lower)) type = 'test';
+        else if (/\brefactor(ed|ing)?\b/.test(lower)) type = 'refactor';
+        description = subject;
+      }
+
+      // strip leading past-tense verbs and convert to imperative-ish
+      const verbMap = {
+        fixed: 'fix', added: 'add', updated: 'update', removed: 'remove',
+        changed: 'change', created: 'create', deleted: 'delete',
+        resolved: 'resolve', implemented: 'implement', refactored: 'refactor'
+      };
+      let words = description.trim().split(/\s+/);
+      if (words.length > 0 && verbMap[words[0].toLowerCase()]) {
+        words[0] = verbMap[words[0].toLowerCase()];
+      }
+      description = words.join(' ');
+
+      // lowercase first letter, strip trailing period
+      description = description.charAt(0).toLowerCase() + description.slice(1);
+      description = description.replace(/\.+$/, '');
+
+      // truncate to keep total line reasonably short, but don't mangle mid-word
+      let result = `${type}: ${description}`;
+      if (result.length > 72) {
+        const words2 = result.split(' ');
+        let truncated = '';
+        for (const w of words2) {
+          if ((truncated + ' ' + w).trim().length > 69) break;
+          truncated = (truncated + ' ' + w).trim();
+        }
+        result = truncated + '…';
+      }
+
+      return result;
+    }
+
+    function render() {
+      const message = document.getElementById('commit-input').value;
+      const scoreCircle = document.getElementById('score-circle');
+      const scoreLabel = document.getElementById('score-label');
+      const checkList = document.getElementById('check-list');
+      const rewriteGroup = document.getElementById('rewrite-group');
+      const rewriteBox = document.getElementById('rewrite-box');
+
+      if (!message.trim()) {
+        scoreCircle.textContent = '—';
+        scoreCircle.style.borderColor = 'var(--puny)';
+        scoreCircle.style.color = 'var(--text)';
+        scoreLabel.textContent = 'Paste a commit message above.';
+        checkList.innerHTML = '';
+        rewriteGroup.style.display = 'none';
+        return;
+      }
+
+      const result = lintCommit(message);
+
+      scoreCircle.textContent = result.score;
+      const color = result.score >= 80 ? 'var(--accent)' : result.score >= 50 ? '#f59e0b' : '#ef4444';
+      scoreCircle.style.borderColor = color;
+      scoreCircle.style.color = color;
+
+      scoreLabel.textContent = result.score >= 80
+        ? 'Great — this follows Conventional Commits closely.'
+        : result.score >= 50
+        ? 'Decent, but a few things could be tightened up.'
+        : 'This commit message needs work to follow the spec.';
+
+      checkList.innerHTML = result.checks.map((c) => `
+        <div class="check-item ${c.pass ? 'pass' : 'fail'}">
+          <span class="check-icon">${c.pass ? '✓' : '✕'}</span>
+          <span>${c.label}</span>
+        </div>
+      `).join('');
+
+      if (result.score < 100) {
+        rewriteGroup.style.display = 'flex';
+        rewriteBox.textContent = suggestRewrite(message, result);
+      } else {
+        rewriteGroup.style.display = 'none';
+      }
+    }
+
+    document.getElementById('commit-input').addEventListener('input', render);
+    render();
+  </script>
+</body>
+</html>

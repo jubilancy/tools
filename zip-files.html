@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ZIP Files | tools.eliana.lol</title>
+  <link rel="stylesheet" href="../global.css" />
+  <link rel="icon" type="image/x-icon" href="../favicon.svg" />
+  <style>
+    .tool-layout { display: flex; flex-direction: column; gap: 20px; }
+    .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    label { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 5px; }
+    #file-list { list-style: none; padding: 0; margin: 0; }
+    #file-list li { border: 1px solid var(--puny); padding: 8px 10px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+    #file-list li:hover { background: var(--hover); }
+    #drop-zone { border: 2px dashed var(--puny); padding: 30px; text-align: center; cursor: pointer; color: var(--puny); transition: border-color 0.2s; }
+    #drop-zone.over { border-color: var(--accent); color: var(--text); }
+    #zip-contents { font-size: 0.8rem; }
+    #zip-contents li { border-bottom: 1px solid var(--puny); padding: 4px 0; }
+    .tab-bar { display: flex; gap: 0; margin-bottom: 16px; }
+    .tab { border: 1px solid var(--puny); padding: 5px 14px; cursor: pointer; font-size: 0.85rem; }
+    .tab.active { background: var(--highlight); border-color: var(--text); }
+    .pane { display: none; }
+    .pane.active { display: block; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left"><a href="../index.html">home</a> | <a href="../extra.html">extra</a> | <a href="../credits.html">credits</a> | <a href="../changelog.html">logs</a></div>
+    <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+  </nav>
+  <main>
+    <h1>ZIP Files</h1>
+    <p class="puny">Create ZIP archives from files, or inspect an existing ZIP — all in the browser.</p>
+    <div class="tool-layout">
+      <div class="tab-bar">
+        <div class="tab active" onclick="switchTab('create')">Create ZIP</div>
+        <div class="tab" onclick="switchTab('inspect')">Inspect ZIP</div>
+      </div>
+
+      <div id="pane-create" class="pane active">
+        <div id="drop-zone" onclick="document.getElementById('file-input').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFiles(event)">
+          Drop files here or click to browse
+        </div>
+        <input type="file" id="file-input" multiple style="display:none" onchange="addFiles(this.files)" />
+        <ul id="file-list"></ul>
+        <div class="action-bar">
+          <button onclick="createZip()">Download ZIP</button>
+          <button onclick="clearFiles()">Clear</button>
+        </div>
+        <div>
+          <label>ZIP filename</label>
+          <input type="text" id="zip-name" value="archive.zip" style="width:200px" />
+        </div>
+      </div>
+
+      <div id="pane-inspect" class="pane">
+        <label>Open a ZIP file</label>
+        <input type="file" id="zip-input" accept=".zip" onchange="inspectZip(this)" />
+        <ul id="zip-contents" style="margin-top:12px"></ul>
+      </div>
+    </div>
+  </main>
+  <footer style="margin-top: 4rem; text-align: center" class="puny">© 2026 eliana.lol • <a href="../credits.html">credits</a></footer>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => { const now = htmlEl.getAttribute('data-theme'); const next = now === 'dark' ? 'light' : 'dark'; htmlEl.setAttribute('data-theme', next); localStorage.setItem('theme', next); toggle.innerText = next === 'dark' ? '[light]' : '[dark]'; };
+
+    let files = [];
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0) === (tab==='create')));
+      document.getElementById('pane-create').classList.toggle('active', tab === 'create');
+      document.getElementById('pane-inspect').classList.toggle('active', tab === 'inspect');
+    }
+
+    function addFiles(newFiles) {
+      Array.from(newFiles).forEach(f => { if (!files.find(x=>x.name===f.name)) files.push(f); });
+      renderList();
+    }
+
+    function renderList() {
+      const ul = document.getElementById('file-list');
+      ul.innerHTML = files.map((f,i) => `<li><span>${f.name} <span class="puny">(${(f.size/1024).toFixed(1)} KB)</span></span><button onclick="removeFile(${i})" style="padding:2px 8px;font-size:0.75rem">✕</button></li>`).join('');
+    }
+
+    function removeFile(i) { files.splice(i,1); renderList(); }
+    function clearFiles() { files = []; renderList(); }
+    function dragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('over'); }
+    function dragLeave(e) { document.getElementById('drop-zone').classList.remove('over'); }
+    function dropFiles(e) { e.preventDefault(); dragLeave(e); addFiles(e.dataTransfer.files); }
+
+    async function createZip() {
+      if (!files.length) return;
+      const zip = new JSZip();
+      for (const f of files) zip.file(f.name, f);
+      const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = document.getElementById('zip-name').value || 'archive.zip';
+      a.click();
+    }
+
+    async function inspectZip(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const zip = await JSZip.loadAsync(file);
+      const ul = document.getElementById('zip-contents');
+      const entries = [];
+      zip.forEach((path, entry) => entries.push({ path, dir: entry.dir, size: entry._data?.uncompressedSize }));
+      ul.innerHTML = entries.map(e => `<li>${e.dir ? '📁' : '📄'} ${e.path}${e.size != null ? ` <span class="puny">(${(e.size/1024).toFixed(1)} KB)</span>` : ''}</li>`).join('');
+    }
+  </script>
+</body>
+</html>

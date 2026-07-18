@@ -1,0 +1,112 @@
+<h2 class="sr-only">iPhone app export tool</h2>
+<div style="padding: 1rem 0;">
+  <div style="background: var(--color-background-secondary); padding: 1.5rem; border-radius: var(--border-radius-lg); margin-bottom: 1.5rem;">
+    <h2 style="font-size: 18px; font-weight: 500; margin: 0 0 0.75rem; color: var(--color-text-primary);">How to get your app list</h2>
+    <p style="font-size: 14px; color: var(--color-text-secondary); margin: 0 0 1rem; line-height: 1.6;">Choose your data source below. Each method requires a few taps on your iPhone.</p>
+    
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <button onclick="sendPrompt('I want to use Shortcuts to export my apps')" style="text-align: left; padding: 12px; background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.15s;">
+        <div style="font-weight: 500; font-size: 15px; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px;">
+          <i class="ti ti-player-play" aria-hidden="true"></i>
+          Shortcuts app (fastest & most complete)
+        </div>
+        <div style="font-size: 13px; color: var(--color-text-secondary); margin-top: 4px; padding-left: 24px;">Automated export with all metadata: bundle ID, version, size, install date</div>
+      </button>
+      
+      <button onclick="sendPrompt('I want to use Settings & App Library to export my apps')" style="text-align: left; padding: 12px; background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.15s;">
+        <div style="font-weight: 500; font-size: 15px; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px;">
+          <i class="ti ti-settings" aria-hidden="true"></i>
+          Settings & manual export (more control)
+        </div>
+        <div style="font-size: 13px; color: var(--color-text-secondary); margin-top: 4px; padding-left: 24px;">Export from App Library or Settings; paste the data into the formatter below</div>
+      </button>
+      
+      <button onclick="sendPrompt('I have app data ready—let me paste it')" style="text-align: left; padding: 12px; background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.15s;">
+        <div style="font-weight: 500; font-size: 15px; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px;">
+          <i class="ti ti-upload" aria-hidden="true"></i>
+          I already have my app list (paste & convert)
+        </div>
+        <div style="font-size: 13px; color: var(--color-text-secondary); margin-top: 4px; padding-left: 24px;">Paste raw app names or data you've already exported</div>
+      </button>
+    </div>
+  </div>
+
+  <div style="background: var(--color-background-secondary); padding: 1.5rem; border-radius: var(--border-radius-lg);">
+    <h2 style="font-size: 18px; font-weight: 500; margin: 0 0 0.75rem; color: var(--color-text-primary);">Or use this CSV formatter</h2>
+    <p style="font-size: 14px; color: var(--color-text-secondary); margin: 0 0 1rem; line-height: 1.6;">If you already have your app list (from screenshots, email, or another tool), paste it below and we'll convert it to a proper CSV file.</p>
+    
+    <label style="display: block; font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 8px;">Paste your app data:</label>
+    <textarea id="appData" placeholder="Paste app names or data here (one per line, or comma-separated)&#10;Example:&#10;Slack&#10;Figma&#10;Notion&#10;Safari" style="width: 100%; min-height: 120px; padding: 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); font-family: var(--font-mono); font-size: 13px; resize: vertical;"></textarea>
+    
+    <div style="display: flex; gap: 8px; margin-top: 12px;">
+      <button onclick="convertToCSV()" style="padding: 10px 16px; background: var(--color-background-info); color: var(--color-text-info); border: 0.5px solid var(--color-border-info); border-radius: var(--border-radius-md); font-weight: 500; cursor: pointer; font-size: 14px;">
+        <i class="ti ti-download" style="margin-right: 6px; vertical-align: -2px;"></i>Generate CSV
+      </button>
+      <button onclick="document.getElementById('appData').value = ''; document.getElementById('preview').innerHTML = ''" style="padding: 10px 16px; background: var(--color-background-primary); color: var(--color-text-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); font-weight: 500; cursor: pointer; font-size: 14px;">
+        Clear
+      </button>
+    </div>
+    
+    <div id="preview" style="margin-top: 1.5rem;"></div>
+  </div>
+</div>
+
+<script>
+function convertToCSV() {
+  const input = document.getElementById('appData').value.trim();
+  if (!input) {
+    alert('Please paste your app data first');
+    return;
+  }
+
+  // Parse input - handle both newline and comma-separated formats
+  let apps = [];
+  if (input.includes(',')) {
+    apps = input.split(',').map(s => s.trim()).filter(s => s);
+  } else {
+    apps = input.split('\n').map(s => s.trim()).filter(s => s);
+  }
+
+  // Remove duplicates while preserving order
+  const seen = new Set();
+  apps = apps.filter(app => {
+    if (seen.has(app)) return false;
+    seen.add(app);
+    return true;
+  });
+
+  // Create CSV content
+  const headers = ['App Name', 'Category', 'Install Date', 'Version', 'Size (MB)', 'Bundle ID', 'Notes'];
+  const csvContent = [headers.join(','), ...apps.map(app => `"${app.replace(/"/g, '""')}",,,,,`)].join('\n');
+
+  // Create preview
+  const previewHTML = `
+    <div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 12px; margin-bottom: 12px;">
+      <div style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 8px;">Preview (${apps.length} apps):</div>
+      <div style="max-height: 180px; overflow-y: auto; font-size: 13px; font-family: var(--font-mono); color: var(--color-text-primary);">
+        <div style="border-bottom: 0.5px solid var(--color-border-tertiary); padding: 8px 0; font-weight: 500; color: var(--color-text-secondary);">${headers.join(' | ')}</div>
+        ${apps.slice(0, 10).map(app => `<div style="border-bottom: 0.5px solid var(--color-border-tertiary); padding: 6px 0; word-break: break-all;">${app} | | | | | |</div>`).join('')}
+        ${apps.length > 10 ? `<div style="padding: 6px 0; color: var(--color-text-secondary);">... and ${apps.length - 10} more</div>` : ''}
+      </div>
+    </div>
+    <button onclick="downloadCSV('${btoa(csvContent)}', 'iphone-apps.csv')" style="padding: 10px 16px; background: var(--color-background-success); color: var(--color-text-success); border: 0.5px solid var(--color-border-success); border-radius: var(--border-radius-md); font-weight: 500; cursor: pointer; font-size: 14px;">
+      <i class="ti ti-download" style="margin-right: 6px; vertical-align: -2px;"></i>Download iphone-apps.csv
+    </button>
+  `;
+
+  document.getElementById('preview').innerHTML = previewHTML;
+}
+
+function downloadCSV(base64Content, filename) {
+  const binaryString = atob(base64Content);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  const blob = new Blob([bytes], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+}
+</script>

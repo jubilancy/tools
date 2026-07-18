@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Particle Launcher | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles/tsparticles.bundle.min.js"></script>
+  <style>
+    .container { display: flex; flex-direction: column; gap: 1.5rem; }
+
+    #tsparticles {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 0.75rem;
+    }
+
+    button.preset {
+      padding: 10px;
+      text-align: center;
+      font-size: 0.85rem;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      font-family: monospace;
+      transition: all 150ms;
+    }
+
+    button.preset:hover, button.preset.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--hover);
+    }
+
+    .preset-icon {
+      display: block;
+      font-size: 1.5rem;
+      margin-bottom: 4px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+
+    .control-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .input-label { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: var(--puny); }
+
+    input[type="range"] { width: 100%; padding: 0; }
+    input[type="color"] { width: 100%; height: 36px; padding: 2px; border: 1px solid var(--puny); background: var(--bg); border-radius: 4px; cursor: pointer; }
+
+    .launch-btn {
+      font-size: 1rem;
+      padding: 12px 24px;
+      border: 2px solid var(--accent);
+      color: var(--accent);
+      font-weight: bold;
+      background: var(--bg);
+      cursor: pointer;
+      font-family: monospace;
+      letter-spacing: 0.05em;
+    }
+    .launch-btn:hover { background: var(--hover); }
+
+    .info-box {
+      padding: 0.75rem 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.875rem;
+    }
+
+    .status { padding: 0.75rem 1rem; margin: 0.5rem 0; display: none; font-size: 0.9rem; border-left: 3px solid var(--accent); background: rgba(255,102,0,0.08); color: var(--accent); }
+    .status.show { display: block; }
+
+    button {
+      padding: 8px 14px;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+    button:hover { background-color: var(--hover); border-color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div id="tsparticles"></div>
+
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Particle Launcher</h1>
+    <p class="puny">confetti, fireworks, and particle systems. pick a preset and fire.</p>
+
+    <div class="container">
+      <div>
+        <span class="input-label" style="display:block;margin-bottom:0.75rem;">Preset</span>
+        <div class="preset-grid">
+          <button class="preset active" onclick="selectPreset('confetti', this)">
+            <span class="preset-icon">🎊</span>confetti
+          </button>
+          <button class="preset" onclick="selectPreset('fireworks', this)">
+            <span class="preset-icon">🎆</span>fireworks
+          </button>
+          <button class="preset" onclick="selectPreset('snow', this)">
+            <span class="preset-icon">❄️</span>snow
+          </button>
+          <button class="preset" onclick="selectPreset('bubbles', this)">
+            <span class="preset-icon">🫧</span>bubbles
+          </button>
+          <button class="preset" onclick="selectPreset('stars', this)">
+            <span class="preset-icon">✨</span>stars
+          </button>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="control-group">
+          <label class="input-label">Count <span id="count-val">80</span></label>
+          <input type="range" id="count" min="10" max="300" value="80" oninput="document.getElementById('count-val').textContent=this.value">
+        </div>
+        <div class="control-group">
+          <label class="input-label">Speed <span id="pspeed-val">3</span></label>
+          <input type="range" id="pspeed" min="1" max="10" value="3" oninput="document.getElementById('pspeed-val').textContent=this.value">
+        </div>
+        <div class="control-group">
+          <label class="input-label">Size <span id="psize-val">6</span></label>
+          <input type="range" id="psize" min="2" max="20" value="6" oninput="document.getElementById('psize-val').textContent=this.value">
+        </div>
+        <div class="control-group">
+          <label class="input-label">Color</label>
+          <input type="color" id="pcolor" value="#ff6600">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
+        <button class="launch-btn" onclick="launch()">▶ launch</button>
+        <button onclick="stopParticles()">■ stop</button>
+      </div>
+
+      <div class="info-box">
+        <strong>Click anywhere</strong> on the page to fire a burst at that spot — works with all presets.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <script>
+    let currentPreset = 'confetti';
+    let particlesInstance = null;
+
+    function selectPreset(name, btn) {
+      currentPreset = name;
+      document.querySelectorAll('.preset').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function getConfig(preset, x, y) {
+      const count = parseInt(document.getElementById('count').value);
+      const speed = parseInt(document.getElementById('pspeed').value);
+      const size = parseInt(document.getElementById('psize').value);
+      const color = document.getElementById('pcolor').value;
+      const originX = x != null ? x / window.innerWidth : 0.5;
+      const originY = y != null ? y / window.innerHeight : 0.5;
+
+      const configs = {
+        confetti: {
+          particles: {
+            number: { value: count },
+            color: { value: ["#ff6600", "#ffff99", "#ff0055", "#00ccff", color] },
+            shape: { type: ["square", "circle"] },
+            opacity: { value: 1, animation: { enable: true, minimumValue: 0, speed: 2, sync: false } },
+            size: { value: { min: size * 0.5, max: size } },
+            move: { enable: true, speed: speed * 2, direction: "bottom", gravity: { enable: true, acceleration: 9 }, outModes: "out" },
+            rotate: { animation: { enable: true, speed: 20 } }
+          },
+          emitters: { position: { x: originX * 100, y: originY * 100 }, rate: { quantity: count, delay: 0 }, life: { count: 1, duration: 0.1 } }
+        },
+        fireworks: {
+          particles: {
+            number: { value: 0 },
+            color: { value: ["#ff6600", "#ffff00", "#ff0055", "#00ff88", color] },
+            shape: { type: "circle" },
+            opacity: { value: 1, animation: { enable: true, minimumValue: 0, speed: 3, sync: false } },
+            size: { value: size * 0.5 },
+            move: { enable: true, speed: speed * 3, direction: "none", random: true, straight: false, outModes: "out", gravity: { enable: true, acceleration: 3 } },
+            life: { count: 1 }
+          },
+          emitters: { position: { x: originX * 100, y: originY * 100 }, rate: { quantity: count, delay: 0 }, life: { count: 1, duration: 0.05 } }
+        },
+        snow: {
+          background: { opacity: 0 },
+          particles: {
+            number: { value: count },
+            color: { value: "#ffffff" },
+            shape: { type: "circle" },
+            opacity: { value: { min: 0.3, max: 0.8 } },
+            size: { value: { min: 1, max: size * 0.5 } },
+            move: { enable: true, speed: speed * 0.5, direction: "bottom", straight: false, outModes: "out", wobble: { enable: true, distance: 10, speed: 2 } }
+          }
+        },
+        bubbles: {
+          particles: {
+            number: { value: count },
+            color: { value: color },
+            shape: { type: "circle" },
+            opacity: { value: { min: 0.1, max: 0.5 } },
+            size: { value: { min: size, max: size * 3 }, animation: { enable: true, speed: 2, minimumValue: 0.1, sync: false } },
+            stroke: { width: 1, color: color },
+            move: { enable: true, speed: speed * 0.5, direction: "top", outModes: "out" }
+          }
+        },
+        stars: {
+          particles: {
+            number: { value: count },
+            color: { value: ["#ffffff", "#ffff99", color] },
+            shape: { type: "star", options: { star: { sides: 5 } } },
+            opacity: { value: { min: 0.3, max: 1 }, animation: { enable: true, speed: 1, minimumValue: 0.1, sync: false } },
+            size: { value: { min: size * 0.3, max: size } },
+            move: { enable: true, speed: speed * 0.3, direction: "none", random: true, outModes: "out" },
+            rotate: { animation: { enable: true, speed: 5 } }
+          }
+        }
+      };
+      return configs[preset] || configs.confetti;
+    }
+
+    async function launch(x, y) {
+      if (particlesInstance) {
+        await particlesInstance.destroy();
+        particlesInstance = null;
+      }
+      const config = getConfig(currentPreset, x, y);
+      particlesInstance = await tsParticles.load({ id: "tsparticles", options: config });
+
+      if (currentPreset !== 'snow' && currentPreset !== 'bubbles' && currentPreset !== 'stars') {
+        setTimeout(() => stopParticles(), 4000);
+      }
+    }
+
+    async function stopParticles() {
+      if (particlesInstance) {
+        await particlesInstance.destroy();
+        particlesInstance = null;
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'A') return;
+      launch(e.clientX, e.clientY);
+    });
+  </script>
+</body>
+</html>
