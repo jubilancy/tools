@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JSON to CSV Converter | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 100px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+      font-size: 0.85rem;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea,
+    input[type="text"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    textarea {
+      min-height: 300px;
+      resize: vertical;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .options-panel {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+    }
+
+    .option-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    input[type="checkbox"] {
+      cursor: pointer;
+      width: auto;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .section-header .button-group {
+      gap: 0.5rem;
+    }
+
+    .drop-zone {
+      position: relative;
+      border: 1px dashed transparent;
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    .drop-zone.drag-over {
+      border-color: var(--accent);
+      background-color: var(--highlight);
+    }
+
+    .drop-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(102, 126, 234, 0.15);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: var(--accent);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 150ms;
+      z-index: 10;
+    }
+
+    .drop-zone.drag-over .drop-overlay {
+      opacity: 1;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.status-success {
+      display: block;
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.status-error {
+      display: block;
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 768px) {
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .section-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>JSON to CSV Converter</h1>
+    <p class="puny">Bidirectional JSON ⇄ CSV conversion with nested object flattening, array handling, and drag-and-drop file support.</p>
+
+    <div class="container">
+
+      <div id="status-message" class="status hidden"></div>
+
+      <!-- OPTIONS -->
+      <div class="options-panel">
+        <span class="input-label" style="color: var(--accent); margin-bottom: 0.75rem; display: block;">Conversion Options</span>
+        <div class="options-grid">
+          <div class="option-group">
+            <label class="input-label" for="delimiter">Delimiter</label>
+            <input type="text" id="delimiter" value="," placeholder="," maxlength="3" />
+          </div>
+          <div class="option-group">
+            <div class="checkbox-group">
+              <input type="checkbox" id="includeHeaders" checked />
+              <label for="includeHeaders">Include Headers</label>
+            </div>
+          </div>
+          <div class="option-group">
+            <div class="checkbox-group">
+              <input type="checkbox" id="flattenObjects" checked />
+              <label for="flattenObjects">Flatten Nested Objects</label>
+            </div>
+          </div>
+          <div class="option-group">
+            <div class="checkbox-group">
+              <input type="checkbox" id="handleArrays" />
+              <label for="handleArrays">Join Arrays with |</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONVERTER -->
+      <div class="two-col">
+        <div class="input-group">
+          <div class="section-header">
+            <span class="input-label">JSON Data</span>
+            <div class="button-group">
+              <button id="clear-json-btn">Clear</button>
+              <button id="download-json-btn" disabled>Download</button>
+            </div>
+          </div>
+          <div class="drop-zone" id="json-drop-zone">
+            <textarea id="json-input" placeholder='Paste JSON here or drop a JSON file...
+Example:
+[
+  {"name": "John", "age": 30, "city": "New York"},
+  {"name": "Jane", "age": 25, "city": "London"}
+]'></textarea>
+            <div class="drop-overlay">Drop JSON file here</div>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <div class="section-header">
+            <span class="input-label">CSV Data</span>
+            <div class="button-group">
+              <button id="clear-csv-btn">Clear</button>
+              <button id="download-csv-btn" disabled>Download</button>
+            </div>
+          </div>
+          <div class="drop-zone" id="csv-drop-zone">
+            <textarea id="csv-output" placeholder="CSV data will appear here or drop a CSV file to convert to JSON..."></textarea>
+            <div class="drop-overlay">Drop CSV file here</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COPY BUTTONS -->
+      <div class="button-group">
+        <button class="primary" id="copy-json-btn" disabled>Copy JSON</button>
+        <button class="primary" id="copy-csv-btn" disabled>Copy CSV</button>
+      </div>
+
+      <div class="info-box">
+        <strong>JSON to CSV Converter:</strong> Edit either side and the other updates automatically (debounced 500ms). Supports drag-and-drop file uploads, nested object flattening (dot notation), and configurable delimiters. Arrays can be flattened to indexed keys or joined with a pipe character.
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    &copy; 2026 eliana.lol &bull; <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- JSON to CSV Converter Logic (full bidirectional conversion preserved) -->
+  <script>
+    class JSONToCSVConverter {
+      constructor() {
+        this.initializeElements();
+        this.attachEventListeners();
+        this.loadSampleData();
+        this.setupDragAndDrop();
+      }
+
+      initializeElements() {
+        this.jsonInput = document.getElementById('json-input');
+        this.csvOutput = document.getElementById('csv-output');
+        this.downloadCSVBtn = document.getElementById('download-csv-btn');
+        this.downloadJSONBtn = document.getElementById('download-json-btn');
+        this.copyJSONBtn = document.getElementById('copy-json-btn');
+        this.copyCSVBtn = document.getElementById('copy-csv-btn');
+        this.clearJSONBtn = document.getElementById('clear-json-btn');
+        this.clearCSVBtn = document.getElementById('clear-csv-btn');
+        this.statusMessage = document.getElementById('status-message');
+
+        // Drop zones
+        this.jsonDropZone = document.getElementById('json-drop-zone');
+        this.csvDropZone = document.getElementById('csv-drop-zone');
+
+        // Options
+        this.delimiterInput = document.getElementById('delimiter');
+        this.includeHeadersCheck = document.getElementById('includeHeaders');
+        this.flattenObjectsCheck = document.getElementById('flattenObjects');
+        this.handleArraysCheck = document.getElementById('handleArrays');
+      }
+
+      attachEventListeners() {
+        this.downloadCSVBtn.addEventListener('click', () => this.downloadFile('csv'));
+        this.downloadJSONBtn.addEventListener('click', () => this.downloadFile('json'));
+        this.copyJSONBtn.addEventListener('click', () => this.copyToClipboard('json'));
+        this.copyCSVBtn.addEventListener('click', () => this.copyToClipboard('csv'));
+        this.clearJSONBtn.addEventListener('click', this.clearJSON.bind(this));
+        this.clearCSVBtn.addEventListener('click', this.clearCSV.bind(this));
+
+        // Auto-convert on input change with debounce
+        let jsonTimeout, csvTimeout;
+
+        this.jsonInput.addEventListener('input', () => {
+          clearTimeout(jsonTimeout);
+          jsonTimeout = setTimeout(() => this.convertJSONToCSV(), 500);
+        });
+
+        this.csvOutput.addEventListener('input', () => {
+          clearTimeout(csvTimeout);
+          csvTimeout = setTimeout(() => this.convertCSVToJSON(), 500);
+        });
+
+        // Auto-convert on option changes
+        [this.delimiterInput, this.includeHeadersCheck, this.flattenObjectsCheck, this.handleArraysCheck].forEach(
+          (element) => {
+            element.addEventListener('change', () => {
+              if (this.jsonInput.value.trim()) this.convertJSONToCSV();
+              if (this.csvOutput.value.trim()) this.convertCSVToJSON();
+            });
+          }
+        );
+      }
+
+      setupDragAndDrop() {
+        // JSON drop zone
+        this.setupDropZone(this.jsonDropZone, (file) => this.handleFileUpload(file, 'json'));
+
+        // CSV drop zone
+        this.setupDropZone(this.csvDropZone, (file) => this.handleFileUpload(file, 'csv'));
+      }
+
+      setupDropZone(dropZone, onFileDrop) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
+          dropZone.addEventListener(eventName, this.preventDefaults, false);
+        });
+
+        ['dragenter', 'dragover'].forEach((eventName) => {
+          dropZone.addEventListener(
+            eventName,
+            () => {
+              dropZone.classList.add('drag-over');
+            },
+            false
+          );
+        });
+
+        ['dragleave', 'drop'].forEach((eventName) => {
+          dropZone.addEventListener(
+            eventName,
+            () => {
+              dropZone.classList.remove('drag-over');
+            },
+            false
+          );
+        });
+
+        dropZone.addEventListener(
+          'drop',
+          (e) => {
+            const files = Array.from(e.dataTransfer.files);
+            if (files.length > 0) {
+              onFileDrop(files[0]);
+            }
+          },
+          false
+        );
+      }
+
+      preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      async handleFileUpload(file, expectedType) {
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+
+        // Validate file type
+        if (expectedType === 'json' && !['json', 'txt'].includes(fileExtension)) {
+          this.showStatus('Please drop a JSON file (.json or .txt)', 'error');
+          return;
+        }
+
+        if (expectedType === 'csv' && !['csv', 'txt'].includes(fileExtension)) {
+          this.showStatus('Please drop a CSV file (.csv or .txt)', 'error');
+          return;
+        }
+
+        try {
+          const content = await this.readFileContent(file);
+
+          if (expectedType === 'json') {
+            this.jsonInput.value = content;
+            this.convertJSONToCSV();
+            this.showStatus(`JSON file "${file.name}" loaded successfully!`, 'success');
+          } else {
+            this.csvOutput.value = content;
+            this.convertCSVToJSON();
+            this.showStatus(`CSV file "${file.name}" loaded successfully!`, 'success');
+          }
+        } catch (error) {
+          this.showStatus(`Error reading file: ${error.message}`, 'error');
+        }
+      }
+
+      readFileContent(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsText(file);
+        });
+      }
+
+      loadSampleData() {
+        const sampleJSON = [
+          {
+            name: 'John Doe',
+            age: 30,
+            city: 'New York',
+            skills: ['JavaScript', 'Python', 'React'],
+            address: {
+              street: '123 Main St',
+              zip: '10001'
+            }
+          },
+          {
+            name: 'Jane Smith',
+            age: 25,
+            city: 'London',
+            skills: ['CSS', 'HTML', 'Vue.js'],
+            address: {
+              street: '456 Oak Ave',
+              zip: 'SW1A 1AA'
+            }
+          }
+        ];
+
+        this.jsonInput.value = JSON.stringify(sampleJSON, null, 2);
+        this.convertJSONToCSV();
+      }
+
+      convertJSONToCSV() {
+        const jsonText = this.jsonInput.value.trim();
+
+        if (!jsonText) {
+          this.csvOutput.value = '';
+          this.updateButtons();
+          return;
+        }
+
+        try {
+          const jsonData = JSON.parse(jsonText);
+          const csv = this.jsonToCSV(jsonData);
+          this.csvOutput.value = csv;
+          this.updateButtons();
+        } catch (error) {
+          this.showStatus(`Error parsing JSON: ${error.message}`, 'error');
+        }
+      }
+
+      convertCSVToJSON() {
+        const csvText = this.csvOutput.value.trim();
+
+        if (!csvText) {
+          return;
+        }
+
+        try {
+          const jsonData = this.csvToJSON(csvText);
+          this.jsonInput.value = JSON.stringify(jsonData, null, 2);
+          this.updateButtons();
+        } catch (error) {
+          this.showStatus(`Error parsing CSV: ${error.message}`, 'error');
+        }
+      }
+
+      csvToJSON(csvText) {
+        const delimiter = this.delimiterInput.value || ',';
+        const includeHeaders = this.includeHeadersCheck.checked;
+
+        const lines = csvText
+          .split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line);
+
+        if (lines.length === 0) {
+          return [];
+        }
+
+        let headers = [];
+        let dataStartIndex = 0;
+
+        if (includeHeaders && lines.length > 0) {
+          headers = this.parseCSVLine(lines[0], delimiter);
+          dataStartIndex = 1;
+        } else {
+          // Generate generic headers
+          const firstDataLine = this.parseCSVLine(lines[0], delimiter);
+          headers = firstDataLine.map((_, index) => `column_${index + 1}`);
+        }
+
+        const jsonArray = [];
+
+        for (let i = dataStartIndex; i < lines.length; i++) {
+          const values = this.parseCSVLine(lines[i], delimiter);
+          const obj = {};
+
+          headers.forEach((header, index) => {
+            let value = values[index] || '';
+
+            // Try to parse as number if it looks like one
+            if (value && !isNaN(value) && !isNaN(parseFloat(value))) {
+              value = parseFloat(value);
+            }
+            // Try to parse as boolean
+            else if (value.toLowerCase() === 'true') {
+              value = true;
+            } else if (value.toLowerCase() === 'false') {
+              value = false;
+            }
+
+            // Handle flattened object notation (e.g., "address.street")
+            if (this.flattenObjectsCheck.checked && header.includes('.')) {
+              this.setNestedValue(obj, header, value);
+            } else {
+              obj[header] = value;
+            }
+          });
+
+          jsonArray.push(obj);
+        }
+
+        return jsonArray;
+      }
+
+      parseCSVLine(line, delimiter) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+
+          if (char === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+              // Escaped quote
+              current += '"';
+              i++; // Skip next quote
+            } else {
+              // Toggle quote state
+              inQuotes = !inQuotes;
+            }
+          } else if (char === delimiter && !inQuotes) {
+            // End of field
+            result.push(current);
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+
+        // Add final field
+        result.push(current);
+
+        return result;
+      }
+
+      setNestedValue(obj, path, value) {
+        const keys = path.split('.');
+        let current = obj;
+
+        for (let i = 0; i < keys.length - 1; i++) {
+          const key = keys[i];
+          if (!(key in current)) {
+            current[key] = {};
+          }
+          current = current[key];
+        }
+
+        current[keys[keys.length - 1]] = value;
+      }
+
+      jsonToCSV(jsonData) {
+        const delimiter = this.delimiterInput.value || ',';
+        const includeHeaders = this.includeHeadersCheck.checked;
+        const flattenObjects = this.flattenObjectsCheck.checked;
+        const handleArrays = this.handleArraysCheck.checked;
+
+        // Ensure we have an array
+        if (!Array.isArray(jsonData)) {
+          jsonData = [jsonData];
+        }
+
+        if (jsonData.length === 0) {
+          return '';
+        }
+
+        // Flatten objects if requested and collect all possible keys
+        const processedData = jsonData.map((item) => {
+          if (flattenObjects) {
+            return this.flattenObject(item, '', handleArrays);
+          }
+          return this.processObject(item, handleArrays);
+        });
+
+        // Get all unique headers
+        const headers = new Set();
+        processedData.forEach((item) => {
+          Object.keys(item).forEach((key) => headers.add(key));
+        });
+        const headerArray = Array.from(headers).sort();
+
+        // Build CSV
+        const csvRows = [];
+
+        // Add headers if requested
+        if (includeHeaders) {
+          csvRows.push(headerArray.map((header) => this.escapeCSVValue(header, delimiter)).join(delimiter));
+        }
+
+        // Add data rows
+        processedData.forEach((item) => {
+          const row = headerArray.map((header) => {
+            const value = item[header] !== undefined ? item[header] : '';
+            return this.escapeCSVValue(String(value), delimiter);
+          });
+          csvRows.push(row.join(delimiter));
+        });
+
+        return csvRows.join('\n');
+      }
+
+      flattenObject(obj, prefix = '', handleArrays = false) {
+        const flattened = {};
+
+        for (const key in obj) {
+          if (obj.hasOwnProperty(key)) {
+            const newKey = prefix ? `${prefix}.${key}` : key;
+            const value = obj[key];
+
+            if (value === null || value === undefined) {
+              flattened[newKey] = '';
+            } else if (Array.isArray(value)) {
+              if (handleArrays) {
+                flattened[newKey] = value.join('|');
+              } else {
+                value.forEach((item, index) => {
+                  if (typeof item === 'object' && item !== null) {
+                    Object.assign(flattened, this.flattenObject(item, `${newKey}[${index}]`, handleArrays));
+                  } else {
+                    flattened[`${newKey}[${index}]`] = item;
+                  }
+                });
+              }
+            } else if (typeof value === 'object') {
+              Object.assign(flattened, this.flattenObject(value, newKey, handleArrays));
+            } else {
+              flattened[newKey] = value;
+            }
+          }
+        }
+
+        return flattened;
+      }
+
+      processObject(obj, handleArrays = false) {
+        const processed = {};
+
+        for (const key in obj) {
+          if (obj.hasOwnProperty(key)) {
+            const value = obj[key];
+
+            if (value === null || value === undefined) {
+              processed[key] = '';
+            } else if (Array.isArray(value)) {
+              if (handleArrays) {
+                processed[key] = value.join('|');
+              } else {
+                processed[key] = JSON.stringify(value);
+              }
+            } else if (typeof value === 'object') {
+              processed[key] = JSON.stringify(value);
+            } else {
+              processed[key] = value;
+            }
+          }
+        }
+
+        return processed;
+      }
+
+      escapeCSVValue(value, delimiter) {
+        const stringValue = String(value);
+
+        // If the value contains the delimiter, newlines, or quotes, wrap it in quotes
+        if (
+          stringValue.includes(delimiter) ||
+          stringValue.includes('\n') ||
+          stringValue.includes('\r') ||
+          stringValue.includes('"')
+        ) {
+          // Escape existing quotes by doubling them
+          const escapedValue = stringValue.replace(/"/g, '""');
+          return `"${escapedValue}"`;
+        }
+
+        return stringValue;
+      }
+
+      updateButtons() {
+        const hasJSON = this.jsonInput.value.trim() !== '';
+        const hasCSV = this.csvOutput.value.trim() !== '';
+
+        this.downloadJSONBtn.disabled = !hasJSON;
+        this.downloadCSVBtn.disabled = !hasCSV;
+        this.copyJSONBtn.disabled = !hasJSON;
+        this.copyCSVBtn.disabled = !hasCSV;
+      }
+
+      async copyToClipboard(format) {
+        const content = format === 'json' ? this.jsonInput.value : this.csvOutput.value;
+
+        if (!content) return;
+
+        try {
+          await navigator.clipboard.writeText(content);
+          this.showStatus(`${format.toUpperCase()} copied to clipboard!`, 'success');
+        } catch (error) {
+          // Fallback for older browsers
+          const textarea = format === 'json' ? this.jsonInput : this.csvOutput;
+          textarea.select();
+          document.execCommand('copy');
+          this.showStatus(`${format.toUpperCase()} copied to clipboard!`, 'success');
+        }
+      }
+
+      downloadFile(format) {
+        const content = format === 'json' ? this.jsonInput.value : this.csvOutput.value;
+
+        if (!content) return;
+
+        const mimeType = format === 'json' ? 'application/json' : 'text/csv';
+        const extension = format === 'json' ? 'json' : 'csv';
+
+        const blob = new Blob([content], { type: `${mimeType};charset=utf-8;` });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `converted_data.${extension}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        URL.revokeObjectURL(url);
+        this.showStatus(`${format.toUpperCase()} file downloaded!`, 'success');
+      }
+
+      clearJSON() {
+        this.jsonInput.value = '';
+        this.updateButtons();
+        this.hideStatus();
+      }
+
+      clearCSV() {
+        this.csvOutput.value = '';
+        this.updateButtons();
+        this.hideStatus();
+      }
+
+      showStatus(message, type) {
+        this.statusMessage.textContent = message;
+        this.statusMessage.className = `status status-${type}`;
+        this.statusMessage.classList.remove('hidden');
+        setTimeout(() => this.statusMessage.classList.add('hidden'), 3000);
+      }
+
+      hideStatus() {
+        this.statusMessage.classList.add('hidden');
+      }
+    }
+
+    // Initialize the converter when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      new JSONToCSVConverter();
+    });
+  </script>
+</body>
+</html>
