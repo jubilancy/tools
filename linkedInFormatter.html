@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LinkedIn Formatter | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea,
+    input[type="text"],
+    div[contenteditable] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus,
+    div[contenteditable]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    div[contenteditable] {
+      min-height: 200px;
+      padding: 10px;
+      resize: vertical;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .output-box {
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      min-height: 80px;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .tab-nav {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--puny);
+      margin-bottom: 1.5rem;
+    }
+
+    .tab-button {
+      padding: 10px 15px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-family: monospace;
+      color: var(--puny);
+      transition: all 150ms;
+    }
+
+    .tab-button.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-button:hover {
+      color: var(--text);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .output-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .output-section h2 {
+      font-size: 0.95rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      margin-bottom: 0.5rem;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .tab-nav {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>LinkedIn Formatter</h1>
+    <p class="puny">Convert text to bold, italic, and bold-italic Unicode for LinkedIn posts</p>
+
+    <div class="container">
+      <div class="info-box">
+        <strong>How it works:</strong> LinkedIn doesn't support native formatting, so this tool uses Unicode characters to make text appear bold and italic. Paste your text or formatted content from Word/Outlook.
+      </div>
+
+      <div class="tab-nav">
+        <button class="tab-button active" onclick="switchTab('unicode')">Unicode Converter</button>
+        <button class="tab-button" onclick="switchTab('formatted')">Formatted Text</button>
+      </div>
+
+      <!-- Unicode Converter Tab -->
+      <div id="unicode-tab" class="tab-content active">
+        <div class="input-group">
+          <label class="input-label">Plain Text:</label>
+          <textarea id="inputText" placeholder="Enter your text here..."></textarea>
+        </div>
+
+        <div class="output-section">
+          <h2>Bold Text:</h2>
+          <div id="outputBold" class="output-box"></div>
+          <div class="button-group">
+            <button class="primary" id="copyBoldBtn">Copy Bold</button>
+          </div>
+        </div>
+
+        <div class="output-section">
+          <h2>Bold Italic Text:</h2>
+          <div id="outputBoldItalic" class="output-box"></div>
+          <div class="button-group">
+            <button class="primary" id="copyBoldItalicBtn">Copy Bold Italic</button>
+          </div>
+        </div>
+
+        <div class="output-section">
+          <h2>Italic Text:</h2>
+          <div id="outputItalic" class="output-box"></div>
+          <div class="button-group">
+            <button class="primary" id="copyItalicBtn">Copy Italic</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formatted Text Tab -->
+      <div id="formatted-tab" class="tab-content">
+        <div class="input-group">
+          <label class="input-label">Paste Formatted Text (from Word/Outlook):</label>
+          <div contenteditable="true" id="formattedInput" class="input-group" style="display: block;"></div>
+        </div>
+
+        <div class="output-section">
+          <h2>LinkedIn-Ready Text:</h2>
+          <div id="formattedOutput" class="output-box"></div>
+          <div class="button-group">
+            <button class="primary" id="copyFormattedBtn">Copy Formatted Text</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Inlined linkedIn.js -->
+  <script>
+    // Tab switching functionality
+    function switchTab(tabName) {
+      document.getElementById('unicode-tab').classList.remove('active');
+      document.getElementById('formatted-tab').classList.remove('active');
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+
+      if (tabName === 'unicode') {
+        document.getElementById('unicode-tab').classList.add('active');
+        document.querySelectorAll('.tab-button')[0].classList.add('active');
+      } else if (tabName === 'formatted') {
+        document.getElementById('formatted-tab').classList.add('active');
+        document.querySelectorAll('.tab-button')[1].classList.add('active');
+      }
+    }
+
+    // Unicode character mappings
+    const boldMap = {
+      'A': '𝗔', 'B': '𝗕', 'C': '𝗖', 'D': '𝗗', 'E': '𝗘', 'F': '𝗙', 'G': '𝗚', 'H': '𝗛', 'I': '𝗜', 'J': '𝗝', 'K': '𝗞',
+      'L': '𝗟', 'M': '𝗠', 'N': '𝗡', 'O': '𝗢', 'P': '𝗣', 'Q': '𝗤', 'R': '𝗥', 'S': '𝗦', 'T': '𝗧', 'U': '𝗨', 'V': '𝗩',
+      'W': '𝗪', 'X': '𝗫', 'Y': '𝗬', 'Z': '𝗭',
+      'a': '𝗮', 'b': '𝗯', 'c': '𝗰', 'd': '𝗱', 'e': '𝗲', 'f': '𝗳', 'g': '𝗴', 'h': '𝗵', 'i': '𝗶', 'j': '𝗷', 'k': '𝗸',
+      'l': '𝗹', 'm': '𝗺', 'n': '𝗻', 'o': '𝗼', 'p': '𝗽', 'q': '𝗾', 'r': '𝗿', 's': '𝘀', 't': '𝘁', 'u': '𝘂', 'v': '𝘃',
+      'w': '𝘄', 'x': '𝘅', 'y': '𝘆', 'z': '𝘇',
+      '0': '𝟬', '1': '𝟭', '2': '𝟮', '3': '𝟯', '4': '𝟰', '5': '𝟱', '6': '𝟲', '7': '𝟳', '8': '𝟴', '9': '𝟵'
+    };
+
+    const boldItalicMap = {
+      'A': '𝘼', 'B': '𝘽', 'C': '𝘾', 'D': '𝘿', 'E': '𝙀', 'F': '𝙁', 'G': '𝙂', 'H': '𝙃', 'I': '𝙄', 'J': '𝙅', 'K': '𝙆',
+      'L': '𝙇', 'M': '𝙈', 'N': '𝙉', 'O': '𝙊', 'P': '𝙋', 'Q': '𝙌', 'R': '𝙍', 'S': '𝙎', 'T': '𝙏', 'U': '𝙐', 'V': '𝙑',
+      'W': '𝙒', 'X': '𝙓', 'Y': '𝙔', 'Z': '𝙕',
+      'a': '𝙖', 'b': '𝙗', 'c': '𝙘', 'd': '𝙙', 'e': '𝙚', 'f': '𝙛', 'g': '𝙜', 'h': '𝙝', 'i': '𝙞', 'j': '𝙟', 'k': '𝙠',
+      'l': '𝙡', 'm': '𝙢', 'n': '𝙣', 'o': '𝙤', 'p': '𝙥', 'q': '𝙦', 'r': '𝙧', 's': '𝙨', 't': '𝙩', 'u': '𝙪', 'v': '𝙫',
+      'w': '𝙬', 'x': '𝙭', 'y': '𝙮', 'z': '𝙯',
+      '0': '𝟬', '1': '𝟭', '2': '𝟮', '3': '𝟯', '4': '𝟰', '5': '𝟱', '6': '𝟲', '7': '𝟳', '8': '𝟴', '9': '𝟵'
+    };
+
+    const italicMap = {
+      'A': '𝐴', 'B': '𝐵', 'C': '𝐶', 'D': '𝐷', 'E': '𝐸', 'F': '𝐹', 'G': '𝐺', 'H': '𝐻', 'I': '𝐼', 'J': '𝐽', 'K': '𝐾',
+      'L': '𝐿', 'M': '𝑀', 'N': '𝑁', 'O': '𝑂', 'P': '𝑃', 'Q': '𝑄', 'R': '𝑅', 'S': '𝑆', 'T': '𝑇', 'U': '𝑈', 'V': '𝑉',
+      'W': '𝑊', 'X': '𝑋', 'Y': '𝑌', 'Z': '𝑍',
+      'a': '𝑎', 'b': '𝑏', 'c': '𝑐', 'd': '𝑑', 'e': '𝑒', 'f': '𝑓', 'g': '𝑔', 'h': '𝒉', 'i': '𝑖', 'j': '𝒋', 'k': '𝑘',
+      'l': '𝑙', 'm': '𝑚', 'n': '𝑛', 'o': '𝑜', 'p': '𝑝', 'q': '𝑞', 'r': '𝑟', 's': '𝑠', 't': '𝑡', 'u': '𝑢', 'v': '𝑣',
+      'w': '𝑤', 'x': '𝑥', 'y': '𝑦', 'z': '𝑧',
+      '0': '0', '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9'
+    };
+
+    function convertText(text, map) {
+      return text.split('').map(char => map[char] || char).join('');
+    }
+
+    function updateUnicodeText() {
+      const inputText = document.getElementById('inputText').value;
+      document.getElementById('outputBold').textContent = convertText(inputText, boldMap);
+      document.getElementById('outputBoldItalic').textContent = convertText(inputText, boldItalicMap);
+      document.getElementById('outputItalic').textContent = convertText(inputText, italicMap);
+    }
+
+    function processFormattedText(element) {
+      let processedText = '';
+      for (let node of element.childNodes) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          processedText += node.textContent;
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          const tagName = node.tagName.toLowerCase();
+          const text = node.textContent;
+          if (tagName === 'b' || tagName === 'strong') {
+            processedText += convertText(text, boldMap);
+          } else if (tagName === 'i' || tagName === 'em') {
+            processedText += convertText(text, italicMap);
+          } else if (tagName === 'br') {
+            processedText += '\n';
+          } else if (tagName === 'p' || tagName === 'div') {
+            processedText += processFormattedText(node) + '\n';
+            continue;
+          } else {
+            processedText += processFormattedText(node);
+            continue;
+          }
+        }
+      }
+      return processedText;
+    }
+
+    function updateFormattedText() {
+      const inputElement = document.getElementById('formattedInput');
+      const outputElement = document.getElementById('formattedOutput');
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = inputElement.innerHTML;
+      let processedText = processFormattedText(tempDiv);
+      processedText = processedText
+        .replace(/\n\s*\n\s*\n/g, '\n\n')
+        .replace(/^\s+|\s+$/g, '');
+      outputElement.textContent = processedText;
+    }
+
+    function copyToClipboard(outputId) {
+      const text = document.getElementById(outputId).textContent;
+      if (text) {
+        navigator.clipboard.writeText(text).then(() => {
+          showStatus('✅ Copied to clipboard!', 'success');
+        }).catch(err => {
+          showStatus('❌ Failed to copy', 'error');
+        });
+      }
+    }
+
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    }
+
+    // Event listeners
+    document.getElementById('inputText').addEventListener('input', updateUnicodeText);
+    document.getElementById('copyBoldBtn').addEventListener('click', () => copyToClipboard('outputBold'));
+    document.getElementById('copyBoldItalicBtn').addEventListener('click', () => copyToClipboard('outputBoldItalic'));
+    document.getElementById('copyItalicBtn').addEventListener('click', () => copyToClipboard('outputItalic'));
+
+    const formattedInput = document.getElementById('formattedInput');
+    if (formattedInput) {
+      formattedInput.addEventListener('input', updateFormattedText);
+      formattedInput.addEventListener('paste', function(e) {
+        setTimeout(updateFormattedText, 10);
+      });
+    }
+
+    const copyFormattedBtn = document.getElementById('copyFormattedBtn');
+    if (copyFormattedBtn) {
+      copyFormattedBtn.addEventListener('click', () => copyToClipboard('formattedOutput'));
+    }
+  </script>
+</body>
+</html>
