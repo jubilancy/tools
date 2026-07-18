@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Word Counter & Speech Timer | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea,
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus,
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 250px;
+      resize: vertical;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 1rem;
+      border: 1px solid var(--puny);
+      background-color: var(--highlight);
+      border-radius: 4px;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      color: var(--puny);
+    }
+
+    .settings-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--accent);
+      border-radius: 4px;
+      padding: 2rem 1rem;
+      text-align: center;
+      background: var(--highlight);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .drop-zone:hover {
+      border-color: var(--text);
+      background-color: var(--hover);
+    }
+
+    .drop-zone.active {
+      border-color: var(--accent);
+      background-color: var(--hover);
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .settings-row {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Word Counter & Speech Timer</h1>
+    <p class="puny">Real-time word counter and speech time calculator for writers and speakers</p>
+
+    <div class="container">
+      <div class="info-box">
+        <strong>Tip:</strong> Paste or type your text, adjust speech speed, and get instant stats. Upload a text file or paste content to get started.
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="wordCount">0</div>
+          <div class="stat-label">Words</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="charCount">0</div>
+          <div class="stat-label">Characters</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="lineCount">0</div>
+          <div class="stat-label">Lines</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="speechTime">0:00</div>
+          <div class="stat-label">Speech Time</div>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Upload or Paste Text:</label>
+        <div class="drop-zone" id="dropZone">
+          <div style="font-size: 2rem; margin-bottom: 0.5rem;">📄</div>
+          <div style="font-weight: bold; margin-bottom: 0.25rem;">Drop text file here or click to upload</div>
+          <div class="puny">Supports: .txt, .md</div>
+        </div>
+        <input type="file" id="fileInput" style="display: none;" accept=".txt,.md" />
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="textArea">Text Editor:</label>
+        <textarea id="textArea" placeholder="Paste your text here or upload a file..."></textarea>
+      </div>
+
+      <div class="settings-row">
+        <div class="input-group">
+          <label class="input-label" for="wordsPerMinute">Words Per Minute (WPM):</label>
+          <input type="number" id="wordsPerMinute" value="150" min="50" max="400" />
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="pauseFactor">Pause Factor (%):</label>
+          <input type="number" id="pauseFactor" value="20" min="0" max="100" />
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" onclick="updateStats()">Update Stats</button>
+        <button onclick="clearText()">Clear</button>
+        <button onclick="downloadText()">Download</button>
+        <button onclick="copyText()">Copy</button>
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool-specific script -->
+  <script>
+    const textArea = document.getElementById('textArea');
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const status = document.getElementById('status');
+
+    // Drag and drop
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('active');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('active');
+      const files = e.dataTransfer.files;
+      if (files.length) loadFile(files[0]);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length) loadFile(e.target.files[0]);
+    });
+
+    function loadFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        textArea.value = e.target.result;
+        updateStats();
+        showStatus('✅ File loaded successfully!', 'success');
+      };
+      reader.onerror = () => showStatus('❌ Error reading file', 'error');
+      reader.readAsText(file);
+    }
+
+    function updateStats() {
+      const text = textArea.value;
+      const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+      const chars = text.length;
+      const lines = text === '' ? 0 : text.split('\n').length;
+
+      const wpm = parseInt(document.getElementById('wordsPerMinute').value) || 150;
+      const pauseFactor = (parseInt(document.getElementById('pauseFactor').value) || 20) / 100;
+      const speechSeconds = (words / wpm) * 60 * (1 + pauseFactor);
+      const minutes = Math.floor(speechSeconds / 60);
+      const seconds = Math.round(speechSeconds % 60);
+
+      document.getElementById('wordCount').textContent = words.toLocaleString();
+      document.getElementById('charCount').textContent = chars.toLocaleString();
+      document.getElementById('lineCount').textContent = lines;
+      document.getElementById('speechTime').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function clearText() {
+      textArea.value = '';
+      updateStats();
+      showStatus('Text cleared', 'success');
+    }
+
+    function downloadText() {
+      const text = textArea.value;
+      if (!text.trim()) {
+        showStatus('❌ Nothing to download', 'error');
+        return;
+      }
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'text-' + Date.now() + '.txt';
+      a.click();
+      showStatus('✅ Downloaded', 'success');
+    }
+
+    function copyText() {
+      const text = textArea.value;
+      if (!text.trim()) {
+        showStatus('❌ Nothing to copy', 'error');
+        return;
+      }
+      navigator.clipboard.writeText(text);
+      showStatus('✅ Copied to clipboard', 'success');
+    }
+
+    function showStatus(message, type = 'success') {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = message;
+      statusEl.className = `status show ${type}`;
+      setTimeout(() => statusEl.classList.remove('show'), 2000);
+    }
+
+    // Real-time updates
+    textArea.addEventListener('input', updateStats);
+    document.getElementById('wordsPerMinute').addEventListener('change', updateStats);
+    document.getElementById('pauseFactor').addEventListener('change', updateStats);
+
+    // Initial update
+    updateStats();
+  </script>
+</body>
+</html>
