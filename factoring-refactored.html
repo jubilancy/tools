@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Factoring Calculator | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    button {
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    input[type="number"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .section {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .section h3 {
+      font-size: 1rem;
+      color: var(--accent);
+    }
+
+    .results {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      display: none;
+    }
+
+    .results.show {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .result-item {
+      padding: 1rem;
+      background-color: var(--bg);
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+    }
+
+    .result-label {
+      font-weight: bold;
+      color: var(--puny);
+      font-size: 0.8rem;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+    }
+
+    .result-value {
+      font-size: 1rem;
+      color: var(--text);
+      font-family: monospace;
+      word-break: break-word;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    @media (max-width: 600px) {
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Factoring Calculator</h1>
+    <p class="puny">Find prime factorizations, divisors, GCD, and LCM for any number.</p>
+
+    <div class="container">
+
+      <div class="two-col">
+        <!-- PRIME FACTORIZATION -->
+        <div class="section">
+          <h3>Prime Factorization</h3>
+          <div class="input-group">
+            <span class="input-label">Number</span>
+            <input type="number" id="number" placeholder="Enter a number" value="120" />
+          </div>
+          <button class="primary" id="factorsBtn">Find Factors</button>
+        </div>
+
+        <!-- GCD & LCM -->
+        <div class="section">
+          <h3>GCD & LCM</h3>
+          <div class="input-group">
+            <span class="input-label">Number 1</span>
+            <input type="number" id="num1" placeholder="First number" value="48" />
+          </div>
+          <div class="input-group">
+            <span class="input-label">Number 2</span>
+            <input type="number" id="num2" placeholder="Second number" value="180" />
+          </div>
+          <button class="primary" id="gcdLcmBtn">Calculate GCD & LCM</button>
+        </div>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <!-- RESULTS -->
+      <div class="results" id="results"></div>
+
+      <div class="info-box">
+        <strong>Factoring Calculator:</strong> Prime factorization breaks a number into its prime components. GCD (Greatest Common Divisor) and LCM (Least Common Multiple) are useful for fraction simplification and finding common denominators.
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    &copy; 2026 eliana.lol &bull; <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Factoring Calculator Logic -->
+  <script>
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status show ' + (type || 'error');
+      setTimeout(() => status.classList.remove('show'), 3000);
+    }
+
+    function calculateFactors() {
+      const num = parseInt(document.getElementById('number').value);
+
+      if (isNaN(num) || num < 2) {
+        showStatus('Please enter a number greater than 1', 'error');
+        return;
+      }
+
+      const factors = [];
+      let n = num;
+
+      for (let i = 2; i * i <= n; i++) {
+        while (n % i === 0) {
+          factors.push(i);
+          n /= i;
+        }
+      }
+
+      if (n > 1) {
+        factors.push(n);
+      }
+
+      const factorCount = factors.reduce((acc, f) => {
+        acc[f] = (acc[f] || 0) + 1;
+        return acc;
+      }, {});
+
+      const resultsHtml = `
+        <div class="result-item">
+          <div class="result-label">Prime Factorization of ${num}</div>
+          <div class="result-value">${factors.join(' × ')}</div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-label">Exponential Form</div>
+          <div class="result-value">${Object.entries(factorCount)
+            .map(([p, c]) => (c === 1 ? p : `${p}^${c}`))
+            .join(' × ')}</div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-label">Number of Divisors</div>
+          <div class="result-value">${Object.values(factorCount).reduce((a, b) => a * (b + 1), 1)}</div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-label">All Divisors</div>
+          <div class="result-value">${getAllDivisors(num).join(', ')}</div>
+        </div>
+      `;
+
+      const resultsEl = document.getElementById('results');
+      resultsEl.innerHTML = resultsHtml;
+      resultsEl.classList.add('show');
+    }
+
+    function calculateGCDLCM() {
+      const num1 = parseInt(document.getElementById('num1').value);
+      const num2 = parseInt(document.getElementById('num2').value);
+
+      if (isNaN(num1) || isNaN(num2)) {
+        showStatus('Please enter valid numbers', 'error');
+        return;
+      }
+
+      const gcd = findGCD(num1, num2);
+      const lcm = (num1 * num2) / gcd;
+
+      const resultsHtml = `
+        <div class="result-item">
+          <div class="result-label">GCD (Greatest Common Divisor)</div>
+          <div class="result-value">${gcd}</div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-label">LCM (Least Common Multiple)</div>
+          <div class="result-value">${lcm}</div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-label">Verification</div>
+          <div class="result-value">GCD × LCM = ${gcd} × ${lcm} = ${gcd * lcm}</div>
+        </div>
+      `;
+
+      const resultsEl = document.getElementById('results');
+      resultsEl.innerHTML = resultsHtml;
+      resultsEl.classList.add('show');
+    }
+
+    function findGCD(a, b) {
+      while (b !== 0) {
+        const temp = b;
+        b = a % b;
+        a = temp;
+      }
+      return a;
+    }
+
+    function getAllDivisors(n) {
+      const divisors = [];
+      for (let i = 1; i * i <= n; i++) {
+        if (n % i === 0) {
+          divisors.push(i);
+          if (i !== n / i) {
+            divisors.push(n / i);
+          }
+        }
+      }
+      return divisors.sort((a, b) => a - b);
+    }
+
+    document.getElementById('factorsBtn').addEventListener('click', calculateFactors);
+    document.getElementById('gcdLcmBtn').addEventListener('click', calculateGCDLCM);
+  </script>
+</body>
+</html>
