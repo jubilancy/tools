@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>URL Parser & Query String Splitter | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    button.danger {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+
+    textarea,
+    input[type="text"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    /* Drop zone */
+    .drop-zone {
+      border: 2px dashed var(--puny);
+      border-radius: 6px;
+      padding: 1.25rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--puny);
+      cursor: pointer;
+      transition: all 150ms;
+    }
+
+    .drop-zone.drag-over {
+      border-color: var(--accent);
+      color: var(--accent);
+      background-color: var(--highlight);
+    }
+
+    .drop-zone input[type="file"] {
+      display: none;
+    }
+
+    /* Tabs for mode */
+    .mode-tabs {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      overflow: hidden;
+      width: fit-content;
+    }
+
+    .mode-tab {
+      padding: 6px 16px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      background: var(--bg);
+      color: var(--puny);
+      border-right: 1px solid var(--puny);
+      user-select: none;
+    }
+
+    .mode-tab:last-child {
+      border-right: none;
+    }
+
+    .mode-tab.active {
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: bold;
+    }
+
+    /* Results */
+    .result-block {
+      border: 1px solid var(--puny);
+      border-radius: 6px;
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+    }
+
+    .result-header {
+      padding: 0.6rem 0.9rem;
+      background: var(--highlight);
+      font-size: 0.85rem;
+      font-weight: bold;
+      word-break: break-all;
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+
+    .result-header .idx {
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .result-body {
+      padding: 0.9rem;
+    }
+
+    .result-body.error-body {
+      color: #ef4444;
+      font-size: 0.9rem;
+    }
+
+    table.parts-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-bottom: 0.75rem;
+    }
+
+    table.parts-table td {
+      padding: 4px 8px;
+      border-bottom: 1px solid var(--hover);
+      vertical-align: top;
+      word-break: break-all;
+    }
+
+    table.parts-table td:first-child {
+      color: var(--puny);
+      white-space: nowrap;
+      width: 1%;
+      font-weight: bold;
+    }
+
+    .subhead {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--puny);
+      margin: 0.75rem 0 0.35rem;
+    }
+
+    .empty-note {
+      font-size: 0.8rem;
+      color: var(--puny);
+      font-style: italic;
+    }
+
+    .summary-bar {
+      font-size: 0.85rem;
+      color: var(--puny);
+    }
+
+    .summary-bar strong {
+      color: var(--text);
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      table.parts-table td:first-child {
+        white-space: normal;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>URL Parser & Query String Splitter</h1>
+    <p class="puny">Parse one or many URLs into their parts and split query strings into readable key/value pairs. All processing happens locally in your browser.</p>
+
+    <div class="container">
+
+      <div class="mode-tabs" id="mode-tabs">
+        <div class="mode-tab active" data-mode="single">single url</div>
+        <div class="mode-tab" data-mode="bulk">bulk (paste / upload)</div>
+      </div>
+
+      <!-- SINGLE MODE -->
+      <div id="single-panel" class="input-group">
+        <label class="input-label" for="single-input">Paste a URL</label>
+        <input type="text" id="single-input" placeholder="https://example.com/path?foo=bar&baz=qux#section" />
+      </div>
+
+      <!-- BULK MODE -->
+      <div id="bulk-panel" class="input-group" style="display:none;">
+        <label class="input-label" for="bulk-input">Paste multiple URLs (one per line)</label>
+        <textarea id="bulk-input" placeholder="https://example.com/a?x=1
+https://example.com/b?y=2
+https://another.com/path#hash"></textarea>
+
+        <div class="drop-zone" id="drop-zone">
+          drop a .txt / .csv file here, or click to choose one (one URL per line)
+          <input type="file" id="file-input" accept=".txt,.csv,text/plain,text/csv" />
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" id="parse-btn">Parse</button>
+        <button id="clear-btn">Clear</button>
+        <button id="copy-json-btn">Copy as JSON</button>
+        <button id="copy-csv-btn">Copy as CSV</button>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <div id="summary" class="summary-bar" style="display:none;"></div>
+
+      <div id="results"></div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> Bulk mode splits on newlines &mdash; blank lines and lines starting with <code>#</code> are ignored. Uploading a file just fills the paste box, nothing leaves your browser. Use "Copy as CSV" to paste straight into a spreadsheet, or "Copy as JSON" for scripting.
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool logic -->
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2500);
+    }
+
+    // ---- Mode switching ----
+    const tabs = document.querySelectorAll('.mode-tab');
+    const singlePanel = document.getElementById('single-panel');
+    const bulkPanel = document.getElementById('bulk-panel');
+    let mode = 'single';
+
+    tabs.forEach(tab => {
+      tab.onclick = () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        mode = tab.dataset.mode;
+        singlePanel.style.display = mode === 'single' ? 'flex' : 'none';
+        bulkPanel.style.display = mode === 'bulk' ? 'flex' : 'none';
+      };
+    });
+
+    // ---- File upload / drag-drop (bulk mode) ----
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const bulkInput = document.getElementById('bulk-input');
+
+    dropZone.onclick = () => fileInput.click();
+
+    fileInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) readFileIntoBulk(file);
+    };
+
+    ['dragenter', 'dragover'].forEach(evt => {
+      dropZone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add('drag-over');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(evt => {
+      dropZone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('drag-over');
+      });
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      const file = e.dataTransfer.files[0];
+      if (file) readFileIntoBulk(file);
+    });
+
+    function readFileIntoBulk(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const existing = bulkInput.value.trim();
+        const incoming = e.target.result.trim();
+        bulkInput.value = existing ? existing + '\n' + incoming : incoming;
+        showStatus(`Loaded ${file.name}`, 'success');
+      };
+      reader.onerror = () => showStatus('Could not read that file', 'error');
+      reader.readAsText(file);
+    }
+
+    // ---- Parsing ----
+    function extractLines(raw) {
+      return raw
+        .split(/\r?\n/)
+        .map(l => l.trim())
+        .filter(l => l.length > 0 && !l.startsWith('#'));
+    }
+
+    function parseOneUrl(raw) {
+      let u;
+      try {
+        u = new URL(raw);
+      } catch (err) {
+        return { raw, error: 'Invalid URL — ' + err.message };
+      }
+
+      const hostParts = u.hostname.split('.');
+      let subdomain = '', domain = u.hostname, tld = '';
+      if (hostParts.length >= 2) {
+        tld = hostParts[hostParts.length - 1];
+        domain = hostParts[hostParts.length - 2] + '.' + tld;
+        subdomain = hostParts.slice(0, hostParts.length - 2).join('.');
+      }
+
+      const pathParts = u.pathname.split('/');
+      const fileName = pathParts[pathParts.length - 1] || '';
+      const fileSuffixMatch = fileName.match(/\.([a-zA-Z0-9]+)$/);
+      const fileSuffix = fileSuffixMatch ? fileSuffixMatch[1] : '';
+      const directory = u.pathname.slice(0, u.pathname.length - fileName.length) || '/';
+
+      const params = [];
+      u.searchParams.forEach((value, key) => params.push({ key, value }));
+
+      return {
+        raw,
+        error: null,
+        scheme: u.protocol.replace(':', ''),
+        protocol: u.protocol.replace(':', ''),
+        username: u.username,
+        password: u.password,
+        authority: u.host,
+        host: u.host,
+        hostname: u.hostname,
+        port: u.port,
+        subdomain,
+        domain,
+        tld,
+        path: u.pathname,
+        directory,
+        fileName,
+        fileSuffix,
+        queryString: u.search.replace(/^\?/, ''),
+        hash: u.hash.replace(/^#/, ''),
+        params
+      };
+    }
+
+    function rowHtml(label, value) {
+      const v = (value === '' || value === undefined || value === null)
+        ? '<span class="empty-note">(none)</span>'
+        : escapeHtml(value);
+      return `<tr><td>${label}</td><td>${v}</td></tr>`;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function renderResult(result, index, total) {
+      const idxLabel = total > 1 ? `<span class="idx">#${index + 1}</span> ` : '';
+
+      if (result.error) {
+        return `
+          <div class="result-block">
+            <div class="result-header">
+              <span>${idxLabel}${escapeHtml(result.raw)}</span>
+            </div>
+            <div class="result-body error-body">${escapeHtml(result.error)}</div>
+          </div>`;
+      }
+
+      const partsRows = [
+        rowHtml('Scheme', result.scheme),
+        rowHtml('Protocol', result.protocol),
+        rowHtml('Username', result.username),
+        rowHtml('Password', result.password),
+        rowHtml('Authority', result.authority),
+        rowHtml('Host', result.host),
+        rowHtml('Hostname', result.hostname),
+        rowHtml('Port', result.port),
+        rowHtml('Subdomain', result.subdomain),
+        rowHtml('Domain', result.domain),
+        rowHtml('TLD', result.tld),
+        rowHtml('Path', result.path),
+        rowHtml('Directory', result.directory),
+        rowHtml('File name', result.fileName),
+        rowHtml('File suffix', result.fileSuffix),
+        rowHtml('Query string', result.queryString),
+        rowHtml('Hash', result.hash),
+      ].join('');
+
+      let queryHtml = '<p class="empty-note">No query parameters</p>';
+      if (result.params.length) {
+        queryHtml = '<table class="parts-table">' +
+          result.params.map(p => rowHtml(`'${p.key}'`, p.value)).join('') +
+          '</table>';
+      }
+
+      return `
+        <div class="result-block">
+          <div class="result-header">
+            <span>${idxLabel}${escapeHtml(result.raw)}</span>
+          </div>
+          <div class="result-body">
+            <div class="subhead">URL parts</div>
+            <table class="parts-table">${partsRows}</table>
+            <div class="subhead">Query string</div>
+            ${queryHtml}
+          </div>
+        </div>`;
+    }
+
+    let lastResults = [];
+
+    function parse() {
+      const resultsEl = document.getElementById('results');
+      const summaryEl = document.getElementById('summary');
+      let lines = [];
+
+      if (mode === 'single') {
+        const v = document.getElementById('single-input').value.trim();
+        if (!v) {
+          showStatus('Paste a URL first', 'error');
+          return;
+        }
+        lines = [v];
+      } else {
+        lines = extractLines(bulkInput.value);
+        if (!lines.length) {
+          showStatus('Paste or upload some URLs first', 'error');
+          return;
+        }
+      }
+
+      const results = lines.map(parseOneUrl);
+      lastResults = results;
+
+      const errorCount = results.filter(r => r.error).length;
+      resultsEl.innerHTML = results.map((r, i) => renderResult(r, i, results.length)).join('');
+
+      if (results.length > 1) {
+        summaryEl.style.display = 'block';
+        summaryEl.innerHTML = `Parsed <strong>${results.length}</strong> URL${results.length === 1 ? '' : 's'}` +
+          (errorCount ? ` &mdash; <strong>${errorCount}</strong> failed` : ' &mdash; all valid');
+      } else {
+        summaryEl.style.display = 'none';
+      }
+
+      showStatus(errorCount ? `Parsed with ${errorCount} error(s)` : 'Parsed successfully', errorCount ? 'error' : 'success');
+    }
+
+    document.getElementById('parse-btn').onclick = parse;
+
+    document.getElementById('single-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') parse();
+    });
+
+    document.getElementById('clear-btn').onclick = () => {
+      document.getElementById('single-input').value = '';
+      bulkInput.value = '';
+      document.getElementById('results').innerHTML = '';
+      document.getElementById('summary').style.display = 'none';
+      lastResults = [];
+      showStatus('Cleared', 'success');
+    };
+
+    // ---- Export ----
+    function copyToClipboard(text, label) {
+      navigator.clipboard.writeText(text)
+        .then(() => showStatus(`Copied ${label} to clipboard`, 'success'))
+        .catch(() => showStatus('Clipboard copy failed', 'error'));
+    }
+
+    document.getElementById('copy-json-btn').onclick = () => {
+      if (!lastResults.length) {
+        showStatus('Parse something first', 'error');
+        return;
+      }
+      const json = lastResults.map(r => {
+        if (r.error) return { url: r.raw, error: r.error };
+        const { raw, error, params, ...rest } = r;
+        const queryObj = {};
+        params.forEach(p => { queryObj[p.key] = p.value; });
+        return { url: raw, ...rest, query: queryObj };
+      });
+      copyToClipboard(JSON.stringify(json, null, 2), 'JSON');
+    };
+
+    document.getElementById('copy-csv-btn').onclick = () => {
+      if (!lastResults.length) {
+        showStatus('Parse something first', 'error');
+        return;
+      }
+      const cols = ['url', 'scheme', 'username', 'password', 'authority', 'hostname', 'port',
+        'subdomain', 'domain', 'tld', 'path', 'directory', 'fileName', 'fileSuffix',
+        'queryString', 'hash', 'error'];
+
+      const csvEscape = (v) => {
+        if (v === undefined || v === null) v = '';
+        v = String(v);
+        if (/[",\n]/.test(v)) v = '"' + v.replace(/"/g, '""') + '"';
+        return v;
+      };
+
+      const rows = [cols.join(',')];
+      lastResults.forEach(r => {
+        if (r.error) {
+          rows.push(cols.map(c => csvEscape(c === 'url' ? r.raw : (c === 'error' ? r.error : ''))).join(','));
+        } else {
+          rows.push(cols.map(c => csvEscape(c === 'url' ? r.raw : r[c])).join(','));
+        }
+      });
+      copyToClipboard(rows.join('\n'), 'CSV');
+    };
+  </script>
+</body>
+</html>
