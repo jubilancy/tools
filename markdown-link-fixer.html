@@ -57,11 +57,6 @@
       color: var(--accent);
     }
 
-    button.danger {
-      border-style: dashed;
-      opacity: 0.7;
-    }
-
     textarea,
     input[type="text"] {
       width: 100%;
@@ -166,7 +161,7 @@
 
   <main>
     <h1>Markdown Link Fixer</h1>
-    <p class="puny">Cleans up broken multi-line markdown links for Obsidian — handles nested image-in-link exports, Google Lens copy-paste dumps, empty alt text, and dangling standalone images.</p>
+    <p class="puny">Cleans up broken multi-line markdown links for Obsidian — handles nested image-in-link exports, Google Lens copy-paste dumps, video-carousel debris, double-closed heading cards, empty alt text, and dangling standalone images.</p>
 
     <div class="container">
       <div class="options">
@@ -235,247 +230,294 @@
       status.className = `status show ${type}`;
       setTimeout(() => status.classList.remove('show'), 2500);
     }
+        function fixLinks() {
+            let text = document.getElementById('input').value;
+            const dropImages = document.getElementById('dropImages').checked;
+            const stripBase64 = document.getElementById('stripBase64').checked;
+            const dropDangling = document.getElementById('dropDangling').checked;
+            let count = 0;
 
-    // Shared helper: clean up a candidate link label — trim, collapse
-    // internal whitespace/newlines, and strip trailing "+1" style
-    // badge counts that Lens tacks onto site names.
-    function cleanDisplayText(s) {
-      if (!s) return '';
-      return s
-        .replace(/\s+/g, ' ')
-        .replace(/\s*\+\d+\s*$/, '')
-        .trim();
-    }
-
-    function fixLinks() {
-      let text = document.getElementById('input').value;
-      const dropImages = document.getElementById('dropImages').checked;
-      const stripBase64 = document.getElementById('stripBase64').checked;
-      const dropDangling = document.getElementById('dropDangling').checked;
-      let count = 0;
-
-      if (!text.trim()) {
-        showStatus('Nothing to fix — paste some markdown first', 'error');
-        return;
-      }
-
-      // Step 0: strip huge base64 image blobs first so later regexes
-      // aren't scanning megabytes of encoded pixel data. This also
-      // prevents catastrophic backtracking on long Lens pastes.
-      if (stripBase64) {
-        text = text.replace(/!\[([^\]]*)\]\(data:image\/[a-zA-Z0-9+.-]+;base64,[A-Za-z0-9+/=]+\)/g, (m, alt) => {
-          return `![${alt.trim()}]()`;
-        });
-      }
-
-      // Step 1: normalize Windows line endings and collapse runs of
-      // 3+ blank lines down to a double newline, so the multi-line
-      // patterns below don't have to separately account for
-      // "one blank line" vs "several blank lines" (Lens pastes vary).
-      text = text.replace(/\r\n/g, '\n');
-      text = text.replace(/\n{3,}/g, '\n\n');
-
-      // Pattern A: nested image-in-link, e.g.
-      // - [![alt](img_url)
-      //     title text
-      //     ](page_url)
-      // Allows blank lines between the pieces (Lens/Google exports
-      // often insert a full blank line, not just a newline).
-      const nestedPattern = /-?\s*\[!\[(.*?)\]\((.*?)\)\s*\n\s*\n?\s*(.+?)\s*\n\s*\n?\s*\]\((.*?)\)/gs;
-      text = text.replace(nestedPattern, (match, alt, imgUrl, title, pageUrl) => {
-        count++;
-        title = title.trim();
-        alt = alt.trim();
-        const display = cleanDisplayText(title || alt || 'Untitled');
-        if (dropImages) {
-          return `- [${display}](${pageUrl.trim()})`;
-        }
-        return `- [${display}](${pageUrl.trim()}) ![${alt}](${imgUrl.trim()})`;
-      });
-
-      // Pattern B: Lens-style multi-line link body with no leading
-      // image marker, e.g.
-      // [
-      //
-      // ![](favicon-url)
-      //
-      // Site Name
-      //
-      // Page Title
-      //
-      // snippet text...
-      //
-      // ](page-url)
-      // The bracket may contain several blank-line-separated chunks:
-      // an optional favicon image, a site name, a title, and a
-      // snippet. Keep the most informative text line as the link
-      // label and drop the rest (or keep as image if unchecked).
-      const lensBlockPattern = /\[\s*\n((?:.|\n)*?)\n\s*\]\(\s*\n?\s*([^\s)]+)\s*\n?\s*\)/g;
-      text = text.replace(lensBlockPattern, (match, body, pageUrl) => {
-        count++;
-        // Split the body into non-empty, trimmed lines/chunks
-        const chunks = body
-          .split(/\n\s*\n|\n/)
-          .map(s => s.trim())
-          .filter(Boolean);
-
-        // Separate any inline image markup from plain text chunks
-        let imgMarkup = '';
-        const textChunks = [];
-        for (const chunk of chunks) {
-          const imgMatch = chunk.match(/^!\[([^\]]*)\]\(([^)]*)\)$/);
-          if (imgMatch && !imgMarkup) {
-            imgMarkup = chunk;
-          } else if (!/^!\[/.test(chunk)) {
-            textChunks.push(chunk);
-          }
-        }
-
-        // Prefer the longest text chunk as the label (usually the
-        // page title), falling back to the first chunk, then to
-        // the URL itself if nothing usable remains.
-        let display = 'Untitled';
-        if (textChunks.length) {
-          display = textChunks.reduce((a, b) => (b.length > a.length ? b : a));
-        }
-        display = cleanDisplayText(display);
-
-        if (!display && dropDangling) {
-          return ''; // nothing worth keeping, drop entirely
-        }
-        if (!display) display = 'Untitled';
-
-        if (dropImages || !imgMarkup) {
-          return `[${display}](${pageUrl})`;
-        }
-        return `[${display}](${pageUrl}) ${imgMarkup}`;
-      });
-
-      // Pattern B2: empty link immediately followed by an indented
-      // "card" of blank-line-separated chunks (favicon image, site
-      // name, title, snippet, thumbnail) that are siblings of the
-      // link, not inside its brackets. This is the most common
-      // Google Lens "visual matches" / "related searches" shape:
-      //   -   [](page-url)
-      //
-      //       ![](favicon-url)
-      //
-      //       Site Name
-      //
-      //       Page Title
-      //
-      //       snippet text...
-      //
-      //       ![](thumbnail-url)
-      const emptyLinkCardPattern = /(-?\s*)\[\s*\]\(([^\s)]+)\)\n((?:[ \t]*\n)*(?:[ \t]+.*\n(?:[ \t]*\n)*)+)/g;
-      text = text.replace(emptyLinkCardPattern, (match, bullet, pageUrl, cardBody) => {
-        count++;
-        const lines = cardBody.split('\n').map(s => s.trim()).filter(Boolean);
-        let imgMarkup = '';
-        const textLines = [];
-        for (const line of lines) {
-          const imgMatch = line.match(/^!\[([^\]]*)\]\(([^)]*)\)$/);
-          if (imgMatch) {
-            if (!imgMarkup && imgMatch[2] && !imgMatch[2].startsWith('data:')) {
-              imgMarkup = line;
+            if (!text.trim()) {
+                showStatus('Nothing to fix — paste some markdown first', 'error');
+                return;
             }
-            continue;
-          }
-          textLines.push(line);
+
+            // Step 0.5: fix Google "Short videos" carousel dumps. Each
+            // card is one real link, immediately followed by a stray
+            // "MM:SS](next-url)" fragment that's actually the orphaned
+            // tail of the *next* card's duration badge + link (its
+            // opening bracket and thumbnail got lost on copy). Pattern:
+            //   [Title...Platform · Channel](this-url)MM:SS](next-url)
+            // Strip the trailing "MM:SS](next-url)" debris — the next
+            // card's own line already states that same info correctly.
+            // Also handles a leading "Short videosM:SS](url)" fragment
+            // with no opening bracket at all, which is pure debris to
+            // drop entirely (it duplicates the very next card's link).
+            const videoCarouselTail = /(\]\([^)\s]+\))(?:[A-Za-z0-9 ]{0,20}?)\d{1,2}:\d{2}\]\([^)\s]+\)/g;
+            text = text.replace(videoCarouselTail, (match, closedLink) => {
+                count++;
+                return closedLink;
+            });
+            const orphanDurationLead = /(?:^|\n)[A-Za-z0-9 ]*?\d{1,2}:\d{2}\]\([^)\s]+\)(?=\n|$)/g;
+            text = text.replace(orphanDurationLead, (match) => {
+                count++;
+                return match.startsWith('\n') ? '' : '';
+            });
+
+            // Step 0.6: fix "double-closed" cards where a heading link's
+            // real closing ](url) got pushed to the END of a trailing
+            // body paragraph, leaving a spurious extra ](url) stuck
+            // right after the heading text instead, e.g.:
+            //   [### TitleSite · Author](spurious-url)Body text here...](real-url)
+            // The first ](spurious-url) is bogus — the real one is the
+            // last ](url) on the line/paragraph. Keep the heading text as
+            // the label and the LAST url on the line as the link target,
+            // drop the injected mid-text url and the extra bracket noise.
+            const doubleClosedPattern = /\[(#{1,6}\s*[^\]]+?)\]\([^)\s]+\)([^\[\n]*?)\]\(([^)\s]+)\)/g;
+            text = text.replace(doubleClosedPattern, (match, heading, body, realUrl) => {
+                count++;
+                const cleanHeading = cleanDisplayText(heading.replace(/^#{1,6}\s*/, ''));
+                const cleanBody = body.trim();
+                if (cleanBody) {
+                    return `[${cleanHeading}](${realUrl}) ${cleanBody}`;
+                }
+                return `[${cleanHeading}](${realUrl})`;
+            });
+
+            // Step 0: strip huge base64 image blobs first so later regexes
+            // aren't scanning megabytes of encoded pixel data. This also
+            // prevents catastrophic backtracking on long Lens pastes.
+            if (stripBase64) {
+                text = text.replace(/!\[([^\]]*)\]\(data:image\/[a-zA-Z0-9+.-]+;base64,[A-Za-z0-9+/=]+\)/g, (m, alt) => {
+                    return `![${alt.trim()}]()`;
+                });
+            }
+
+            // Step 1: normalize Windows line endings and collapse runs of
+            // 3+ blank lines down to a double newline, so the multi-line
+            // patterns below don't have to separately account for
+            // "one blank line" vs "several blank lines" (Lens pastes vary).
+            text = text.replace(/\r\n/g, '\n');
+            text = text.replace(/\n{3,}/g, '\n\n');
+
+            // Pattern A: nested image-in-link, e.g.
+            // - [![alt](img_url)
+            //     title text
+            //     ](page_url)
+            // Allows blank lines between the pieces (Lens/Google exports
+            // often insert a full blank line, not just a newline).
+            const nestedPattern = /-?\s*\[!\[(.*?)\]\((.*?)\)\s*\n\s*\n?\s*(.+?)\s*\n\s*\n?\s*\]\((.*?)\)/gs;
+            text = text.replace(nestedPattern, (match, alt, imgUrl, title, pageUrl) => {
+                count++;
+                title = title.trim();
+                alt = alt.trim();
+                const display = cleanDisplayText(title || alt || 'Untitled');
+                if (dropImages) {
+                    return `- [${display}](${pageUrl.trim()})`;
+                }
+                return `- [${display}](${pageUrl.trim()}) ![${alt}](${imgUrl.trim()})`;
+            });
+
+            // Pattern B: Lens-style multi-line link body with no leading
+            // image marker, e.g.
+            // [
+            //
+            // ![](favicon-url)
+            //
+            // Site Name
+            //
+            // Page Title
+            //
+            // snippet text...
+            //
+            // ](page-url)
+            // The bracket may contain several blank-line-separated chunks:
+            // an optional favicon image, a site name, a title, and a
+            // snippet. Keep the most informative text line as the link
+            // label and drop the rest (or keep as image if unchecked).
+            const lensBlockPattern = /\[\s*\n((?:.|\n)*?)\n\s*\]\(\s*\n?\s*([^\s)]+)\s*\n?\s*\)/g;
+            text = text.replace(lensBlockPattern, (match, body, pageUrl) => {
+                count++;
+                // Split the body into non-empty, trimmed lines/chunks
+                const chunks = body
+                    .split(/\n\s*\n|\n/)
+                    .map(s => s.trim())
+                    .filter(Boolean);
+
+                // Separate any inline image markup from plain text chunks
+                let imgMarkup = '';
+                const textChunks = [];
+                for (const chunk of chunks) {
+                    const imgMatch = chunk.match(/^!\[([^\]]*)\]\(([^)]*)\)$/);
+                    if (imgMatch && !imgMarkup) {
+                        imgMarkup = chunk;
+                    } else if (!/^!\[/.test(chunk)) {
+                        textChunks.push(chunk);
+                    }
+                }
+
+                // Prefer the longest text chunk as the label (usually the
+                // page title), falling back to the first chunk, then to
+                // the URL itself if nothing usable remains.
+                let display = 'Untitled';
+                if (textChunks.length) {
+                    display = textChunks.reduce((a, b) => (b.length > a.length ? b : a));
+                }
+                display = cleanDisplayText(display);
+
+                if (!display && dropDangling) {
+                    return ''; // nothing worth keeping, drop entirely
+                }
+                if (!display) display = 'Untitled';
+
+                if (dropImages || !imgMarkup) {
+                    return `[${display}](${pageUrl})`;
+                }
+                return `[${display}](${pageUrl}) ${imgMarkup}`;
+            });
+
+            // Pattern B2: empty link immediately followed by an indented
+            // "card" of blank-line-separated chunks (favicon image, site
+            // name, title, snippet, thumbnail) that are siblings of the
+            // link, not inside its brackets. This is the most common
+            // Google Lens "visual matches" / "related searches" shape:
+            //   -   [](page-url)
+            //
+            //       ![](favicon-url)
+            //
+            //       Site Name
+            //
+            //       Page Title
+            //
+            //       snippet text...
+            //
+            //       ![](thumbnail-url)
+            const emptyLinkCardPattern = /(-?\s*)\[\s*\]\(([^\s)]+)\)\n((?:[ \t]*\n)*(?:[ \t]+.*\n(?:[ \t]*\n)*)+)/g;
+            text = text.replace(emptyLinkCardPattern, (match, bullet, pageUrl, cardBody) => {
+                count++;
+                const lines = cardBody.split('\n').map(s => s.trim()).filter(Boolean);
+                let imgMarkup = '';
+                const textLines = [];
+                for (const line of lines) {
+                    const imgMatch = line.match(/^!\[([^\]]*)\]\(([^)]*)\)$/);
+                    if (imgMatch) {
+                        if (!imgMarkup && imgMatch[2] && !imgMatch[2].startsWith('data:')) {
+                            imgMarkup = line;
+                        }
+                        continue;
+                    }
+                    textLines.push(line);
+                }
+                // The title is usually the longest short-ish line, but
+                // snippets (which repeat the title + more) are often the
+                // longest overall. Prefer a line that looks like a title
+                // (ends without "..." and is reasonably short) over a
+                // clearly longer snippet paragraph.
+                let display = '';
+                const titleCandidates = textLines.filter(l => l.length < 120 && !l.endsWith('...'));
+                if (titleCandidates.length) {
+                    display = titleCandidates.reduce((a, b) => (b.length > a.length ? b : a));
+                } else if (textLines.length) {
+                    display = textLines.reduce((a, b) => (b.length > a.length ? b : a));
+                }
+                display = cleanDisplayText(display);
+
+                if (!display) {
+                    if (dropDangling) return `${bullet}[Untitled](${pageUrl})\n\n`;
+                    display = 'Untitled';
+                }
+
+                if (dropImages || !imgMarkup) {
+                    return `${bullet}[${display}](${pageUrl})\n\n`;
+                }
+                return `${bullet}[${display}](${pageUrl}) ${imgMarkup}\n\n`;
+            });
+
+            // Pattern C: simple broken link with newlines between text and url
+            // [
+            // text
+            // ](url)
+            const simplePattern = /\[\s*\n\s*(.+?)\s*\n\s*\]\s*\(\s*\n?\s*(.+?)\s*\n?\s*\)/gs;
+            text = text.replace(simplePattern, (match, txt, url) => {
+                count++;
+                return `[${cleanDisplayText(txt.trim())}](${url.trim()})`;
+            });
+
+            // Step 2: strip trailing site-name/count badges glued onto a
+            // finished link, e.g. "[Title](url)MUBI +1" or
+            // "[Title](url)tv-media.at +1" -> just the link.
+            text = text.replace(/(\]\([^)\s]+\))(?:[ \t]*[A-Za-z0-9.\-]+(?:\.[a-z]{2,})?(?:\s*\+\d+)?)(?=\n|$)/g, '$1');
+
+            // Step 3: remove now-empty or dangling images/badges that carry
+            // no link and no useful alt text (e.g. bare favicon blobs or
+            // leftover "![]()"" after base64 stripping).
+            if (dropDangling) {
+                text = text.replace(/^\s*!\[\s*\]\(\s*\)\s*$/gm, '');
+                text = text.replace(/!\[\s*\]\(\s*\)/g, '');
+                // Drop any remaining standalone image line (thumbnail,
+                // favicon, etc.) that sits alone on its own line with no
+                // surrounding link — these are pure visual clutter once
+                // the card's real link has already been extracted above.
+                text = text.replace(/^[ \t]*!\[[^\]]*\]\([^)]*\)[ \t]*$/gm, '');
+                // Drop lines that are now just a lone site-name badge like
+                // "MUBI" or "tv-media.at +1" left orphaned on their own line
+                text = text.replace(/^[ \t]*[A-Za-z0-9.\-]{1,30}(?:\s*\+\d+)?[ \t]*$/gm, (m) => {
+                    // Only strip if it doesn't look like a real sentence
+                    // (no spaces beyond the +N badge, short, no punctuation)
+                    return /^[A-Za-z0-9.\-]+(\s*\+\d+)?$/.test(m.trim()) ? '' : m;
+                });
+            }
+
+            // Step 4b: strip stray leading heading markers ("### ") that
+            // survive inside otherwise-valid, untouched link labels —
+            // Google's card titles are often copied as markdown headings.
+            text = text.replace(/\[#{1,6}\s*([^\]]+)\]/g, '[$1]');
+
+            // Cleanup: trim stray spaces inside remaining [ ] pairs
+            text = text.replace(/\[\s+(.+?)\s+\]/g, '[$1]');
+
+            // Collapse the blank-line runs created by all the deletions above
+            text = text.replace(/\n{3,}/g, '\n\n');
+            text = text.replace(/[ \t]+\n/g, '\n');
+            text = text.trim();
+
+            document.getElementById('output').value = text;
+            showStatus(`✓ Fixed ${count} link(s)`, 'success');
         }
-        // The title is usually the longest short-ish line, but
-        // snippets (which repeat the title + more) are often the
-        // longest overall. Prefer a line that looks like a title
-        // (ends without "..." and is reasonably short) over a
-        // clearly longer snippet paragraph.
-        let display = '';
-        const titleCandidates = textLines.filter(l => l.length < 120 && !l.endsWith('...'));
-        if (titleCandidates.length) {
-          display = titleCandidates.reduce((a, b) => (b.length > a.length ? b : a));
-        } else if (textLines.length) {
-          display = textLines.reduce((a, b) => (b.length > a.length ? b : a));
-        }
-        display = cleanDisplayText(display);
 
-        if (!display) {
-          if (dropDangling) return `${bullet}[Untitled](${pageUrl})\n\n`;
-          display = 'Untitled';
+        // Shared helper: clean up a candidate link label — trim, collapse
+        // internal whitespace/newlines, and strip trailing "+1" style
+        // badge counts that Lens tacks onto site names.
+        function cleanDisplayText(s) {
+            if (!s) return '';
+            return s
+                .replace(/^#{1,6}\s*/, '')
+                .replace(/\s+/g, ' ')
+                .replace(/\s*\+\d+\s*$/, '')
+                .trim();
         }
 
-        if (dropImages || !imgMarkup) {
-          return `${bullet}[${display}](${pageUrl})\n\n`;
+        function copyToClipboard() {
+            const output = document.getElementById('output');
+            if (!output.value) {
+                showStatus('No output to copy — fix links first', 'error');
+                return;
+            }
+            navigator.clipboard.writeText(output.value).then(() => {
+                showStatus('✓ Copied to clipboard', 'success');
+            }).catch(() => {
+                output.select();
+                document.execCommand('copy');
+                showStatus('✓ Copied to clipboard', 'success');
+            });
         }
-        return `${bullet}[${display}](${pageUrl}) ${imgMarkup}\n\n`;
-      });
 
-      // Pattern C: simple broken link with newlines between text and url
-      // [
-      // text
-      // ](url)
-      const simplePattern = /\[\s*\n\s*(.+?)\s*\n\s*\]\s*\(\s*\n?\s*(.+?)\s*\n?\s*\)/gs;
-      text = text.replace(simplePattern, (match, txt, url) => {
-        count++;
-        return `[${cleanDisplayText(txt.trim())}](${url.trim()})`;
-      });
+        document.getElementById('fix-btn').addEventListener('click', fixLinks);
+        document.getElementById('copy-btn').addEventListener('click', copyToClipboard);
 
-      // Step 2: strip trailing site-name/count badges glued onto a
-      // finished link, e.g. "[Title](url)MUBI +1" or
-      // "[Title](url)tv-media.at +1" -> just the link.
-      text = text.replace(/(\]\([^)\s]+\))(?:[ \t]*[A-Za-z0-9.\-]+(?:\.[a-z]{2,})?(?:\s*\+\d+)?)(?=\n|$)/g, '$1');
-
-      // Step 3: remove now-empty or dangling images/badges that carry
-      // no link and no useful alt text (e.g. bare favicon blobs or
-      // leftover "![]()"" after base64 stripping).
-      if (dropDangling) {
-        text = text.replace(/^\s*!\[\s*\]\(\s*\)\s*$/gm, '');
-        text = text.replace(/!\[\s*\]\(\s*\)/g, '');
-        // Drop any remaining standalone image line (thumbnail,
-        // favicon, etc.) that sits alone on its own line with no
-        // surrounding link — these are pure visual clutter once
-        // the card's real link has already been extracted above.
-        text = text.replace(/^[ \t]*!\[[^\]]*\]\([^)]*\)[ \t]*$/gm, '');
-        // Drop lines that are now just a lone site-name badge like
-        // "MUBI" or "tv-media.at +1" left orphaned on their own line
-        text = text.replace(/^[ \t]*[A-Za-z0-9.\-]{1,30}(?:\s*\+\d+)?[ \t]*$/gm, (m) => {
-          // Only strip if it doesn't look like a real sentence
-          // (no spaces beyond the +N badge, short, no punctuation)
-          return /^[A-Za-z0-9.\-]+(\s*\+\d+)?$/.test(m.trim()) ? '' : m;
+        document.getElementById('input').addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') fixLinks();
         });
-      }
-
-      // Cleanup: trim stray spaces inside remaining [ ] pairs
-      text = text.replace(/\[\s+(.+?)\s+\]/g, '[$1]');
-
-      // Collapse the blank-line runs created by all the deletions above
-      text = text.replace(/\n{3,}/g, '\n\n');
-      text = text.replace(/[ \t]+\n/g, '\n');
-      text = text.trim();
-
-      document.getElementById('output').value = text;
-      showStatus(`✓ Fixed ${count} link(s)`, 'success');
-    }
-
-    function copyToClipboard() {
-      const output = document.getElementById('output');
-      if (!output.value) {
-        showStatus('No output to copy — fix links first', 'error');
-        return;
-      }
-      navigator.clipboard.writeText(output.value).then(() => {
-        showStatus('✓ Copied to clipboard', 'success');
-      }).catch(() => {
-        output.select();
-        document.execCommand('copy');
-        showStatus('✓ Copied to clipboard', 'success');
-      });
-    }
-
-    document.getElementById('fix-btn').addEventListener('click', fixLinks);
-    document.getElementById('copy-btn').addEventListener('click', copyToClipboard);
-
-    document.getElementById('input').addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') fixLinks();
-    });
-  </script>
+    </script>
 </body>
 </html>
