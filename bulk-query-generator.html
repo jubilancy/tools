@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bulk Query Generator | tools.eliana.lol</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --text: #1a1a1a;
+    --accent: #ff6600;
+    --puny: #888888;
+    --hover: #f0f0f0;
+    --highlight: #fff3e6;
+  }
+  [data-theme="dark"] {
+    --bg: #1a1a1a;
+    --text: #e8e8e8;
+    --accent: #ff6600;
+    --puny: #999999;
+    --hover: #2a2a2a;
+    --highlight: #2a1f14;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+    transition: background 0.2s, color 0.2s;
+  }
+  nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--hover);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  nav .nav-links a {
+    color: var(--text);
+    text-decoration: none;
+    margin-right: 18px;
+    font-size: 14px;
+  }
+  nav .nav-links a:hover { color: var(--accent); }
+  #theme-toggle {
+    background: none;
+    border: 1px solid var(--puny);
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+  }
+  #theme-toggle:hover { border-color: var(--accent); }
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 24px 60px;
+  }
+  h1 {
+    font-size: 22px;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    color: var(--puny);
+    font-size: 13px;
+    margin-bottom: 28px;
+  }
+  .input-group {
+    margin-bottom: 20px;
+  }
+  .input-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .row > div { flex: 1; min-width: 200px; }
+  select, textarea, input[type="text"] {
+    width: 100%;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--puny);
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 13px;
+  }
+  select:focus, textarea:focus, input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  textarea {
+    height: 220px;
+    resize: vertical;
+  }
+  .button-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 16px 0;
+  }
+  button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  button:hover { opacity: 0.88; }
+  button.secondary {
+    background: none;
+    color: var(--text);
+    border: 1px solid var(--puny);
+  }
+  button.secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .status {
+    font-size: 12px;
+    color: var(--puny);
+    margin-top: 8px;
+    min-height: 16px;
+  }
+  .status.show-success { color: var(--accent); }
+  .output-section { margin-top: 28px; }
+  .output-list {
+    border: 1px solid var(--hover);
+    border-radius: 6px;
+    max-height: 420px;
+    overflow-y: auto;
+  }
+  .output-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--hover);
+    font-size: 13px;
+  }
+  .output-row:last-child { border-bottom: none; }
+  .output-row:hover { background: var(--hover); }
+  .output-row a {
+    color: var(--text);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+  .output-row a:hover { color: var(--accent); text-decoration: underline; }
+  .output-row .copy-one {
+    background: none;
+    border: none;
+    color: var(--puny);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 4px 8px;
+    flex-shrink: 0;
+  }
+  .output-row .copy-one:hover { color: var(--accent); }
+  .info-box {
+    background: var(--highlight);
+    border-left: 3px solid var(--accent);
+    padding: 12px 14px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+  .stats {
+    display: flex;
+    gap: 20px;
+    font-size: 12px;
+    color: var(--puny);
+    margin: 10px 0 0;
+  }
+  .stat strong { color: var(--accent); }
+  footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--puny);
+    font-size: 12px;
+    border-top: 1px solid var(--hover);
+  }
+  footer a { color: var(--puny); }
+  footer a:hover { color: var(--accent); }
+  @media (max-width: 600px) {
+    .row { flex-direction: column; }
+    nav { padding: 12px 16px; }
+    .container { padding: 20px 16px 40px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-links">
+    <a href="index.html">home</a>
+    <a href="extra.html">extra</a>
+    <a href="credits.html">credits</a>
+    <a href="changelog.html">changelog</a>
+  </div>
+  <button id="theme-toggle">toggle theme</button>
+</nav>
+
+<div class="container">
+  <h1>Bulk Query Generator</h1>
+  <div class="subtitle">Paste a list of titles, questions, or links — get search URLs for any engine, one click at a time.</div>
+
+  <div class="info-box">
+    Paste one query per line. Each line becomes a search URL using the engine you pick below. Existing full URLs (http/https) are searched as-is on Google's "search this URL" pattern unless you want them passed through raw — toggle that below.
+  </div>
+
+  <div class="row">
+    <div>
+      <label class="input-label" for="engine">Search engine / site</label>
+      <select id="engine">
+        <optgroup label="General Search">
+          <option value="google" selected>Google</option>
+          <option value="bing">Bing</option>
+          <option value="duckduckgo">DuckDuckGo</option>
+          <option value="yahoo">Yahoo</option>
+          <option value="ecosia">Ecosia</option>
+          <option value="startpage">Startpage</option>
+          <option value="brave">Brave Search</option>
+        </optgroup>
+        <optgroup label="Images / Video">
+          <option value="googleimages">Google Images</option>
+          <option value="youtube">YouTube</option>
+          <option value="pinterest">Pinterest</option>
+          <option value="tiktok">TikTok</option>
+          <option value="vimeo">Vimeo</option>
+        </optgroup>
+        <optgroup label="Social">
+          <option value="reddit">Reddit</option>
+          <option value="twitter">X / Twitter</option>
+          <option value="facebook">Facebook</option>
+          <option value="instagram">Instagram (tag)</option>
+        </optgroup>
+        <optgroup label="Shopping / Reference">
+          <option value="amazon">Amazon</option>
+          <option value="ebay">eBay</option>
+          <option value="etsy">Etsy</option>
+          <option value="wikipedia">Wikipedia</option>
+          <option value="scholar">Google Scholar</option>
+          <option value="archive">Internet Archive</option>
+        </optgroup>
+      </select>
+    </div>
+    <div>
+      <label class="input-label" for="format">Export format</label>
+      <select id="format">
+        <option value="txt">Plain text (.txt)</option>
+        <option value="md">Markdown links (.md)</option>
+        <option value="csv">CSV (.csv)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="input-group">
+    <label class="input-label" for="input">Queries (one per line)</label>
+    <textarea id="input" placeholder="Schizo-Culture 1975 colloquium&#10;best tailwind css templates 2026&#10;Edward Gorey illustrations&#10;https://example.com/some-article"></textarea>
+    <div class="stats"><div class="stat"><strong id="lineCount">0</strong> lines</div></div>
+  </div>
+
+  <div class="button-group">
+    <button onclick="generate()">Generate URLs</button>
+    <button class="secondary" onclick="copyAll()">📋 Copy All</button>
+    <button class="secondary" onclick="downloadFile()">⬇ Download</button>
+    <button class="secondary" onclick="openAll()">↗ Open All in Tabs</button>
+  </div>
+  <div class="status" id="status"></div>
+
+  <div class="output-section">
+    <label class="input-label">Generated links</label>
+    <div class="output-list" id="output"></div>
+  </div>
+</div>
+
+<footer>
+  <a href="index.html">tools.eliana.lol</a> · Bulk Query Generator
+</footer>
+
+<script>
+  // Theme toggle
+  const toggleBtn = document.getElementById('theme-toggle');
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  toggleBtn.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+  });
+
+  // Engine URL builders — {q} is replaced with encoded query
+  const engines = {
+    google:       q => `https://www.google.com/search?q=${q}`,
+    bing:         q => `https://www.bing.com/search?q=${q}`,
+    duckduckgo:   q => `https://duckduckgo.com/?q=${q}`,
+    yahoo:        q => `https://search.yahoo.com/search?p=${q}`,
+    ecosia:       q => `https://www.ecosia.org/search?q=${q}`,
+    startpage:    q => `https://www.startpage.com/sp/search?query=${q}`,
+    brave:        q => `https://search.brave.com/search?q=${q}`,
+    googleimages: q => `https://www.google.com/search?tbm=isch&q=${q}`,
+    youtube:      q => `https://www.youtube.com/results?search_query=${q}`,
+    pinterest:    q => `https://www.pinterest.com/search/pins/?q=${q}`,
+    tiktok:       q => `https://www.tiktok.com/search?q=${q}`,
+    vimeo:        q => `https://vimeo.com/search?q=${q}`,
+    reddit:       q => `https://www.reddit.com/search/?q=${q}`,
+    twitter:      q => `https://twitter.com/search?q=${q}`,
+    facebook:     q => `https://www.facebook.com/search/top?q=${q}`,
+    instagram:    q => `https://www.instagram.com/explore/tags/${q}/`,
+    amazon:       q => `https://www.amazon.com/s?k=${q}`,
+    ebay:         q => `https://www.ebay.com/sch/i.html?_nkw=${q}`,
+    etsy:         q => `https://www.etsy.com/search?q=${q}`,
+    wikipedia:    q => `https://en.wikipedia.org/w/index.php?search=${q}`,
+    scholar:      q => `https://scholar.google.com/scholar?q=${q}`,
+    archive:      q => `https://archive.org/search?query=${q}`
+  };
+
+  const engineNames = {
+    google: 'Google', bing: 'Bing', duckduckgo: 'DuckDuckGo', yahoo: 'Yahoo',
+    ecosia: 'Ecosia', startpage: 'Startpage', brave: 'Brave Search',
+    googleimages: 'Google Images', youtube: 'YouTube', pinterest: 'Pinterest',
+    tiktok: 'TikTok', vimeo: 'Vimeo', reddit: 'Reddit', twitter: 'X / Twitter',
+    facebook: 'Facebook', instagram: 'Instagram', amazon: 'Amazon', ebay: 'eBay',
+    etsy: 'Etsy', wikipedia: 'Wikipedia', scholar: 'Google Scholar', archive: 'Internet Archive'
+  };
+
+  let currentResults = [];
+
+  const inputEl = document.getElementById('input');
+  const lineCountEl = document.getElementById('lineCount');
+  inputEl.addEventListener('input', updateLineCount);
+  function updateLineCount() {
+    const lines = inputEl.value.split('\n').filter(l => l.trim());
+    lineCountEl.textContent = lines.length;
+  }
+
+  function generate() {
+    const raw = inputEl.value.split('\n').map(l => l.trim()).filter(Boolean);
+    const engineKey = document.getElementById('engine').value;
+    const buildUrl = engines[engineKey];
+
+    if (raw.length === 0) {
+      showStatus('Paste at least one line first.', false);
+      return;
+    }
+
+    currentResults = raw.map(line => {
+      // Instagram tags don't like spaces/punctuation as encoded query — strip to hashtag-safe
+      let query;
+      if (engineKey === 'instagram') {
+        query = line.toLowerCase().replace(/[^a-z0-9]+/g, '');
+      } else {
+        query = encodeURIComponent(line);
+      }
+      return {
+        title: line,
+        url: buildUrl(query)
+      };
+    });
+
+    renderOutput();
+    showStatus(`✓ Generated ${currentResults.length} ${engineNames[engineKey]} link(s)`, true);
+  }
+
+  function renderOutput() {
+    const output = document.getElementById('output');
+    if (currentResults.length === 0) {
+      output.innerHTML = '<div style="padding:20px; color:var(--puny); font-size:13px;">No links yet — paste queries and click Generate.</div>';
+      return;
+    }
+    output.innerHTML = currentResults.map((r, i) => `
+      <div class="output-row">
+        <a href="${r.url}" target="_blank" title="${escapeHtml(r.title)}">${escapeHtml(r.title)}</a>
+        <button class="copy-one" onclick="copyOne(${i})">copy</button>
+      </div>
+    `).join('');
+  }
+
+  function copyOne(i) {
+    navigator.clipboard.writeText(currentResults[i].url);
+    showStatus(`✓ Copied link ${i + 1}`, true);
+  }
+
+  function copyAll() {
+    if (currentResults.length === 0) { showStatus('Nothing to copy yet.', false); return; }
+    const text = currentResults.map(r => r.url).join('\n');
+    navigator.clipboard.writeText(text);
+    showStatus(`✓ Copied ${currentResults.length} link(s) to clipboard`, true);
+  }
+
+  function openAll() {
+    if (currentResults.length === 0) { showStatus('Nothing to open yet.', false); return; }
+    if (currentResults.length > 15) {
+      if (!confirm(`This will open ${currentResults.length} tabs. Continue?`)) return;
+    }
+    currentResults.forEach(r => window.open(r.url, '_blank'));
+    showStatus(`✓ Opened ${currentResults.length} tab(s)`, true);
+  }
+
+  function downloadFile() {
+    if (currentResults.length === 0) { showStatus('Nothing to export yet.', false); return; }
+    const format = document.getElementById('format').value;
+    let content, mime, ext;
+
+    if (format === 'txt') {
+      content = currentResults.map(r => r.url).join('\n');
+      mime = 'text/plain';
+      ext = 'txt';
+    } else if (format === 'md') {
+      content = currentResults.map(r => `- [${r.title}](${r.url})`).join('\n');
+      mime = 'text/markdown';
+      ext = 'md';
+    } else {
+      const rows = [['title', 'url'], ...currentResults.map(r => [r.title, r.url])];
+      content = rows.map(row => row.map(csvEscape).join(',')).join('\n');
+      mime = 'text/csv';
+      ext = 'csv';
+    }
+
+    const blob = new Blob([content], { type: mime });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `bulk-queries.${ext}`;
+    a.click();
+    showStatus(`✓ Downloaded bulk-queries.${ext}`, true);
+  }
+
+  function csvEscape(val) {
+    const s = String(val);
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function showStatus(msg, success) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = 'status' + (success ? ' show-success' : '');
+    setTimeout(() => { el.textContent = ''; el.className = 'status'; }, 3000);
+  }
+
+  renderOutput();
+</script>
+
+</body>
+</html>
