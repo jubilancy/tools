@@ -1,0 +1,180 @@
+{
+  "categories": [
+    {
+      "name": "Data & Text",
+      "emoji": "📊",
+      "tools": [
+        { "file": "batch-isbn-finder.html", "title": "Batch ISBN Finder" },
+        { "file": "markdown-link-fixer.html", "title": "Markdown Link Fixer" },
+        { "file": "book-list-cleaner.html", "title": "Book List Cleaner" },
+        { "file": "clean-text.html", "title": "Clean Text" },
+        { "file": "clean-text-test-1.html", "title": "Clean Text (test 1)" },
+        { "file": "csv-parser.html", "title": "CSV Parser" },
+        { "file": "csv-to-json.html", "title": "CSV to JSON" },
+        { "file": "diff-viewer.html", "title": "Diff Viewer" },
+        { "file": "full-text-search.html", "title": "Full-Text Search" },
+        { "file": "json5-validator.html", "title": "JSON5 Validator" },
+        { "file": "link-splitter.html", "title": "Link Splitter" },
+        { "file": "metadata-extractor.html", "title": "Metadata Extractor" },
+        { "file": "password-generator-test-1.html", "title": "Password Generator (test 1)" },
+        { "file": "regex-tester.html", "title": "Regex Tester" },
+        { "file": "Strip HTML & Formatting.html", "title": "Strip HTML & Formatting" },
+        { "file": "toc-generator.html", "title": "TOC Generator" },
+        { "file": "url-categorizer-test-1.html", "title": "URL Categorizer (test 1)" },
+        { "file": "url-cleaner.html", "title": "URL Cleaner" },
+        { "file": "url-cleaner-test-1.html", "title": "URL Cleaner (test 1)" },
+        { "file": "yaml-json.html", "title": "YAML ↔ JSON" }
+      ]
+    },
+    {
+      "name": "URLs & Feeds",
+      "emoji": "🔗",
+      "tools": [
+        { "file": "Bulk-Hyperlink-Generator.html", "title": "Bulk Hyperlink Generator" },
+        { "file": "bulk-rss-finder.html", "title": "Bulk RSS Finder" },
+        { "file": "bulk-url.html", "title": "Bulk URL" },
+        { "file": "Feed Finder.html", "title": "Feed Finder" },
+        { "file": "OPML-Converter.html", "title": "OPML Converter" },
+        { "file": "rss-reader.html", "title": "RSS Reader" },
+        { "file": "rss-to-markdown.html", "title": "RSS to Markdown" },
+        { "file": "sitemap-explorer.html", "title": "Sitemap Explorer" },
+        { "file": "rss-widget-generator.html", "title": "RSS Widget Generator" },
+        { "file": "url-parser.html", "title": "URL Parser" }
+      ]
+    },
+    {
+      "name": "Writing & Markdown",
+      "emoji": "📝",
+      "tools": [
+        { "file": "ascii-art.html", "title": "ASCII Art Generator" },
+        { "file": "code-cleaner.html", "title": "Code Cleaner" },
+        { "file": "code-editor.html", "title": "Code Editor" },
+        { "file": "code-formatter.html", "title": "Code Formatter" },
+        { "file": "html-template.html", "title": "HTML Template Engine" },
+        { "file": "markdown-preview.html", "title": "Markdown Preview" },
+        { "file": "paste-markdown.html", "title": "Paste Markdown" },
+        { "file": "turndown.html", "title": "Turndown" },
+        { "file": "widget-generator.html", "title": "Widget Generator" },
+        { "file": "demo/claude-markdown-it.html", "title": "Claude Markdown It" },
+        { "file": "demo/Convert URL to MarkDown.html", "title": "Convert URL to Markdown" },
+        { "file": "demo/jinja-markdown-it.html", "title": "Jinja Markdown It" },
+        { "file": "demo/markdown-it.html", "title": "Markdown It" },
+        { "file": "claude-markdown-it.html", "title": "Claude Markdown It" },
+        { "file": "jinja-markdown-it.html", "title": "Jinja Markdown It" },
+        { "file": "markdown-it.html", "title": "Markdown It" },
+        { "file": "Convert URL to MarkDown.html", "title": "Convert URL to Markdown" }
+      ]
+    },
+    {
+      "name": "Visualization & Diagrams",
+      "emoji": "📈",
+      "tools": [
+        { "file": "color-palette.html", "title": "Color Palette" },
+        { "file": "data-charts.html", "title": "Data Charts" },
+        { "file": "diagram-editor.html", "title": "Diagram Editor" },
+        { "file": "hex-visualizer.html", "title": "Hex Visualizer" },
+        { "file": "hex-visualizer-test-1.html", "title": "Hex Visualizer (test 1)" },
+        { "file": "sketchy-graphics.html", "title": "Sketchy Graphics" },
+        { "file": "zindex-stacking-visualizer.html", "title": "Z-Index Stacking Visualizer" }
+      ]
+    },
+    {
+      "name": "Image Tools",
+      "emoji": "🖼️",
+      "tools": [
+        { "file": "ascii-art-converter.html", "title": "ASCII Art Converter" },
+        { "file": "Bulk_Image_Formatter.html", "title": "Bulk Image Formatter" },
+        { "file": "chromatic-aberration-fx.html", "title": "Chromatic Aberration FX" },
+        { "file": "dithering-engine.html", "title": "Dithering Engine" },
+        { "file": "halftone-generator.html", "title": "Halftone Generator" },
+        { "file": "image-diff-viewer.html", "title": "Image Diff Viewer" },
+        { "file": "image-grid-generator.html", "title": "Image Grid Generator" },
+        { "file": "image-histogram-analyzer.html", "title": "Image Histogram Analyzer" },
+        { "file": "image-palette-extractor.html", "title": "Image Palette Extractor" },
+        { "file": "image-to-svg-tracer.html", "title": "Image to SVG Tracer" },
+        { "file": "image-tools.html", "title": "Image Tools" },
+        { "file": "mosaic-tile-maker.html", "title": "Mosaic / Tile Maker" },
+        { "file": "pixel-sort-glitch.html", "title": "Pixel Sort Glitch" },
+        { "file": "sprite-sheet-packer.html", "title": "Sprite Sheet Packer" },
+        { "file": "steganography-encoder.html", "title": "Steganography Encoder" },
+        { "file": "image-vision-lab.html", "title": "Image Vision Lab" },
+        { "file": "imagestitch.html", "title": "Imagestitch" },
+        { "file": "pixel-size-calculator.html", "title": "Pixel Size Calculator" },
+        { "file": "face-detector.html", "title": "Face Detector" },
+        { "file": "ocr-image-to-text.html", "title": "OCR Image to Text" }
+      ]
+    },
+    {
+      "name": "Files & Media",
+      "emoji": "📦",
+      "tools": [
+        { "file": "barcode.html", "title": "Barcode Generator" },
+        { "file": "ocr.html", "title": "OCR / Text Recognition" },
+        { "file": "qr-generator.html", "title": "QR Generator" },
+        { "file": "zip-files.html", "title": "ZIP Files" },
+        { "file": "voice-to-text.html", "title": "Voice to Text" }
+      ]
+    },
+    {
+      "name": "Interactive & Utility",
+      "emoji": "⚡",
+      "tools": [
+        { "file": "animation-playground.html", "title": "Animation Playground" },
+        { "file": "canvas-playground.html", "title": "Canvas Playground" },
+        { "file": "confetti.html", "title": "Confetti" },
+        { "file": "css-units.html", "title": "CSS Units" },
+        { "file": "dates.html", "title": "Date Tools" },
+        { "file": "drag-drop.html", "title": "Drag & Drop Lists" },
+        { "file": "emoji-organizer.html", "title": "Emoji Organizer" },
+        { "file": "hash-crypto.html", "title": "Hash & Crypto" },
+        { "file": "maps-playground.html", "title": "Maps Playground" },
+        { "file": "math.html", "title": "Advanced Math" },
+        { "file": "offline-dictionary.html", "title": "Dictionary & Thesaurus" },
+        { "file": "reactive.html", "title": "Reactive Components" },
+        { "file": "unit-converter.html", "title": "Unit Converter" },
+        { "file": "browser-synth.html", "title": "Browser Synth" },
+        { "file": "particle-launcher.html", "title": "Particle Launcher" },
+        { "file": "rough-sketch.html", "title": "Rough Sketch" },
+        { "file": "soundboard.html", "title": "Soundboard" },
+        { "file": "vanta-backgrounds.html", "title": "Vanta Backgrounds" },
+        { "file": "vr-scene-builder.html", "title": "VR Scene Builder" },
+        { "file": "ar-marker-viewer.html", "title": "AR Marker Viewer" },
+        { "file": "websocket-message-inspector.html", "title": "WebSocket Message Inspector" },
+        { "file": "syntax-highlighter.html", "title": "Syntax Highlighter" },
+        { "file": "codemirror.html", "title": "CodeMirror" },
+        { "file": "rich-text-editor.html", "title": "Rich Text Editor" },
+        { "file": "svelte-jsoneditor.html", "title": "Svelte JSON Editor" },
+        { "file": "stackedit-embed.html", "title": "StackEdit Embed" },
+        { "file": "github-stars.html", "title": "GitHub Stars" },
+        { "file": "goodreads-widget.html", "title": "Goodreads Widget" },
+        { "file": "letterboxd-widget.html", "title": "Letterboxd Widget" },
+        { "file": "music-embeds.html", "title": "Music Embeds" },
+        { "file": "XSLT_Viewer.html", "title": "XSLT Viewer" },
+        { "file": "AI_Chat_Exporter.html", "title": "AI Chat Exporter" },
+        { "file": "Bits_and_Bobs.html", "title": "Bits and Bobs" }
+      ]
+    },
+    {
+      "name": "Site pages",
+      "emoji": "📁",
+      "tools": [
+        { "file": "changelog.html", "title": "Changelog" },
+        { "file": "credits.html", "title": "Credits" },
+        { "file": "extra.html", "title": "Extra" },
+        { "file": "guestbook-idea.html", "title": "Guestbook Idea" },
+        { "file": "guestbook-idea2.html", "title": "Guestbook Idea 2" },
+        { "file": "test.html", "title": "Test Page" },
+        { "file": "testing.html", "title": "Testing" },
+        { "file": "faq.html", "title": "FAQ" },
+        { "file": "index.html", "title": "Index" }
+      ]
+    }
+  ],
+  "ignore": [
+    "index.html",
+    "README.md",
+    "global.css",
+    "favicon.svg",
+    "TOOL_TEMPLATE.html"
+  ]
+}
