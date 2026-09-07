@@ -7,16 +7,19 @@
     <link rel="stylesheet" href="global.css">
     <link rel="icon" type="image/x-icon" href="favicon.svg">
     <style>
+        body {
+            font-size: 1.05rem;
+        }
         .tool-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
             margin-top: 1rem;
         }
         .tool-grid a {
             border: 1px solid var(--puny);
-            padding: 8px 10px;
-            font-size: 0.85rem;
+            padding: 10px 12px;
+            font-size: 1rem;
             border-bottom: 1px solid var(--puny);
             display: block;
         }
@@ -26,6 +29,10 @@
         }
         .section-title {
             margin-top: 2rem;
+            font-size: 1.05rem;
+        }
+        h1 {
+            font-size: 1.5rem;
         }
     </style>
 </head>
@@ -45,10 +52,10 @@
 
     <main>
         <h1>Toolbox</h1>
-        <p class="puny">A collection of single-purpose utilities for the small web.</p>
+        <p class="puny">A collection of single-purpose utilities for the small web. 172 tools and counting.</p>
 
         <div class="changelog-marquee">
-            <strong>DIRECTORY:</strong> All tools and assets currently hosted at tools.eliana.lol.
+            <strong>DIRECTORY:</strong> Auto-generated on every push — categories are managed in <code>data/tools.json</code>.
         </div>
 
         <span class="section-title">📊 Data &amp; Text</span>
@@ -57,7 +64,6 @@
             <a href="markdown-link-fixer.html">Markdown Link Fixer</a>
             <a href="book-list-cleaner.html">Book List Cleaner</a>
             <a href="clean-text.html">Clean Text</a>
-            <a href="clean-text-test-1.html">Clean Text (test 1)</a>
             <a href="csv-parser.html">CSV Parser</a>
             <a href="csv-to-json.html">CSV to JSON</a>
             <a href="diff-viewer.html">Diff Viewer</a>
@@ -65,9 +71,8 @@
             <a href="json5-validator.html">JSON5 Validator</a>
             <a href="link-splitter.html">Link Splitter</a>
             <a href="metadata-extractor.html">Metadata Extractor</a>
-            <a href="password-generator-test-1.html">Password Generator (test 1)</a>
             <a href="regex-tester.html">Regex Tester</a>
-            <a href="Strip HTML & Formatting.html">Strip HTML &amp; Formatting</a>
+            <a href="Strip HTML &amp; Formatting.html">Strip HTML &amp; Formatting</a>
             <a href="toc-generator.html">TOC Generator</a>
             <a href="url-categorizer-test-1.html">URL Categorizer (test 1)</a>
             <a href="url-cleaner.html">URL Cleaner</a>
@@ -85,6 +90,8 @@
             <a href="rss-reader.html">RSS Reader</a>
             <a href="rss-to-markdown.html">RSS to Markdown</a>
             <a href="sitemap-explorer.html">Sitemap Explorer</a>
+            <a href="rss-widget-generator.html">RSS Widget Generator</a>
+            <a href="url-parser.html">URL Parser</a>
         </div>
 
         <span class="section-title">📝 Writing &amp; Markdown</span>
@@ -98,10 +105,7 @@
             <a href="paste-markdown.html">Paste Markdown</a>
             <a href="turndown.html">Turndown</a>
             <a href="widget-generator.html">Widget Generator</a>
-            <a href="demo/claude-markdown-it.html">Claude Markdown It</a>
-            <a href="demo/Convert URL to MarkDown.html">Convert URL to Markdown</a>
-            <a href="demo/jinja-markdown-it.html">Jinja Markdown It</a>
-            <a href="demo/markdown-it.html">Markdown It</a>
+            <a href="markdown-it.html">Markdown It</a>
         </div>
 
         <span class="section-title">📈 Visualization &amp; Diagrams</span>
@@ -110,8 +114,8 @@
             <a href="data-charts.html">Data Charts</a>
             <a href="diagram-editor.html">Diagram Editor</a>
             <a href="hex-visualizer.html">Hex Visualizer</a>
-            <a href="hex-visualizer-test-1.html">Hex Visualizer (test 1)</a>
             <a href="sketchy-graphics.html">Sketchy Graphics</a>
+            <a href="zindex-stacking-visualizer.html">Z-Index Stacking Visualizer</a>
         </div>
 
         <span class="section-title">🖼️ Image Tools</span>
@@ -131,6 +135,10 @@
             <a href="pixel-sort-glitch.html">Pixel Sort Glitch</a>
             <a href="sprite-sheet-packer.html">Sprite Sheet Packer</a>
             <a href="steganography-encoder.html">Steganography Encoder</a>
+            <a href="image-vision-lab.html">Image Vision Lab</a>
+            <a href="imagestitch.html">Imagestitch</a>
+            <a href="pixel-size-calculator.html">Pixel Size Calculator</a>
+            <a href="face-detector.html">Face Detector</a>
         </div>
 
         <span class="section-title">📦 Files &amp; Media</span>
@@ -139,6 +147,7 @@
             <a href="ocr.html">OCR / Text Recognition</a>
             <a href="qr-generator.html">QR Generator</a>
             <a href="zip-files.html">ZIP Files</a>
+            <a href="voice-to-text.html">Voice to Text</a>
         </div>
 
         <span class="section-title">⚡ Interactive &amp; Utility</span>
@@ -156,6 +165,26 @@
             <a href="offline-dictionary.html">Dictionary &amp; Thesaurus</a>
             <a href="reactive.html">Reactive Components</a>
             <a href="unit-converter.html">Unit Converter</a>
+            <a href="browser-synth.html">Browser Synth</a>
+            <a href="particle-launcher.html">Particle Launcher</a>
+            <a href="rough-sketch.html">Rough Sketch</a>
+            <a href="soundboard.html">Soundboard</a>
+            <a href="vanta-backgrounds.html">Vanta Backgrounds</a>
+            <a href="vr-scene-builder.html">VR Scene Builder</a>
+            <a href="ar-marker-viewer.html">AR Marker Viewer</a>
+            <a href="websocket-message-inspector.html">WebSocket Message Inspector</a>
+            <a href="syntax-highlighter.html">Syntax Highlighter</a>
+            <a href="codemirror.html">CodeMirror</a>
+            <a href="rich-text-editor.html">Rich Text Editor</a>
+            <a href="svelte-jsoneditor.html">Svelte JSON Editor</a>
+            <a href="stackedit-embed.html">StackEdit Embed</a>
+            <a href="github-stars.html">GitHub Stars</a>
+            <a href="goodreads-widget.html">Goodreads Widget</a>
+            <a href="letterboxd-widget.html">Letterboxd Widget</a>
+            <a href="music-embeds.html">Music Embeds</a>
+            <a href="XSLT_Viewer.html">XSLT Viewer</a>
+            <a href="AI_Chat_Exporter.html">AI Chat Exporter</a>
+            <a href="Bits_and_Bobs.html">Bits and Bobs</a>
         </div>
 
         <span class="section-title">📁 Site pages</span>
@@ -166,51 +195,75 @@
             <a href="guestbook-idea.html">Guestbook Idea</a>
             <a href="guestbook-idea2.html">Guestbook Idea 2</a>
             <a href="test.html">Test Page</a>
+            <a href="testing.html">Testing</a>
+            <a href="faq.html">FAQ</a>
+            <a href="index.html">Index</a>
         </div>
 
-        <span class="section-title">more!</span>
+        <span class="section-title">🆕 Uncategorized / New</span>
         <div class="tool-grid">
-            <a href="https://tools.eliana.lol/AI_Chat_Exporter.html">Ai_Chat_Exporter</a>
-<a href="https://tools.eliana.lol/Bits_and_Bobs.html">Bits_And_Bobs</a>
-<a href="https://tools.eliana.lol/Convert%20URL%20to%20MarkDown.html">Convert Url To Markdown</a>
-<a href="https://tools.eliana.lol/README.md">Readme.Md</a>
-<a href="https://tools.eliana.lol/Strip%20HTML%20%26%20Formatting.html">Strip Html %26 Formatting</a>
-<a href="https://tools.eliana.lol/XSLT_Viewer.html">Xslt_Viewer</a>
-<a href="https://tools.eliana.lol/ar-marker-viewer.html">Ar Marker Viewer</a>
-<a href="https://tools.eliana.lol/browser-synth.html">Browser Synth</a>
-<a href="https://tools.eliana.lol/claude-markdown-it.html">Claude Markdown It</a>
-<a href="https://tools.eliana.lol/codemirror.html">Codemirror</a>
-<a href="https://tools.eliana.lol/face-detector.html">Face Detector</a>
-<a href="https://tools.eliana.lol/faq.html">Faq</a>
-<a href="https://tools.eliana.lol/favicon.svg">Favicon.Svg</a>
-<a href="https://tools.eliana.lol/github-stars.html">Github Stars</a>
-<a href="https://tools.eliana.lol/global.css">Global.Css</a>
-<a href="https://tools.eliana.lol/goodreads-widget.html">Goodreads Widget</a>
-<a href="https://tools.eliana.lol/image-vision-lab.html">Image Vision Lab</a>
-<a href="https://tools.eliana.lol/imagestitch.html">Imagestitch</a>
-<a href="https://tools.eliana.lol/index.html">Index</a>
-<a href="https://tools.eliana.lol/jinja-markdown-it.html">Jinja Markdown It</a>
-<a href="https://tools.eliana.lol/letterboxd-widget.html">Letterboxd Widget</a>
-<a href="https://tools.eliana.lol/markdown-it.html">Markdown It</a>
-<a href="https://tools.eliana.lol/music-embeds.html">Music Embeds</a>
-<a href="https://tools.eliana.lol/ocr-image-to-text.html">Ocr Image To Text</a>
-<a href="https://tools.eliana.lol/particle-launcher.html">Particle Launcher</a>
-<a href="https://tools.eliana.lol/pixel-size-calculator.html">Pixel Size Calculator</a>
-<a href="https://tools.eliana.lol/rich-text-editor.html">Rich Text Editor</a>
-<a href="https://tools.eliana.lol/rough-sketch.html">Rough Sketch</a>
-<a href="https://tools.eliana.lol/rss-widget-generator.html">Rss Widget Generator</a>
-<a href="https://tools.eliana.lol/soundboard.html">Soundboard</a>
-<a href="https://tools.eliana.lol/stackedit-embed.html">Stackedit Embed</a>
-<a href="https://tools.eliana.lol/svelte-jsoneditor.html">Svelte Jsoneditor</a>
-<a href="https://tools.eliana.lol/syntax-highlighter.html">Syntax Highlighter</a>
-<a href="https://tools.eliana.lol/testing.html">Testing</a>
-<a href="https://tools.eliana.lol/url-parser.html">Url Parser</a>
-<a href="https://tools.eliana.lol/vanta-backgrounds.html">Vanta Backgrounds</a>
-<a href="https://tools.eliana.lol/voice-to-text.html">Voice To Text</a>
-<a href="https://tools.eliana.lol/vr-scene-builder.html">Vr Scene Builder</a>
-<a href="https://tools.eliana.lol/websocket-message-inspector.html">Websocket Message Inspector</a>
-<a href="https://tools.eliana.lol/zindex-stacking-visualizer.html">Zindex Stacking Visualizer</a>
-            
+            <a href="api-response-time-simulator.html">Api Response Time Simulator</a>
+            <a href="badge-generator.html">Badge Generator</a>
+            <a href="bash-refactored.html">Bash Refactored</a>
+            <a href="bookmarks-html-generator/index.html">Index</a>
+            <a href="break-llm-refactored.html">Break Llm Refactored</a>
+            <a href="bulk-query-generator.html">Bulk Query Generator</a>
+            <a href="bundle-size-estimator.html">Bundle Size Estimator</a>
+            <a href="chrome-prompt-api.html">Chrome Prompt Api</a>
+            <a href="convert-url-to-markdown.html">Convert Url To Markdown</a>
+            <a href="cors-header-analyzer.html">Cors Header Analyzer</a>
+            <a href="css-animation-choreographer.html">Css Animation Choreographer</a>
+            <a href="css-specificity-visualizer.html">Css Specificity Visualizer</a>
+            <a href="csv-compressor-refactored.html">Csv Compressor Refactored</a>
+            <a href="csv-editor-refactored.html">Csv Editor Refactored</a>
+            <a href="data-visualizer.html">Data Visualizer</a>
+            <a href="docker-image-size-estimator.html">Docker Image Size Estimator</a>
+            <a href="docsify-link-tool.html">Docsify Link Tool</a>
+            <a href="factoring-refactored.html">Factoring Refactored</a>
+            <a href="favicongen-refactored.html">Favicongen Refactored</a>
+            <a href="focus-writer.html">Focus Writer</a>
+            <a href="folder-map-generator-refactored.html">Folder Map Generator Refactored</a>
+            <a href="font-metrics-inspector.html">Font Metrics Inspector</a>
+            <a href="free-ocr.html">Free Ocr</a>
+            <a href="geojson-viewer-refactored.html">Geojson Viewer Refactored</a>
+            <a href="gifski.html">Gifski</a>
+            <a href="git-commit-linter.html">Git Commit Linter</a>
+            <a href="hacker-news-thread-export.html">Hacker News Thread Export</a>
+            <a href="html-to-text-refactored.html">Html To Text Refactored</a>
+            <a href="icsmerger.html">Icsmerger</a>
+            <a href="iphone_app_exporter.html">Iphone App Exporter</a>
+            <a href="isbn-asin-converter.html">Isbn Asin Converter</a>
+            <a href="jsontocsv-refactored.html">Jsontocsv Refactored</a>
+            <a href="linkedInFormatter.html">Linkedinformatter</a>
+            <a href="llm-playground-refactored.html">Llm Playground Refactored</a>
+            <a href="markdown-export-suite.html">Markdown Export Suite</a>
+            <a href="markdown-html-diff.html">Markdown Html Diff</a>
+            <a href="markdown-links-to-tsv.html">Markdown Links To Tsv</a>
+            <a href="markdown-shuttle.html">Markdown Shuttle</a>
+            <a href="markdown-table-workbench.html">Markdown Table Workbench</a>
+            <a href="meeting-refactored.html">Meeting Refactored</a>
+            <a href="omdb-lookup.html">Omdb Lookup</a>
+            <a href="opml-editor.html">Opml Editor</a>
+            <a href="opml-extractor.html">Opml Extractor</a>
+            <a href="opml-generator.html">Opml Generator</a>
+            <a href="password-generator.html">Password Generator</a>
+            <a href="pdf-to-txt.html">Pdf To Txt</a>
+            <a href="prompt-injection-generator-refactored.html">Prompt Injection Generator Refactored</a>
+            <a href="regex-visual-explainer.html">Regex Visual Explainer</a>
+            <a href="repo-tree.html">Repo Tree</a>
+            <a href="rss-widget-builder.html">Rss Widget Builder</a>
+            <a href="scriptplanner.html">Scriptplanner</a>
+            <a href="text-file-merger-refactored.html">Text File Merger Refactored</a>
+            <a href="text-processing-toolkit-refactored.html">Text Processing Toolkit Refactored</a>
+            <a href="text-toolkit.html">Text Toolkit</a>
+            <a href="texture-refactored.html">Texture Refactored</a>
+            <a href="token-calculator-refactored.html">Token Calculator Refactored</a>
+            <a href="token-speed-visualizer-refactored.html">Token Speed Visualizer Refactored</a>
+            <a href="topojson-viewer-refactored.html">Topojson Viewer Refactored</a>
+            <a href="txt-merge-refactored.html">Txt Merge Refactored</a>
+            <a href="url-query-parser.html">Url Query Parser</a>
+            <a href="wiki-garden.html">Wiki Garden</a>
+            <a href="z-score-calculator-refactored.html">Z Score Calculator Refactored</a>
         </div>
     </main>
 
