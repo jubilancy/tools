@@ -63,6 +63,11 @@
     .album-art-card .meta { color: var(--puny); font-size: 0.68rem; margin-top: 0.2rem; }
     #album-out { display: none; }
     #album-out.show { display: block; }
+
+    /* Export row */
+    .export-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; border-top: 1px dashed var(--puny); padding-top: 0.75rem; margin-top: 0.25rem; }
+    .export-row .export-label { font-size: 0.72rem; color: var(--puny); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.25rem; }
+    button.export-btn { min-width: 0; padding: 6px 12px; font-size: 0.8rem; }
   </style>
 </head>
 <body>
@@ -118,14 +123,21 @@ https://artist.bandcamp.com/album/..."></textarea>
       </div>
 
       <div class="button-group">
-        <button class="primary" onclick="loadEmbeds()">Generate Embeds</button>
-        <button onclick="clearEmbeds()">Clear</button>
+        <button class="primary" id="btn-generate">Generate Embeds</button>
+        <button id="btn-clear">Clear</button>
       </div>
 
       <div class="status" id="status"></div>
 
       <!-- Embed grid -->
       <div id="embed-grid" class="cols-2"></div>
+
+      <!-- Export row for embed grid -->
+      <div class="export-row" id="embed-export-row" style="display:none;">
+        <span class="export-label">Export gallery:</span>
+        <button class="export-btn" id="btn-export-embed-html">Export as HTML</button>
+        <button class="export-btn" id="btn-export-embed-md">Export as Markdown</button>
+      </div>
 
       <!-- Album art builder -->
       <div class="album-section">
@@ -137,11 +149,16 @@ https://artist.bandcamp.com/album/..."></textarea>
 https://open.spotify.com/track/..." style="min-height:80px;"></textarea>
         </div>
         <div class="button-group">
-          <button class="primary" onclick="buildAlbumWall()">Build Art Wall</button>
-          <button onclick="document.getElementById('art-input').value='';document.getElementById('album-out').classList.remove('show');document.getElementById('album-grid').innerHTML='';">Clear</button>
+          <button class="primary" id="btn-build-wall">Build Art Wall</button>
+          <button id="btn-clear-wall">Clear</button>
         </div>
         <div id="album-out">
           <div class="album-grid" id="album-grid"></div>
+          <div class="export-row" id="album-export-row" style="display:none;">
+            <span class="export-label">Export gallery:</span>
+            <button class="export-btn" id="btn-export-album-html">Export as HTML</button>
+            <button class="export-btn" id="btn-export-album-md">Export as Markdown</button>
+          </div>
         </div>
       </div>
 
@@ -152,42 +169,50 @@ https://open.spotify.com/track/..." style="min-height:80px;"></textarea>
     © 2026 eliana.lol • <a href="credits.html">credits</a>
   </footer>
 
+  <!-- Theme Toggle Script (Required for all tools) -->
   <script>
-    const htmlEl = document.documentElement;
+    const html = document.documentElement;
     const toggle = document.getElementById('theme-toggle');
-    const saved = localStorage.getItem('theme') ||
+    const saved =
+      localStorage.getItem('theme') ||
       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    htmlEl.setAttribute('data-theme', saved);
-    toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
-    toggle.onclick = () => {
-      const now = htmlEl.getAttribute('data-theme');
-      const next = now === 'dark' ? 'light' : 'dark';
-      htmlEl.setAttribute('data-theme', next);
-      localStorage.setItem('theme', next);
-      toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
-    };
 
-    // oEmbed endpoints
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool-specific script -->
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    }
+
+    // ---------- oEmbed helpers ----------
     const OEMBED_ENDPOINTS = [
       { pattern: /soundcloud\.com/, url: u => `https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(u)}` },
       { pattern: /youtube\.com|youtu\.be/, url: u => `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(u)}` },
     ];
 
-    function getSpotifyEmbedUrl(url, theme, height) {
-      // Convert open.spotify.com links to embed links
+    function getSpotifyEmbedUrl(url, theme) {
       try {
         const u = new URL(url);
         if (!u.hostname.includes('spotify.com')) return null;
-        // Path: /track/ID, /album/ID, /playlist/ID, /show/ID, /episode/ID
         const clean = u.pathname.replace(/^\/intl-[a-z]{2}\//, '/');
         return `https://open.spotify.com/embed${clean}?utm_source=generator&theme=${theme}`;
       } catch { return null; }
-    }
-
-    function getBandcampEmbedUrl(url, height) {
-      // Bandcamp doesn't have a simple oEmbed but we can use their iframe embed
-      // Best we can do is link to it — Bandcamp's oEmbed endpoint works
-      return null; // handled via oEmbed fallback
     }
 
     async function fetchOEmbed(url) {
@@ -198,7 +223,6 @@ https://open.spotify.com/track/..." style="min-height:80px;"></textarea>
           return await res.json();
         }
       }
-      // Try Bandcamp oEmbed
       if (/bandcamp\.com/.test(url)) {
         const res = await fetch(`https://bandcamp.com/oembed?url=${encodeURIComponent(url)}&format=json`);
         if (!res.ok) throw new Error('Bandcamp oEmbed failed');
@@ -207,15 +231,22 @@ https://open.spotify.com/track/..." style="min-height:80px;"></textarea>
       throw new Error('No oEmbed provider for this URL');
     }
 
-    function createCard(url, index) {
+    // Track generated embeds so we can export them later.
+    // Each entry: { url, kind: 'spotify'|'oembed', embedUrl (spotify), html (oembed raw), title, height }
+    let embedResults = [];
+
+    function createCard(url) {
       const card = document.createElement('div');
       card.className = 'embed-card';
-      card.dataset.index = index;
 
       const removeBtn = document.createElement('button');
       removeBtn.className = 'remove-btn';
       removeBtn.textContent = '✕';
-      removeBtn.onclick = () => card.remove();
+      removeBtn.addEventListener('click', () => {
+        card.remove();
+        embedResults = embedResults.filter(r => r.cardRef !== card);
+        toggleExportRow('embed-export-row', embedResults.length > 0);
+      });
 
       const label = document.createElement('div');
       label.className = 'embed-label';
@@ -231,14 +262,22 @@ https://open.spotify.com/track/..." style="min-height:80px;"></textarea>
       return { card, content };
     }
 
+    function toggleExportRow(id, show) {
+      const row = document.getElementById(id);
+      if (row) row.style.display = show ? 'flex' : 'none';
+    }
+
     async function loadEmbeds() {
       const rawUrls = document.getElementById('url-input').value
         .split('\n').map(l => l.trim()).filter(Boolean);
 
-      if (!rawUrls.length) { showStatus('Paste some URLs first.'); return; }
+      if (!rawUrls.length) { showStatus('Paste some URLs first.', 'error'); return; }
 
       const grid = document.getElementById('embed-grid');
       grid.innerHTML = '';
+      embedResults = [];
+      toggleExportRow('embed-export-row', false);
+
       const cols = document.getElementById('cols').value;
       grid.className = `cols-${cols}`;
 
@@ -249,13 +288,12 @@ https://open.spotify.com/track/..." style="min-height:80px;"></textarea>
 
       let loaded = 0, failed = 0;
 
-      const promises = rawUrls.map(async (url, i) => {
-        const { card, content } = createCard(url, i);
+      const promises = rawUrls.map(async (url) => {
+        const { card, content } = createCard(url);
         grid.appendChild(card);
 
         try {
-          // Try Spotify first (direct iframe — no CORS needed)
-          const spotifyEmbed = getSpotifyEmbedUrl(url, theme, height);
+          const spotifyEmbed = getSpotifyEmbedUrl(url, theme);
           if (spotifyEmbed) {
             const iframe = document.createElement('iframe');
             iframe.src = spotifyEmbed;
@@ -264,19 +302,19 @@ https://open.spotify.com/track/..." style="min-height:80px;"></textarea>
             iframe.loading = 'lazy';
             content.replaceWith(iframe);
             loaded++;
+            embedResults.push({ cardRef: card, url, kind: 'spotify', embedUrl: spotifyEmbed, height, title: url });
             return;
           }
 
-          // Try oEmbed for SoundCloud, YouTube, Bandcamp
           const data = await fetchOEmbed(url);
           if (data.html) {
             const wrapper = document.createElement('div');
             wrapper.innerHTML = data.html;
-            // Resize iframe if present
             const iframes = wrapper.querySelectorAll('iframe');
             iframes.forEach(f => { f.style.width = '100%'; f.style.height = height + 'px'; f.loading = 'lazy'; });
             content.replaceWith(wrapper);
             loaded++;
+            embedResults.push({ cardRef: card, url, kind: 'oembed', html: data.html, height, title: data.title || url });
           } else {
             throw new Error('No embed HTML returned');
           }
@@ -291,33 +329,39 @@ https://open.spotify.com/track/..." style="min-height:80px;"></textarea>
 
       await Promise.allSettled(promises);
       showStatus(`✓ ${loaded} loaded${failed ? `, ${failed} failed` : ''}`);
+      toggleExportRow('embed-export-row', embedResults.length > 0);
     }
 
     function clearEmbeds() {
       document.getElementById('embed-grid').innerHTML = '';
       document.getElementById('url-input').value = '';
       document.getElementById('status').textContent = '';
+      embedResults = [];
+      toggleExportRow('embed-export-row', false);
     }
 
-    // Album Art Wall using Spotify oEmbed metadata
+    // ---------- Album Art Wall ----------
+    let albumResults = []; // { url, title, thumbnail, provider }
+
     async function buildAlbumWall() {
       const urls = document.getElementById('art-input').value
         .split('\n').map(l => l.trim()).filter(l => l && /spotify\.com\/(album|track)/.test(l));
 
       if (!urls.length) {
-        showStatus('Paste Spotify album or track URLs for the art wall.', true);
+        showStatus('Paste Spotify album or track URLs for the art wall.', 'error');
         return;
       }
 
       const grid = document.getElementById('album-grid');
       grid.innerHTML = '';
+      albumResults = [];
+      toggleExportRow('album-export-row', false);
       document.getElementById('album-out').classList.add('show');
       showStatus(`Building art wall for ${urls.length} item${urls.length !== 1 ? 's' : ''}…`);
 
       let done = 0;
       await Promise.allSettled(urls.map(async url => {
         try {
-          // Use Spotify oEmbed to get thumbnail + title
           const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const data = await res.json();
@@ -344,22 +388,190 @@ https://open.spotify.com/track/..." style="min-height:80px;"></textarea>
           card.appendChild(meta);
           grid.appendChild(card);
           done++;
+
+          albumResults.push({
+            url,
+            title: data.title || 'Unknown',
+            thumbnail: data.thumbnail_url || '',
+            provider: data.provider_name || 'Spotify'
+          });
         } catch(e) {
           const card = document.createElement('div');
           card.className = 'album-art-card';
-          card.innerHTML = `<div class="embed-error" style="font-size:0.75rem;">✗ Failed<br><span style="color:var(--puny);font-size:0.68rem;word-break:break-all;">${url}</span></div>`;
+          const errDiv = document.createElement('div');
+          errDiv.className = 'embed-error';
+          errDiv.style.fontSize = '0.75rem';
+          errDiv.innerHTML = `✗ Failed<br>`;
+          const span = document.createElement('span');
+          span.style.color = 'var(--puny)';
+          span.style.fontSize = '0.68rem';
+          span.style.wordBreak = 'break-all';
+          span.textContent = url;
+          errDiv.appendChild(span);
+          card.appendChild(errDiv);
           grid.appendChild(card);
         }
       }));
 
       showStatus(`✓ Art wall: ${done} of ${urls.length} loaded`);
+      toggleExportRow('album-export-row', albumResults.length > 0);
     }
 
-    function showStatus(msg, isErr = false) {
-      const s = document.getElementById('status');
-      s.textContent = msg;
-      s.className = 'status' + (isErr ? ' err' : '');
+    function clearAlbumWall() {
+      document.getElementById('art-input').value = '';
+      document.getElementById('album-out').classList.remove('show');
+      document.getElementById('album-grid').innerHTML = '';
+      albumResults = [];
+      toggleExportRow('album-export-row', false);
     }
+
+    // ---------- Export helpers ----------
+
+    function downloadFile(filename, content, mime) {
+      const blob = new Blob([content], { type: mime });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Standalone HTML export for the embed grid: reuses global.css tokens inline
+    // so the file looks right dropped anywhere, without depending on the repo.
+    function exportEmbedHtml() {
+      if (!embedResults.length) { showStatus('Nothing to export yet.', 'error'); return; }
+
+      const cols = document.getElementById('cols').value;
+
+      const cards = embedResults.map(r => {
+        if (r.kind === 'spotify') {
+          return `  <div class="embed-card">
+    <iframe src="${escapeHtml(r.embedUrl)}" height="${r.height}" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+    <div class="embed-label">${escapeHtml(r.url)}</div>
+  </div>`;
+        }
+        return `  <div class="embed-card">
+    ${r.html}
+    <div class="embed-label">${escapeHtml(r.url)}</div>
+  </div>`;
+      }).join('\n');
+
+      const doc = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Music Embeds Gallery</title>
+<style>
+  body { font-family: monospace; background: #1c1c1c; color: #d4d4d4; margin: 0; padding: 20px; }
+  .embed-grid { display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: 1rem; max-width: 900px; margin: 0 auto; }
+  @media (max-width: 640px) { .embed-grid { grid-template-columns: 1fr; } }
+  .embed-card { border: 1px solid #a0a0a0; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+  .embed-card iframe { width: 100%; border: none; border-radius: 4px; display: block; }
+  .embed-label { font-size: 0.72rem; color: #a0a0a0; word-break: break-all; }
+</style>
+</head>
+<body>
+<div class="embed-grid">
+${cards}
+</div>
+</body>
+</html>
+`;
+      downloadFile('music-embeds-gallery.html', doc, 'text/html');
+      showStatus('✓ Exported gallery HTML');
+    }
+
+    // GitHub-flavored markdown export for the embed grid.
+    // GFM strips <iframe>, so this renders as a clean linked list instead of broken embeds.
+    function exportEmbedMarkdown() {
+      if (!embedResults.length) { showStatus('Nothing to export yet.', 'error'); return; }
+
+      const lines = ['# Music Embeds Gallery', ''];
+      embedResults.forEach((r, i) => {
+        lines.push(`${i + 1}. [${r.title}](${r.url})`);
+      });
+      lines.push('', `_Generated with tools.eliana.lol — ${embedResults.length} item${embedResults.length !== 1 ? 's' : ''}._`);
+
+      downloadFile('music-embeds-gallery.md', lines.join('\n'), 'text/markdown');
+      showStatus('✓ Exported gallery Markdown');
+    }
+
+    // Standalone HTML export for the album art wall.
+    function exportAlbumHtml() {
+      if (!albumResults.length) { showStatus('Nothing to export yet.', 'error'); return; }
+
+      const cards = albumResults.map(r => `  <div class="album-art-card">
+    <img src="${escapeHtml(r.thumbnail)}" alt="${escapeHtml(r.title)}" loading="lazy" />
+    <a href="${escapeHtml(r.url)}" target="_blank">${escapeHtml(r.title)}</a>
+    <div class="meta">${escapeHtml(r.provider)}</div>
+  </div>`).join('\n');
+
+      const doc = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Album Art Wall</title>
+<style>
+  body { font-family: monospace; background: #1c1c1c; color: #d4d4d4; margin: 0; padding: 20px; }
+  .album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.75rem; max-width: 900px; margin: 0 auto; }
+  .album-art-card { border: 1px solid #a0a0a0; padding: 0.5rem; font-size: 0.75rem; }
+  .album-art-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; margin-bottom: 0.35rem; }
+  .album-art-card a { color: #ff9900; text-decoration: none; word-break: break-word; }
+  .album-art-card .meta { color: #a0a0a0; font-size: 0.68rem; margin-top: 0.2rem; }
+</style>
+</head>
+<body>
+<div class="album-grid">
+${cards}
+</div>
+</body>
+</html>
+`;
+      downloadFile('album-art-wall.html', doc, 'text/html');
+      showStatus('✓ Exported art wall HTML');
+    }
+
+    // GFM markdown export for the album art wall — image + link per entry,
+    // which GitHub renders natively (unlike iframes).
+    function exportAlbumMarkdown() {
+      if (!albumResults.length) { showStatus('Nothing to export yet.', 'error'); return; }
+
+      const lines = ['# Album Art Wall', ''];
+      albumResults.forEach(r => {
+        lines.push(`### [${r.title}](${r.url})`);
+        lines.push('');
+        if (r.thumbnail) lines.push(`![${r.title}](${r.thumbnail})`);
+        lines.push('');
+        lines.push(`*${r.provider}*`);
+        lines.push('');
+      });
+      lines.push(`_Generated with tools.eliana.lol — ${albumResults.length} item${albumResults.length !== 1 ? 's' : ''}._`);
+
+      downloadFile('album-art-wall.md', lines.join('\n'), 'text/markdown');
+      showStatus('✓ Exported art wall Markdown');
+    }
+
+    // ---------- Wire up events ----------
+    document.getElementById('btn-generate').addEventListener('click', loadEmbeds);
+    document.getElementById('btn-clear').addEventListener('click', clearEmbeds);
+    document.getElementById('btn-build-wall').addEventListener('click', buildAlbumWall);
+    document.getElementById('btn-clear-wall').addEventListener('click', clearAlbumWall);
+    document.getElementById('btn-export-embed-html').addEventListener('click', exportEmbedHtml);
+    document.getElementById('btn-export-embed-md').addEventListener('click', exportEmbedMarkdown);
+    document.getElementById('btn-export-album-html').addEventListener('click', exportAlbumHtml);
+    document.getElementById('btn-export-album-md').addEventListener('click', exportAlbumMarkdown);
   </script>
 </body>
 </html>
