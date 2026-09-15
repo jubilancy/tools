@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ISBN / ASIN Converter | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    button.danger {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    textarea,
+    input[type="text"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    input[type="file"] {
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: var(--puny);
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    /* Column-choice banner, styled like .info-box but inline-collapsible */
+    .col-choice {
+      display: none;
+      padding: 0.75rem 1rem;
+      background-color: var(--hover);
+      border-left: 3px solid var(--accent);
+      font-size: 0.85rem;
+    }
+
+    .col-choice.show {
+      display: block;
+    }
+
+    .col-choice select {
+      font-family: monospace;
+      margin-left: 0.5rem;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--puny);
+      padding: 2px 4px;
+    }
+
+    /* Progress bar for ASIN lookups */
+    .progress-wrap {
+      display: none;
+    }
+
+    .progress-wrap.show {
+      display: block;
+    }
+
+    .progress-bar-bg {
+      height: 4px;
+      background: var(--hover);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 150ms ease;
+    }
+
+    .progress-label {
+      font-size: 0.75rem;
+      color: var(--puny);
+      margin-top: 0.35rem;
+    }
+
+    /* Results table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    thead th {
+      text-align: left;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--puny);
+      border-bottom: 1px solid var(--text);
+      padding: 0 0.5rem 0.5rem 0;
+    }
+
+    tbody td {
+      padding: 0.5rem 0.5rem 0.5rem 0;
+      border-bottom: 1px solid var(--puny);
+      vertical-align: top;
+      word-break: break-all;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .out-val {
+      font-weight: bold;
+    }
+
+    .row-ok { color: var(--accent); }
+    .row-err { color: #ef4444; }
+    .row-pending { color: var(--puny); }
+
+    .type-tag {
+      font-size: 0.7rem;
+      color: var(--puny);
+      border: 1px solid var(--puny);
+      padding: 1px 6px;
+      border-radius: 10px;
+      display: inline-block;
+    }
+
+    .results-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .results-count {
+      font-size: 0.8rem;
+      color: var(--puny);
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      thead th:nth-child(2), tbody td:nth-child(2) {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>ISBN / ASIN Converter</h1>
+    <p class="puny">Bulk-convert ISBN-10 ↔ ISBN-13, and look up ISBNs for Amazon ASINs.</p>
+
+    <div class="container">
+      <div class="input-group">
+        <label class="input-label" for="input">input — one per line, or a CSV</label>
+        <textarea id="input" placeholder="9780141439518&#10;0141439518&#10;B00FKJ1VQU"></textarea>
+      </div>
+
+      <div class="col-choice" id="colChoice">
+        Multiple columns detected — which one holds the identifiers?
+        <select id="colSelect"></select>
+      </div>
+
+      <div class="button-group">
+        <input type="file" id="fileInput" accept=".csv,.txt" />
+        <button class="primary" id="runBtn">Convert</button>
+        <button id="downloadBtn" style="display:none;">Download CSV</button>
+        <button class="danger" id="clearBtn">Clear</button>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+        <div class="progress-label" id="progressLabel">looking up 0 / 0</div>
+      </div>
+
+      <div id="resultsSection" style="display:none;">
+        <span class="section-title">Results</span>
+        <div class="results-head">
+          <span></span>
+          <span class="results-count" id="resultsCount"></span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>input</th>
+              <th>type</th>
+              <th>output</th>
+              <th>status</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> ISBN-10 ↔ ISBN-13 conversion is instant checksum math, no network needed. ASIN → ISBN only works reliably for pre-2007 Amazon book ASINs (which are literally the ISBN-10) — true Amazon-only ASINs get a live lookup against <code>openlibrary.org</code>, throttled to ~3 requests/sec, and won't always find a match.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool-specific script -->
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2500);
+    }
+
+    (function () {
+      const inputEl = document.getElementById('input');
+      const fileInput = document.getElementById('fileInput');
+      const runBtn = document.getElementById('runBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const downloadBtn = document.getElementById('downloadBtn');
+      const colChoice = document.getElementById('colChoice');
+      const colSelect = document.getElementById('colSelect');
+      const progressWrap = document.getElementById('progressWrap');
+      const progressFill = document.getElementById('progressFill');
+      const progressLabel = document.getElementById('progressLabel');
+      const resultsSection = document.getElementById('resultsSection');
+      const resultsBody = document.getElementById('resultsBody');
+      const resultsCount = document.getElementById('resultsCount');
+
+      let selectedColIdx = 0;
+      let lastResults = [];
+
+      // ---------- ISBN-10 <-> ISBN-13 (deterministic, no network) ----------
+
+      function cleanId(s) {
+        return (s || '').toString().trim().replace(/[\s-]/g, '');
+      }
+
+      function isIsbn10(s) { return /^[0-9]{9}[0-9Xx]$/.test(s); }
+      function isIsbn13(s) { return /^97[89][0-9]{10}$/.test(s); }
+      function isAsinShaped(s) { return /^[A-Z0-9]{10}$/i.test(s); }
+
+      function isValidIsbn10Checksum(s) {
+        if (!isIsbn10(s)) return false;
+        let sum = 0;
+        for (let i = 0; i < 9; i++) sum += (10 - i) * parseInt(s[i], 10);
+        const last = s[9].toUpperCase();
+        sum += (last === 'X') ? 10 : parseInt(last, 10);
+        return sum % 11 === 0;
+      }
+
+      function isValidIsbn13Checksum(s) {
+        if (!isIsbn13(s)) return false;
+        let sum = 0;
+        for (let i = 0; i < 12; i++) sum += parseInt(s[i], 10) * (i % 2 === 0 ? 1 : 3);
+        const check = (10 - (sum % 10)) % 10;
+        return check === parseInt(s[12], 10);
+      }
+
+      function isbn10to13(isbn10) {
+        const core = '978' + isbn10.slice(0, 9);
+        let sum = 0;
+        for (let i = 0; i < 12; i++) sum += parseInt(core[i], 10) * (i % 2 === 0 ? 1 : 3);
+        const check = (10 - (sum % 10)) % 10;
+        return core + check;
+      }
+
+      function isbn13to10(isbn13) {
+        if (!isbn13.startsWith('978')) return null;
+        const core = isbn13.slice(3, 12);
+        let sum = 0;
+        for (let i = 0; i < 9; i++) sum += (10 - i) * parseInt(core[i], 10);
+        let check = (11 - (sum % 11)) % 11;
+        const checkChar = check === 10 ? 'X' : String(check);
+        return core + checkChar;
+      }
+
+      // ---------- CSV parsing ----------
+
+      function parseCsv(text) {
+        const rows = [];
+        let row = [], field = '', inQuotes = false;
+        for (let i = 0; i < text.length; i++) {
+          const c = text[i];
+          if (inQuotes) {
+            if (c === '"') {
+              if (text[i + 1] === '"') { field += '"'; i++; }
+              else inQuotes = false;
+            } else field += c;
+          } else {
+            if (c === '"') inQuotes = true;
+            else if (c === ',') { row.push(field); field = ''; }
+            else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+            else if (c === '\r') { /* skip */ }
+            else field += c;
+          }
+        }
+        if (field.length || row.length) { row.push(field); rows.push(row); }
+        return rows.filter(r => r.some(c => c.trim() !== ''));
+      }
+
+      function looksLikeIdentifier(s) {
+        const c = cleanId(s);
+        return isIsbn10(c) || isIsbn13(c) || isAsinShaped(c);
+      }
+
+      function guessBestColumn(rows) {
+        if (!rows.length) return 0;
+        const numCols = Math.max(...rows.map(r => r.length));
+        let bestIdx = 0, bestScore = -1;
+        for (let c = 0; c < numCols; c++) {
+          let score = 0;
+          for (const r of rows) if (r[c] && looksLikeIdentifier(r[c])) score++;
+          if (score > bestScore) { bestScore = score; bestIdx = c; }
+        }
+        return bestIdx;
+      }
+
+      function extractValues() {
+        const raw = inputEl.value;
+        if (!raw.trim()) return [];
+
+        const rows = parseCsv(raw);
+        const maxCols = Math.max(...rows.map(r => r.length));
+
+        if (maxCols > 1) {
+          colChoice.classList.add('show');
+          colSelect.innerHTML = '';
+          for (let i = 0; i < maxCols; i++) {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = 'column ' + (i + 1) + (rows[0][i] ? ' — "' + rows[0][i].slice(0, 24) + '"' : '');
+            colSelect.appendChild(opt);
+          }
+          selectedColIdx = guessBestColumn(rows);
+          colSelect.value = selectedColIdx;
+          return rows.map(r => cleanId(r[selectedColIdx] || '')).filter(Boolean);
+        } else {
+          colChoice.classList.remove('show');
+          return rows.map(r => cleanId(r[0] || '')).filter(Boolean);
+        }
+      }
+
+      colSelect.addEventListener('change', () => {
+        selectedColIdx = parseInt(colSelect.value, 10);
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => { inputEl.value = ev.target.result; };
+        reader.onerror = () => showStatus('Could not read that file.', 'error');
+        reader.readAsText(file);
+      });
+
+      clearBtn.addEventListener('click', () => {
+        inputEl.value = '';
+        fileInput.value = '';
+        colChoice.classList.remove('show');
+        resultsSection.style.display = 'none';
+        downloadBtn.style.display = 'none';
+        lastResults = [];
+        showStatus('Cleared.', 'success');
+      });
+
+      // ---------- ASIN -> ISBN lookup ----------
+
+      async function lookupAsin(asin) {
+        if (isValidIsbn10Checksum(asin)) {
+          return { found: true, isbn13: isbn10to13(asin), isbn10: asin.toUpperCase(), via: 'isbn10-shaped' };
+        }
+        try {
+          const url = 'https://openlibrary.org/search.json?q=' + encodeURIComponent(asin) + '&fields=isbn&limit=1';
+          const res = await fetch(url);
+          if (!res.ok) return { found: false, error: 'HTTP ' + res.status };
+          const data = await res.json();
+          const doc = data.docs && data.docs[0];
+          if (doc && doc.isbn && doc.isbn.length) {
+            const isbns = doc.isbn;
+            const found13 = isbns.find(i => isIsbn13(i));
+            const found10 = isbns.find(i => isIsbn10(i));
+            const isbn13 = found13 || (found10 ? isbn10to13(found10) : null);
+            const isbn10 = found10 || (isbn13 ? isbn13to10(isbn13) : null);
+            if (isbn13 || isbn10) return { found: true, isbn13, isbn10, via: 'openlibrary' };
+          }
+          return { found: false, error: 'no match' };
+        } catch (e) {
+          return { found: false, error: 'network error' };
+        }
+      }
+
+      function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+      function classify(raw) {
+        const v = cleanId(raw);
+        if (isIsbn13(v)) return 'isbn13';
+        if (isIsbn10(v)) return 'isbn10';
+        if (isAsinShaped(v)) return 'asin';
+        return 'unknown';
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      }
+
+      function makeRowHtml(input, type, output, status, statusClass) {
+        return '<td>' + escapeHtml(input) + '</td>' +
+               '<td><span class="type-tag">' + type + '</span></td>' +
+               '<td class="out-val">' + escapeHtml(output || '—') + '</td>' +
+               '<td class="' + statusClass + '">' + escapeHtml(status) + '</td>';
+      }
+
+      async function run() {
+        const values = extractValues();
+        resultsBody.innerHTML = '';
+        lastResults = [];
+
+        const unique = [...new Set(values)];
+        if (!unique.length) {
+          resultsSection.style.display = 'none';
+          downloadBtn.style.display = 'none';
+          showStatus('No ISBN-10, ISBN-13, or ASIN-shaped values found in the input.', 'error');
+          return;
+        }
+
+        resultsSection.style.display = 'block';
+
+        const classified = unique.map(v => ({ raw: v, type: classify(v) }));
+        const asinItems = classified.filter(c => c.type === 'asin');
+        let errorCount = 0;
+
+        for (const item of classified) {
+          const tr = document.createElement('tr');
+          if (item.type === 'isbn10') {
+            const valid = isValidIsbn10Checksum(item.raw);
+            const out = valid ? isbn10to13(item.raw) : '';
+            const status = valid ? 'converted → isbn13' : 'invalid checksum';
+            if (!valid) errorCount++;
+            tr.innerHTML = makeRowHtml(item.raw, 'isbn10', out, status, valid ? 'row-ok' : 'row-err');
+            lastResults.push({ input: item.raw, type: 'isbn10', output: out, status });
+            resultsBody.appendChild(tr);
+          } else if (item.type === 'isbn13') {
+            const valid = isValidIsbn13Checksum(item.raw);
+            const out10 = valid ? isbn13to10(item.raw) : null;
+            const out = valid ? (out10 || '(979-series, no isbn10 form)') : '';
+            const status = valid ? (out10 ? 'converted → isbn10' : 'no isbn10 equivalent') : 'invalid checksum';
+            if (!valid) errorCount++;
+            tr.innerHTML = makeRowHtml(item.raw, 'isbn13', out, status, valid ? 'row-ok' : 'row-err');
+            lastResults.push({ input: item.raw, type: 'isbn13', output: out, status });
+            resultsBody.appendChild(tr);
+          } else if (item.type === 'unknown') {
+            errorCount++;
+            tr.innerHTML = makeRowHtml(item.raw, 'unknown', '', 'unrecognized format', 'row-err');
+            lastResults.push({ input: item.raw, type: 'unknown', output: '', status: 'unrecognized format' });
+            resultsBody.appendChild(tr);
+          }
+        }
+
+        if (asinItems.length) {
+          progressWrap.classList.add('show');
+          runBtn.disabled = true;
+          let done = 0;
+          for (const item of asinItems) {
+            progressLabel.textContent = 'looking up ' + (done + 1) + ' / ' + asinItems.length + ' — ' + item.raw;
+
+            const rowTr = document.createElement('tr');
+            rowTr.innerHTML = makeRowHtml(item.raw, 'asin', '…', 'looking up', 'row-pending');
+            resultsBody.appendChild(rowTr);
+
+            const result = await lookupAsin(item.raw);
+            let out = '', status = '', cls = 'row-err';
+            if (result.found) {
+              out = [result.isbn13, result.isbn10].filter(Boolean).join(' / ');
+              status = result.via === 'isbn10-shaped' ? 'is an isbn10 (converted)' : 'found via openlibrary';
+              cls = 'row-ok';
+            } else {
+              status = 'no isbn found (' + (result.error || 'unmatched') + ')';
+              errorCount++;
+            }
+            rowTr.innerHTML = makeRowHtml(item.raw, 'asin', out, status, cls);
+            lastResults.push({ input: item.raw, type: 'asin', output: out, status });
+
+            done++;
+            progressFill.style.width = Math.round((done / asinItems.length) * 100) + '%';
+            await sleep(340); // ~3/sec, polite to openlibrary
+          }
+          progressLabel.textContent = 'done — ' + asinItems.length + ' looked up';
+          runBtn.disabled = false;
+          setTimeout(() => progressWrap.classList.remove('show'), 1200);
+        }
+
+        resultsCount.textContent = lastResults.length + ' item' + (lastResults.length === 1 ? '' : 's');
+        downloadBtn.style.display = lastResults.length ? 'inline-block' : 'none';
+
+        if (errorCount === 0) {
+          showStatus('Converted ' + lastResults.length + ' item' + (lastResults.length === 1 ? '' : 's') + '.', 'success');
+        } else {
+          showStatus(errorCount + ' of ' + lastResults.length + ' item(s) could not be converted — see status column.', 'error');
+        }
+      }
+
+      async function copyText(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (e) {
+          try {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            return true;
+          } catch (e2) {
+            return false;
+          }
+        }
+      }
+
+      function downloadCsv() {
+        if (!lastResults.length) {
+          showStatus('Nothing to download yet.', 'error');
+          return;
+        }
+        const header = 'input,type,output,status\n';
+        const body = lastResults.map(r =>
+          [r.input, r.type, r.output, r.status].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')
+        ).join('\n');
+        const blob = new Blob([header + body], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'isbn-conversion-results.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+        showStatus('CSV downloaded.', 'success');
+      }
+
+      runBtn.addEventListener('click', run);
+      downloadBtn.addEventListener('click', downloadCsv);
+    })();
+  </script>
+</body>
+</html>
