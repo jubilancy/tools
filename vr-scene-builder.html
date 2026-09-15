@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VR Scene Builder | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container { display: flex; flex-direction: column; gap: 1.5rem; }
+
+    .section-label { font-weight: bold; font-size: 0.85rem; text-transform: uppercase; border-bottom: 1px solid var(--puny); padding-bottom: 4px; margin-bottom: 0.75rem; }
+
+    /* Scene preview iframe */
+    #preview-wrap {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%; /* 16:9 */
+      border: 1px solid var(--puny);
+      background: #000;
+      overflow: hidden;
+    }
+
+    #scene-frame {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .object-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 1rem;
+    }
+
+    .control-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .input-label { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: var(--puny); }
+    input[type="range"] { width: 100%; padding: 0; }
+    input[type="color"] { width: 100%; height: 34px; padding: 2px; border: 1px solid var(--puny); background: var(--bg); cursor: pointer; border-radius: 2px; }
+    input[type="text"] { font-family: monospace; font-size: 0.85rem; }
+    select { font-family: monospace; padding: 6px; background: var(--bg); color: var(--text); border: 1px solid var(--puny); width: 100%; cursor: pointer; }
+
+    .shape-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 0.4rem;
+    }
+
+    .shape-btn {
+      padding: 7px 4px;
+      font-family: monospace;
+      font-size: 0.75rem;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      text-align: center;
+    }
+    .shape-btn:hover, .shape-btn.active { border-color: var(--accent); color: var(--accent); background: var(--hover); }
+
+    .objects-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid var(--puny);
+      padding: 0.5rem;
+    }
+
+    .obj-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      padding: 4px 6px;
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+    .obj-item:hover { border-color: var(--puny); background: var(--hover); }
+    .obj-item .remove { color: var(--puny); cursor: pointer; font-size: 0.75rem; padding: 0 4px; }
+    .obj-item .remove:hover { color: #ef4444; }
+
+    .code-block {
+      background: var(--highlight);
+      border: 1px dashed var(--accent);
+      padding: 1rem;
+      font-size: 0.75rem;
+      white-space: pre;
+      overflow-x: auto;
+      max-height: 300px;
+      overflow-y: auto;
+      display: none;
+    }
+    .code-block.show { display: block; }
+
+    button {
+      padding: 6px 12px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+    button:hover { background: var(--hover); border-color: var(--accent); }
+    button.primary { border-color: var(--accent); color: var(--accent); font-weight: bold; }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+    .status { padding: 0.75rem 1rem; margin: 0.5rem 0; display: none; font-size: 0.9rem; border-left: 3px solid var(--accent); background: rgba(255,102,0,0.08); color: var(--accent); }
+    .status.show { display: block; }
+
+    .info-box { padding: 0.75rem 1rem; background-color: var(--highlight); border-left: 3px solid var(--accent); font-size: 0.875rem; }
+
+    .env-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.4rem; }
+    .env-btn { padding: 6px; font-family: monospace; font-size: 0.75rem; border: 1px solid var(--puny); background: var(--bg); color: var(--text); cursor: pointer; text-align: center; }
+    .env-btn:hover, .env-btn.active { border-color: var(--accent); color: var(--accent); background: var(--hover); }
+
+    .position-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>VR Scene Builder</h1>
+    <p class="puny">build a 3d / vr scene visually, then export it as standalone html powered by a-frame.</p>
+
+    <div class="container">
+      <!-- Live preview -->
+      <div>
+        <div class="section-label">Preview <span style="font-weight:normal;color:var(--puny);">— click &amp; drag to look around · scroll to zoom</span></div>
+        <div id="preview-wrap">
+          <iframe id="scene-frame" title="VR Scene Preview" allowfullscreen allow="vr;xr"></iframe>
+        </div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+          <button class="primary" onclick="refreshPreview()">↺ refresh preview</button>
+          <button onclick="openFullscreen()">⛶ fullscreen / VR</button>
+        </div>
+      </div>
+
+      <!-- Environment -->
+      <div>
+        <div class="section-label">Environment</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+          <div class="control-group">
+            <label class="input-label">Sky Color</label>
+            <input type="color" id="sky-color" value="#1a1a2e" oninput="refreshPreview()">
+          </div>
+          <div class="control-group">
+            <label class="input-label">Floor Color</label>
+            <input type="color" id="floor-color" value="#2a2a2a" oninput="refreshPreview()">
+          </div>
+          <div class="control-group">
+            <label class="input-label">Fog</label>
+            <select id="fog-type" onchange="refreshPreview()">
+              <option value="none">none</option>
+              <option value="linear">linear</option>
+              <option value="exponential">exponential</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add object -->
+      <div>
+        <div class="section-label">Add Object</div>
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+          <div>
+            <label class="input-label" style="display:block;margin-bottom:0.4rem;">Shape</label>
+            <div class="shape-grid">
+              <button class="shape-btn active" onclick="setShape('box',this)">■ box</button>
+              <button class="shape-btn" onclick="setShape('sphere',this)">● sphere</button>
+              <button class="shape-btn" onclick="setShape('cylinder',this)">⬤ cylinder</button>
+              <button class="shape-btn" onclick="setShape('cone',this)">▲ cone</button>
+              <button class="shape-btn" onclick="setShape('torus',this)">◎ torus</button>
+              <button class="shape-btn" onclick="setShape('plane',this)">▬ plane</button>
+              <button class="shape-btn" onclick="setShape('tetrahedron',this)">△ tetra</button>
+              <button class="shape-btn" onclick="setShape('dodecahedron',this)">⬡ dodeca</button>
+            </div>
+          </div>
+
+          <div class="object-controls">
+            <div class="control-group">
+              <label class="input-label">Color</label>
+              <input type="color" id="new-color" value="#ff6600">
+            </div>
+            <div class="control-group">
+              <label class="input-label">Scale <span id="new-scale-val">1.0</span></label>
+              <input type="range" id="new-scale" min="0.1" max="5" step="0.1" value="1" oninput="document.getElementById('new-scale-val').textContent=parseFloat(this.value).toFixed(1)">
+            </div>
+            <div class="control-group">
+              <label class="input-label">Material</label>
+              <select id="new-material">
+                <option value="standard">standard</option>
+                <option value="flat">flat</option>
+                <option value="wireframe">wireframe</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="input-label" style="display:block;margin-bottom:0.4rem;">Position (X, Y, Z)</label>
+            <div class="position-grid">
+              <div class="control-group"><label class="input-label">X <span id="px-val">0</span></label><input type="range" id="pos-x" min="-5" max="5" step="0.25" value="0" oninput="document.getElementById('px-val').textContent=this.value"></div>
+              <div class="control-group"><label class="input-label">Y <span id="py-val">1</span></label><input type="range" id="pos-y" min="0" max="8" step="0.25" value="1" oninput="document.getElementById('py-val').textContent=this.value"></div>
+              <div class="control-group"><label class="input-label">Z <span id="pz-val">-3</span></label><input type="range" id="pos-z" min="-10" max="2" step="0.25" value="-3" oninput="document.getElementById('pz-val').textContent=this.value"></div>
+            </div>
+          </div>
+
+          <div>
+            <button class="primary" onclick="addObject()">+ add to scene</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Objects list -->
+      <div>
+        <div class="section-label">Objects in Scene</div>
+        <div class="objects-list" id="objects-list">
+          <span style="color:var(--puny);font-size:0.8rem;">no objects yet — add one above</span>
+        </div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+          <button onclick="clearScene()">clear all</button>
+          <button onclick="loadExample()">load example scene</button>
+        </div>
+      </div>
+
+      <!-- Export -->
+      <div>
+        <div class="section-label">Export</div>
+        <div class="toolbar">
+          <button class="primary" onclick="downloadScene()">download html</button>
+          <button onclick="toggleCode()">view source</button>
+        </div>
+        <div class="code-block" id="code-output"></div>
+      </div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> The exported HTML is fully standalone — just open it in a browser. On mobile or with a VR headset, hit the VR button in the bottom-right corner of the scene for immersive mode.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => {
+      const next = htmlEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      htmlEl.setAttribute('data-theme', next); localStorage.setItem('theme', next);
+      toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+    };
+  </script>
+
+  <script>
+    let objects = [];
+    let currentShape = 'box';
+    let objCounter = 0;
+
+    function setShape(s, btn) {
+      currentShape = s;
+      document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function addObject() {
+      const color = document.getElementById('new-color').value;
+      const scale = parseFloat(document.getElementById('new-scale').value);
+      const mat = document.getElementById('new-material').value;
+      const x = parseFloat(document.getElementById('pos-x').value);
+      const y = parseFloat(document.getElementById('pos-y').value);
+      const z = parseFloat(document.getElementById('pos-z').value);
+      objCounter++;
+
+      objects.push({ id: objCounter, shape: currentShape, color, scale, mat, x, y, z });
+      renderObjectsList();
+      refreshPreview();
+      showStatus(`added ${currentShape} #${objCounter}`);
+    }
+
+    function removeObject(id) {
+      objects = objects.filter(o => o.id !== id);
+      renderObjectsList();
+      refreshPreview();
+    }
+
+    function renderObjectsList() {
+      const list = document.getElementById('objects-list');
+      if (!objects.length) {
+        list.innerHTML = '<span style="color:var(--puny);font-size:0.8rem;">no objects yet — add one above</span>';
+        return;
+      }
+      list.innerHTML = objects.map(o => `
+        <div class="obj-item">
+          <span>
+            <span style="display:inline-block;width:10px;height:10px;background:${o.color};margin-right:6px;border:1px solid var(--puny);"></span>
+            <strong>${o.shape}</strong> #${o.id} &nbsp;<span style="color:var(--puny);">(${o.x}, ${o.y}, ${o.z}) · ×${o.scale}</span>
+          </span>
+          <span class="remove" onclick="removeObject(${o.id})">✕</span>
+        </div>
+      `).join('');
+    }
+
+    function buildSceneHTML() {
+      const sky = document.getElementById('sky-color').value;
+      const floor = document.getElementById('floor-color').value;
+      const fog = document.getElementById('fog-type').value;
+      const fogAttr = fog !== 'none' ? `fog="type:${fog};color:${sky};near:5;far:20"` : '';
+
+      const shapeTag = (o) => {
+        const wireframe = o.mat === 'wireframe' ? 'wireframe: true' : '';
+        const shader = o.mat === 'flat' ? 'shader: flat' : '';
+        const matStr = [wireframe, shader, `color: ${o.color}`].filter(Boolean).join('; ');
+        const pos = `position="${o.x} ${o.y} ${o.z}"`;
+        const scl = `scale="${o.scale} ${o.scale} ${o.scale}"`;
+        const mat = `material="${matStr}"`;
+
+        const shapes = {
+          box: `<a-box ${pos} ${scl} ${mat}></a-box>`,
+          sphere: `<a-sphere ${pos} radius="${o.scale * 0.5}" ${mat}></a-sphere>`,
+          cylinder: `<a-cylinder ${pos} height="${o.scale}" radius="${o.scale * 0.4}" ${mat}></a-cylinder>`,
+          cone: `<a-cone ${pos} height="${o.scale}" radius-bottom="${o.scale * 0.5}" radius-top="0" ${mat}></a-cone>`,
+          torus: `<a-torus ${pos} radius="${o.scale * 0.4}" radius-tubular="${o.scale * 0.1}" ${mat}></a-torus>`,
+          plane: `<a-plane ${pos} rotation="-90 0 0" width="${o.scale * 2}" height="${o.scale * 2}" ${mat}></a-plane>`,
+          tetrahedron: `<a-tetrahedron ${pos} radius="${o.scale * 0.6}" ${mat}></a-tetrahedron>`,
+          dodecahedron: `<a-dodecahedron ${pos} radius="${o.scale * 0.6}" ${mat}></a-dodecahedron>`,
+        };
+        return shapes[o.shape] || shapes.box;
+      };
+
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VR Scene</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.7.0/aframe.min.js"><\/script>
+  <style>body{margin:0;overflow:hidden;}</style>
+</head>
+<body>
+  <a-scene ${fogAttr} background="color: ${sky}">
+    <!-- floor -->
+    <a-plane position="0 0 0" rotation="-90 0 0" width="40" height="40"
+      material="color:${floor};roughness:0.8"></a-plane>
+
+    <!-- objects -->
+    ${objects.map(shapeTag).join('\n    ')}
+
+    <!-- lighting -->
+    <a-light type="ambient" color="#ffffff" intensity="0.4"></a-light>
+    <a-light type="directional" position="1 4 2" intensity="0.8"></a-light>
+
+    <!-- camera with look controls -->
+    <a-entity position="0 1.6 0">
+      <a-camera look-controls wasd-controls></a-camera>
+    </a-entity>
+  </a-scene>
+</body>
+</html>`;
+    }
+
+    function refreshPreview() {
+      const frame = document.getElementById('scene-frame');
+      const html = buildSceneHTML();
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      frame.src = url;
+    }
+
+    function openFullscreen() {
+      const html = buildSceneHTML();
+      const blob = new Blob([html], { type: 'text/html' });
+      window.open(URL.createObjectURL(blob), '_blank');
+    }
+
+    function downloadScene() {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([buildSceneHTML()], { type: 'text/html' }));
+      a.download = 'vr-scene.html'; a.click();
+    }
+
+    function toggleCode() {
+      const el = document.getElementById('code-output');
+      el.textContent = buildSceneHTML();
+      el.classList.toggle('show');
+    }
+
+    function clearScene() {
+      objects = [];
+      objCounter = 0;
+      renderObjectsList();
+      refreshPreview();
+    }
+
+    function loadExample() {
+      objects = [
+        { id: 1, shape: 'box', color: '#ff6600', scale: 1, mat: 'standard', x: -2, y: 0.5, z: -3 },
+        { id: 2, shape: 'sphere', color: '#00ccff', scale: 1.5, mat: 'standard', x: 0, y: 0.75, z: -4 },
+        { id: 3, shape: 'cylinder', color: '#ffff00', scale: 1, mat: 'standard', x: 2, y: 0.5, z: -3 },
+        { id: 4, shape: 'torus', color: '#ff0055', scale: 1, mat: 'wireframe', x: 0, y: 2.5, z: -4 },
+        { id: 5, shape: 'cone', color: '#88ff00', scale: 0.8, mat: 'flat', x: 1, y: 0.4, z: -2 },
+      ];
+      objCounter = 5;
+      renderObjectsList();
+      refreshPreview();
+    }
+
+    function showStatus(msg) {
+      const s = document.getElementById('status');
+      s.textContent = msg; s.classList.add('show');
+      setTimeout(() => s.classList.remove('show'), 2000);
+    }
+
+    // Init with example
+    loadExample();
+  </script>
+</body>
+</html>

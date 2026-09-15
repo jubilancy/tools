@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>URL Query Parser | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    button.danger {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+
+    textarea,
+    input[type="text"],
+    input[type="file"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .status.info {
+      background-color: rgba(59, 130, 246, 0.1);
+      border-left: 3px solid #3b82f6;
+      color: #3b82f6;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .results-container {
+      margin-top: 2rem;
+      display: none;
+    }
+
+    .results-container.show {
+      display: block;
+    }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: 1rem 0;
+      overflow-x: auto;
+    }
+
+    .results-table thead {
+      background-color: var(--highlight);
+      border-bottom: 2px solid var(--accent);
+    }
+
+    .results-table th {
+      padding: 0.75rem;
+      text-align: left;
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    .results-table td {
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--puny);
+      word-break: break-word;
+    }
+
+    .results-table tr:hover {
+      background-color: var(--highlight);
+    }
+
+    .export-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .tab-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--puny);
+    }
+
+    .tab-button {
+      padding: 0.5rem 1rem;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      color: var(--puny);
+      transition: all 150ms;
+      min-width: auto;
+    }
+
+    .tab-button.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .loading {
+      display: inline-block;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .results-table {
+        font-size: 0.75rem;
+      }
+
+      .results-table th,
+      .results-table td {
+        padding: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>URL Query Parser</h1>
+    <p class="puny">Bulk parse URL query strings and extract parameters into structured data</p>
+
+    <div class="container">
+      <!-- Input Methods -->
+      <div class="tab-group">
+        <button class="tab-button active" data-tab="paste-input">Paste URLs</button>
+        <button class="tab-button" data-tab="file-input">Upload File</button>
+      </div>
+
+      <!-- Paste Input -->
+      <div id="paste-input" class="tab-content active">
+        <div class="input-group">
+          <label class="input-label">Paste URLs (one per line)</label>
+          <textarea id="urlInput" placeholder="https://example.com?foo=bar&#10;https://test.com?key=value&other=data"></textarea>
+        </div>
+      </div>
+
+      <!-- File Input -->
+      <div id="file-input" class="tab-content">
+        <div class="input-group">
+          <label class="input-label">Upload File (.txt, .csv)</label>
+          <input type="file" id="fileInput" accept=".txt,.csv" />
+          <p class="puny" style="margin: 0.5rem 0;">Upload a text or CSV file with one URL per line</p>
+        </div>
+      </div>
+
+      <!-- Options -->
+      <div class="input-group">
+        <label class="input-label">Options</label>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" id="fetchTitles" />
+            Fetch page titles
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" id="includeHost" checked />
+            Include hostname
+          </label>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="button-group">
+        <button class="primary" id="parseBtn">Parse URLs</button>
+        <button id="clearBtn">Clear</button>
+      </div>
+
+      <!-- Status -->
+      <div class="status" id="status"></div>
+
+      <!-- Results -->
+      <div class="results-container" id="resultsContainer">
+        <h2>Results</h2>
+        <p class="puny" id="resultsSummary"></p>
+        
+        <div class="tab-group">
+          <button class="tab-button active" data-tab="table-view">Table View</button>
+          <button class="tab-button" data-tab="raw-view">Raw View</button>
+        </div>
+
+        <div id="table-view" class="tab-content active">
+          <div style="overflow-x: auto;">
+            <table class="results-table" id="resultsTable">
+              <thead>
+                <tr id="tableHeader"></tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="raw-view" class="tab-content">
+          <textarea id="rawView" readonly style="min-height: 300px;"></textarea>
+        </div>
+
+        <div class="export-group">
+          <button id="exportCsvBtn" class="primary">Export as CSV</button>
+          <button id="exportTitlesBtn">Export Titles Only</button>
+          <button id="copyTableBtn">Copy as JSON</button>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>How it works:</strong> Paste URLs or upload a file with one URL per line. The parser extracts query parameters and displays them in a table. Optionally fetch page titles. Export results as CSV with all data or just titles.
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tab Switching -->
+  <script>
+    document.querySelectorAll('.tab-button').forEach(button => {
+      button.addEventListener('click', function() {
+        const tabName = this.getAttribute('data-tab');
+        const group = this.closest('.tab-group');
+        
+        // Update active button
+        group.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Update active content
+        const container = group.nextElementSibling || document.getElementById(tabName)?.parentElement;
+        if (container) {
+          container.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        }
+        
+        const content = document.getElementById(tabName);
+        if (content) content.classList.add('active');
+      });
+    });
+  </script>
+
+  <!-- URL Parser Script -->
+  <script>
+    let parsedResults = [];
+
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 3000);
+    }
+
+    function parseUrl(urlString) {
+      try {
+        const url = new URL(urlString.trim());
+        const params = {};
+        
+        url.searchParams.forEach((value, key) => {
+          params[key] = value;
+        });
+
+        return {
+          original: urlString.trim(),
+          protocol: url.protocol.replace(':', ''),
+          hostname: url.hostname,
+          pathname: url.pathname || '/',
+          query: url.search || 'none',
+          paramCount: url.searchParams.size,
+          params: params,
+          title: null
+        };
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function fetchTitle(urlString) {
+      try {
+        const response = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(urlString)}`);
+        const data = await response.json();
+        return data.data?.title || 'N/A';
+      } catch (e) {
+        return 'Error';
+      }
+    }
+
+    document.getElementById('parseBtn').addEventListener('click', async function() {
+      const fileInput = document.getElementById('fileInput');
+      const urlInput = document.getElementById('urlInput');
+      const fetchTitles = document.getElementById('fetchTitles').checked;
+      const includeHost = document.getElementById('includeHost').checked;
+
+      let urls = [];
+
+      // Get URLs from file or textarea
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const text = await file.text();
+        urls = text.split('\n').filter(line => line.trim());
+      } else {
+        urls = urlInput.value.split('\n').filter(line => line.trim());
+      }
+
+      if (urls.length === 0) {
+        showStatus('Please enter or upload URLs', 'error');
+        return;
+      }
+
+      showStatus(`Parsing ${urls.length} URLs...`, 'info');
+      this.disabled = true;
+
+      parsedResults = [];
+      let validCount = 0;
+
+      for (let i = 0; i < urls.length; i++) {
+        const parsed = parseUrl(urls[i]);
+        
+        if (parsed) {
+          if (fetchTitles) {
+            parsed.title = await fetchTitle(urls[i]);
+          }
+          parsedResults.push(parsed);
+          validCount++;
+        }
+      }
+
+      this.disabled = false;
+
+      if (validCount === 0) {
+        showStatus('No valid URLs found', 'error');
+        return;
+      }
+
+      displayResults(includeHost);
+      showStatus(`Successfully parsed ${validCount} URLs`, 'success');
+    });
+
+    function displayResults(includeHost) {
+      const container = document.getElementById('resultsContainer');
+      const summary = document.getElementById('resultsSummary');
+      const tableHeader = document.getElementById('tableHeader');
+      const tableBody = document.getElementById('tableBody');
+      const rawView = document.getElementById('rawView');
+
+      container.classList.add('show');
+      summary.textContent = `${parsedResults.length} URL${parsedResults.length !== 1 ? 's' : ''} parsed`;
+
+      // Build headers
+      const headers = ['URL'];
+      if (includeHost) headers.push('Hostname');
+      headers.push('Protocol', 'Path', 'Query Params', 'Param Count');
+      if (document.getElementById('fetchTitles').checked) headers.push('Title');
+
+      // Dynamic headers for individual params
+      const allParams = new Set();
+      parsedResults.forEach(result => {
+        Object.keys(result.params).forEach(key => allParams.add(key));
+      });
+      const sortedParams = Array.from(allParams).sort();
+
+      tableHeader.innerHTML = headers.map(h => `<th>${h}</th>`).join('') + 
+        sortedParams.map(p => `<th>param: ${p}</th>`).join('');
+
+      tableBody.innerHTML = parsedResults.map(result => {
+        const cells = [
+          `<strong>${result.original}</strong>`
+        ];
+        
+        if (includeHost) {
+          cells.push(result.hostname);
+        }
+        
+        cells.push(
+          result.protocol,
+          result.pathname,
+          result.query === 'none' ? '—' : result.query,
+          result.paramCount
+        );
+
+        if (document.getElementById('fetchTitles').checked) {
+          cells.push(result.title || '—');
+        }
+
+        sortedParams.forEach(param => {
+          cells.push(result.params[param] || '—');
+        });
+
+        return `<tr>${cells.map(c => `<td>${c}</td>`).join('')}</tr>`;
+      }).join('');
+
+      rawView.value = JSON.stringify(parsedResults, null, 2);
+    }
+
+    document.getElementById('clearBtn').addEventListener('click', function() {
+      document.getElementById('urlInput').value = '';
+      document.getElementById('fileInput').value = '';
+      document.getElementById('resultsContainer').classList.remove('show');
+      parsedResults = [];
+      showStatus('Cleared', 'info');
+    });
+
+    document.getElementById('exportCsvBtn').addEventListener('click', function() {
+      if (parsedResults.length === 0) {
+        showStatus('No results to export', 'error');
+        return;
+      }
+
+      const includeHost = document.getElementById('includeHost').checked;
+      const fetchTitles = document.getElementById('fetchTitles').checked;
+
+      // Collect all unique parameters
+      const allParams = new Set();
+      parsedResults.forEach(result => {
+        Object.keys(result.params).forEach(key => allParams.add(key));
+      });
+      const sortedParams = Array.from(allParams).sort();
+
+      // Build CSV header
+      let csv = ['URL'];
+      if (includeHost) csv.push('Hostname');
+      csv.push('Protocol', 'Path', 'Query String', 'Param Count');
+      if (fetchTitles) csv.push('Title');
+      csv.push(...sortedParams.map(p => `param_${p}`));
+
+      csv = [csv.map(escapeCSV).join(',')];
+
+      // Build CSV rows
+      parsedResults.forEach(result => {
+        const row = [result.original];
+        if (includeHost) row.push(result.hostname);
+        row.push(
+          result.protocol,
+          result.pathname,
+          result.query === 'none' ? '' : result.query,
+          result.paramCount
+        );
+        if (fetchTitles) row.push(result.title || '');
+        sortedParams.forEach(param => {
+          row.push(result.params[param] || '');
+        });
+        csv.push(row.map(escapeCSV).join(','));
+      });
+
+      downloadCSV(csv.join('\n'), 'url-parser-results.csv');
+      showStatus('CSV exported', 'success');
+    });
+
+    document.getElementById('exportTitlesBtn').addEventListener('click', function() {
+      if (parsedResults.length === 0) {
+        showStatus('No results to export', 'error');
+        return;
+      }
+
+      const fetchTitles = document.getElementById('fetchTitles').checked;
+      
+      if (!fetchTitles) {
+        showStatus('Please enable "Fetch page titles" first', 'error');
+        return;
+      }
+
+      const csv = ['URL,Title'];
+      parsedResults.forEach(result => {
+        csv.push(`${escapeCSV(result.original)},${escapeCSV(result.title || '')}`);
+      });
+
+      downloadCSV(csv.join('\n'), 'url-titles.csv');
+      showStatus('Titles exported', 'success');
+    });
+
+    document.getElementById('copyTableBtn').addEventListener('click', function() {
+      if (parsedResults.length === 0) {
+        showStatus('No results to copy', 'error');
+        return;
+      }
+
+      navigator.clipboard.writeText(JSON.stringify(parsedResults, null, 2));
+      showStatus('Copied to clipboard', 'success');
+    });
+
+    function escapeCSV(str) {
+      if (str === null || str === undefined) return '';
+      str = String(str);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    }
+
+    function downloadCSV(content, filename) {
+      const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // File input handling
+    document.getElementById('fileInput').addEventListener('change', function() {
+      if (this.files.length > 0) {
+        document.querySelectorAll('.tab-button')[0].click();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image Histogram Analyzer | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.7/chart.umd.min.js"></script>
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    button.danger {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .status.warning {
+      background-color: rgba(245, 158, 11, 0.1);
+      border-left: 3px solid #f59e0b;
+      color: #f59e0b;
+      display: block;
+      margin: 0.5rem 0;
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+
+    /* Tool-specific styles */
+    .dropzone {
+      border: 2px dashed var(--puny);
+      border-radius: 4px;
+      padding: 2.5rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 150ms;
+    }
+
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: var(--accent);
+      background-color: var(--hover);
+    }
+
+    .dropzone input {
+      display: none;
+    }
+
+    #preview-wrap {
+      display: none;
+    }
+
+    #preview-wrap.show {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    #preview-img {
+      max-width: 100%;
+      max-height: 280px;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      display: block;
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 220px;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      padding: 0.75rem;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .slider-row input[type="range"] {
+      flex: 1;
+      width: auto;
+      padding: 0;
+      border: none;
+      accent-color: var(--accent);
+    }
+
+    .slider-value {
+      min-width: 3.5rem;
+      text-align: right;
+      font-size: 0.9rem;
+      color: var(--puny);
+    }
+
+    canvas#hidden-canvas {
+      display: none;
+    }
+
+    .clip-stats {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      font-size: 0.85rem;
+    }
+
+    .clip-stats .num {
+      font-weight: bold;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Image Histogram Analyzer</h1>
+    <p class="puny">Show RGB and luminance histograms for any image, with clipping warnings and levels adjustment.</p>
+
+    <div class="container">
+      <div id="upload-section">
+        <div class="input-group">
+          <span class="input-label">Image</span>
+          <div class="dropzone" id="dropzone">
+            <p>Drag & drop an image here, or click to browse</p>
+            <p class="puny" style="margin-top: 0.5rem;">JPG, PNG, GIF, WEBP supported</p>
+            <input type="file" id="file-input" accept="image/*" />
+          </div>
+        </div>
+      </div>
+
+      <div id="preview-wrap">
+        <div class="input-group">
+          <span class="input-label">Source</span>
+          <img id="preview-img" alt="Uploaded preview" />
+        </div>
+
+        <div class="clip-stats" id="clip-stats"></div>
+        <div class="status warning" id="clip-warning" style="display:none"></div>
+
+        <div class="input-group">
+          <span class="input-label">Luminance histogram</span>
+          <div class="chart-wrap"><canvas id="lum-chart"></canvas></div>
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">RGB channel histograms</span>
+          <div class="chart-wrap"><canvas id="rgb-chart"></canvas></div>
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">Levels adjustment</span>
+          <label class="puny" for="black-point">Black point</label>
+          <div class="slider-row">
+            <input type="range" id="black-point" min="0" max="254" value="0" step="1" />
+            <span class="slider-value" id="black-point-value">0</span>
+          </div>
+          <label class="puny" for="white-point">White point</label>
+          <div class="slider-row">
+            <input type="range" id="white-point" min="1" max="255" value="255" step="1" />
+            <span class="slider-value" id="white-point-value">255</span>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">Adjusted preview</span>
+          <canvas id="adjusted-canvas" style="max-width:100%; border:1px solid var(--puny); border-radius:4px; display:block;"></canvas>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="apply-levels-btn">Apply levels</button>
+          <button id="download-btn">Download adjusted PNG</button>
+          <button class="danger" id="reset-btn">Reset</button>
+        </div>
+      </div>
+
+      <canvas id="hidden-canvas"></canvas>
+
+      <div class="info-box">
+        <strong>Tip:</strong> Spikes pressed against the left or right edge of the histogram indicate clipped shadows or highlights — detail has been lost there permanently. Drag the black/white point sliders to remap the tonal range and recover contrast.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool-specific script -->
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    }
+
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const previewWrap = document.getElementById('preview-wrap');
+    const previewImg = document.getElementById('preview-img');
+    const hiddenCanvas = document.getElementById('hidden-canvas');
+    const ctx = hiddenCanvas.getContext('2d', { willReadFrequently: true });
+    const adjustedCanvas = document.getElementById('adjusted-canvas');
+    const adjustedCtx = adjustedCanvas.getContext('2d');
+
+    let currentImage = null;
+    let lumChart = null;
+    let rgbChart = null;
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) handleFile(file);
+    });
+
+    function handleFile(file) {
+      if (!file.type.startsWith('image/')) {
+        showStatus('Please upload an image file.', 'error');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          currentImage = img;
+          previewImg.src = e.target.result;
+          previewWrap.classList.add('show');
+          analyzeImage();
+          showStatus('Image loaded.', 'success');
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function analyzeImage() {
+      if (!currentImage) return;
+      const w = currentImage.width, h = currentImage.height;
+      hiddenCanvas.width = w;
+      hiddenCanvas.height = h;
+      ctx.drawImage(currentImage, 0, 0);
+      const data = ctx.getImageData(0, 0, w, h).data;
+
+      const rHist = new Array(256).fill(0);
+      const gHist = new Array(256).fill(0);
+      const bHist = new Array(256).fill(0);
+      const lHist = new Array(256).fill(0);
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        rHist[r]++;
+        gHist[g]++;
+        bHist[b]++;
+        const lum = Math.round(r * 0.299 + g * 0.587 + b * 0.114);
+        lHist[lum]++;
+      }
+
+      const totalPixels = w * h;
+      const shadowClip = lHist[0] / totalPixels;
+      const highlightClip = lHist[255] / totalPixels;
+
+      document.getElementById('clip-stats').innerHTML = `
+        <span>Shadow clipping: <span class="num">${(shadowClip * 100).toFixed(2)}%</span></span>
+        <span>Highlight clipping: <span class="num">${(highlightClip * 100).toFixed(2)}%</span></span>
+        <span>Resolution: <span class="num">${w}×${h}</span></span>
+      `;
+
+      const warningEl = document.getElementById('clip-warning');
+      if (shadowClip > 0.02 || highlightClip > 0.02) {
+        warningEl.style.display = 'block';
+        const parts = [];
+        if (shadowClip > 0.02) parts.push('significant shadow clipping');
+        if (highlightClip > 0.02) parts.push('significant highlight clipping');
+        warningEl.textContent = `Warning: this image shows ${parts.join(' and ')}.`;
+      } else {
+        warningEl.style.display = 'none';
+      }
+
+      renderCharts(lHist, rHist, gHist, bHist);
+      drawAdjustedPreview(0, 255);
+    }
+
+    function renderCharts(lHist, rHist, gHist, bHist) {
+      const labels = Array.from({ length: 256 }, (_, i) => i);
+
+      if (lumChart) lumChart.destroy();
+      const lumCtx = document.getElementById('lum-chart').getContext('2d');
+      lumChart = new Chart(lumCtx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            data: lHist,
+            backgroundColor: 'rgba(150,150,150,0.7)',
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          scales: {
+            x: { display: false },
+            y: { display: false }
+          },
+          elements: { bar: { borderRadius: 0 } },
+          barPercentage: 1,
+          categoryPercentage: 1
+        }
+      });
+
+      if (rgbChart) rgbChart.destroy();
+      const rgbCtx = document.getElementById('rgb-chart').getContext('2d');
+      rgbChart = new Chart(rgbCtx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { data: rHist, borderColor: 'rgba(239,68,68,0.8)', backgroundColor: 'rgba(239,68,68,0.15)', fill: true, pointRadius: 0, borderWidth: 1, tension: 0 },
+            { data: gHist, borderColor: 'rgba(34,197,94,0.8)', backgroundColor: 'rgba(34,197,94,0.15)', fill: true, pointRadius: 0, borderWidth: 1, tension: 0 },
+            { data: bHist, borderColor: 'rgba(59,130,246,0.8)', backgroundColor: 'rgba(59,130,246,0.15)', fill: true, pointRadius: 0, borderWidth: 1, tension: 0 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          scales: {
+            x: { display: false },
+            y: { display: false }
+          }
+        }
+      });
+    }
+
+    function drawAdjustedPreview(blackPoint, whitePoint) {
+      if (!currentImage) return;
+      const w = currentImage.width, h = currentImage.height;
+      const maxPreviewDim = 500;
+      let pw = w, ph = h;
+      if (pw > maxPreviewDim || ph > maxPreviewDim) {
+        const scale = maxPreviewDim / Math.max(pw, ph);
+        pw = Math.round(pw * scale);
+        ph = Math.round(ph * scale);
+      }
+      adjustedCanvas.width = pw;
+      adjustedCanvas.height = ph;
+      adjustedCtx.drawImage(currentImage, 0, 0, pw, ph);
+
+      if (blackPoint === 0 && whitePoint === 255) return;
+
+      const imageData = adjustedCtx.getImageData(0, 0, pw, ph);
+      const data = imageData.data;
+      const range = Math.max(1, whitePoint - blackPoint);
+
+      for (let i = 0; i < data.length; i += 4) {
+        for (let c = 0; c < 3; c++) {
+          let v = data[i + c];
+          v = ((v - blackPoint) / range) * 255;
+          data[i + c] = Math.max(0, Math.min(255, v));
+        }
+      }
+      adjustedCtx.putImageData(imageData, 0, 0);
+    }
+
+    document.getElementById('black-point').addEventListener('input', (e) => {
+      document.getElementById('black-point-value').textContent = e.target.value;
+    });
+    document.getElementById('white-point').addEventListener('input', (e) => {
+      document.getElementById('white-point-value').textContent = e.target.value;
+    });
+
+    document.getElementById('apply-levels-btn').addEventListener('click', () => {
+      if (!currentImage) {
+        showStatus('Upload an image first.', 'error');
+        return;
+      }
+      const blackPoint = parseInt(document.getElementById('black-point').value, 10);
+      const whitePoint = parseInt(document.getElementById('white-point').value, 10);
+      if (blackPoint >= whitePoint) {
+        showStatus('Black point must be less than white point.', 'error');
+        return;
+      }
+      drawAdjustedPreview(blackPoint, whitePoint);
+      showStatus('Levels applied.', 'success');
+    });
+
+    document.getElementById('download-btn').addEventListener('click', () => {
+      if (!currentImage) {
+        showStatus('Upload an image first.', 'error');
+        return;
+      }
+      adjustedCanvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'levels-adjusted.png';
+        a.click();
+        URL.revokeObjectURL(url);
+        showStatus('Downloaded levels-adjusted.png', 'success');
+      });
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      currentImage = null;
+      previewWrap.classList.remove('show');
+      fileInput.value = '';
+      document.getElementById('black-point').value = 0;
+      document.getElementById('white-point').value = 255;
+      document.getElementById('black-point-value').textContent = '0';
+      document.getElementById('white-point-value').textContent = '255';
+      showStatus('Reset.', 'success');
+    });
+  </script>
+</body>
+</html>

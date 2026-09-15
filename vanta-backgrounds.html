@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vanta Backgrounds | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta/dist/vanta.birds.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta/dist/vanta.waves.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta/dist/vanta.fog.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta/dist/vanta.net.min.js"></script>
+  <style>
+    .container { display: flex; flex-direction: column; gap: 1.5rem; }
+
+    .preview-box {
+      width: 100%;
+      height: 280px;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preview-label {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      font-size: 0.75rem;
+      color: white;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .input-label {
+      font-size: 0.8rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+    }
+
+    .preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    button.preset {
+      min-width: 80px;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+    }
+
+    button.preset.active {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    input[type="color"] {
+      width: 100%;
+      height: 36px;
+      padding: 2px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      padding: 0;
+    }
+
+    .code-block {
+      background: var(--highlight);
+      border: 1px dashed var(--accent);
+      padding: 1rem;
+      font-size: 0.8rem;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    .button-group { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+    button {
+      padding: 8px 14px;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+    button:hover { background-color: var(--hover); border-color: var(--accent); }
+    button.primary { border-color: var(--accent); color: var(--accent); font-weight: bold; }
+
+    .status { padding: 0.75rem 1rem; margin: 0.5rem 0; display: none; font-size: 0.9rem; border-left: 3px solid var(--accent); background: rgba(255,102,0,0.08); color: var(--accent); }
+    .status.show { display: block; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Vanta Backgrounds</h1>
+    <p class="puny">animated 3d backgrounds — birds, waves, fog, net. tweak and copy the embed code.</p>
+
+    <div class="container">
+      <div>
+        <span class="input-label" style="display:block;margin-bottom:0.5rem;">Effect</span>
+        <div class="preset-row">
+          <button class="preset active" onclick="setEffect('BIRDS')">birds</button>
+          <button class="preset" onclick="setEffect('WAVES')">waves</button>
+          <button class="preset" onclick="setEffect('FOG')">fog</button>
+          <button class="preset" onclick="setEffect('NET')">net</button>
+        </div>
+      </div>
+
+      <div id="preview" class="preview-box">
+        <span class="preview-label">live preview</span>
+      </div>
+
+      <div class="controls">
+        <div class="control-group">
+          <label class="input-label">Color 1</label>
+          <input type="color" id="color1" value="#1a1a2e" oninput="updateEffect()">
+        </div>
+        <div class="control-group">
+          <label class="input-label">Color 2</label>
+          <input type="color" id="color2" value="#ff6600" oninput="updateEffect()">
+        </div>
+        <div class="control-group">
+          <label class="input-label">Speed <span id="speed-val">1.0</span></label>
+          <input type="range" id="speed" min="0.1" max="5" step="0.1" value="1" oninput="document.getElementById('speed-val').textContent=this.value;updateEffect()">
+        </div>
+        <div class="control-group">
+          <label class="input-label">Size <span id="size-val">1.0</span></label>
+          <input type="range" id="size" min="0.5" max="3" step="0.1" value="1" oninput="document.getElementById('size-val').textContent=this.value;updateEffect()">
+        </div>
+      </div>
+
+      <div>
+        <span class="input-label" style="display:block;margin-bottom:0.5rem;">Embed Code</span>
+        <div class="code-block" id="code-output"></div>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" onclick="copyCode()">copy code</button>
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <script>
+    let currentEffect = null;
+    let currentType = 'BIRDS';
+
+    function hexToInt(hex) {
+      return parseInt(hex.replace('#', ''), 16);
+    }
+
+    function setEffect(type) {
+      currentType = type;
+      document.querySelectorAll('.preset').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      updateEffect();
+    }
+
+    function updateEffect() {
+      if (currentEffect) {
+        currentEffect.destroy();
+        currentEffect = null;
+      }
+
+      const c1 = hexToInt(document.getElementById('color1').value);
+      const c2 = hexToInt(document.getElementById('color2').value);
+      const speed = parseFloat(document.getElementById('speed').value);
+      const size = parseFloat(document.getElementById('size').value);
+
+      const el = document.getElementById('preview');
+      const opts = { el, mouseControls: true, touchControls: true, gyroControls: false, minHeight: 200, minWidth: 200 };
+
+      if (currentType === 'BIRDS') {
+        currentEffect = VANTA.BIRDS({ ...opts, backgroundColor: c1, color1: c2, speedLimit: speed * 5, quantity: Math.round(size * 3) });
+      } else if (currentType === 'WAVES') {
+        currentEffect = VANTA.WAVES({ ...opts, color: c1, shininess: 50, waveHeight: size * 10, waveSpeed: speed * 0.5 });
+      } else if (currentType === 'FOG') {
+        currentEffect = VANTA.FOG({ ...opts, highlightColor: c2, midtoneColor: c1, lowlightColor: c1, baseColor: c1, blurFactor: 0.6, speed: speed, zoom: size });
+      } else if (currentType === 'NET') {
+        currentEffect = VANTA.NET({ ...opts, color: c2, backgroundColor: c1, points: Math.round(size * 10), maxDistance: 20, spacing: 15, showDots: true });
+      }
+
+      updateCode();
+    }
+
+    function updateCode() {
+      const c1 = document.getElementById('color1').value;
+      const c2 = document.getElementById('color2').value;
+      const speed = document.getElementById('speed').value;
+      const size = document.getElementById('size').value;
+      const type = currentType;
+
+      let script = '';
+      if (type === 'BIRDS') script = `vanta.birds.min.js`;
+      else if (type === 'WAVES') script = `vanta.waves.min.js`;
+      else if (type === 'FOG') script = `vanta.fog.min.js`;
+      else if (type === 'NET') script = `vanta.net.min.js`;
+
+      let config = '';
+      if (type === 'BIRDS') config = `  backgroundColor: 0x${c1.slice(1)},\n  color1: 0x${c2.slice(1)},\n  speedLimit: ${(speed*5).toFixed(0)},\n  quantity: ${Math.round(size*3)}`;
+      else if (type === 'WAVES') config = `  color: 0x${c1.slice(1)},\n  waveHeight: ${(size*10).toFixed(0)},\n  waveSpeed: ${(speed*0.5).toFixed(2)}`;
+      else if (type === 'FOG') config = `  highlightColor: 0x${c2.slice(1)},\n  midtoneColor: 0x${c1.slice(1)},\n  speed: ${speed},\n  zoom: ${size}`;
+      else if (type === 'NET') config = `  color: 0x${c2.slice(1)},\n  backgroundColor: 0x${c1.slice(1)},\n  points: ${Math.round(size*10)},\n  maxDistance: 20`;
+
+      document.getElementById('code-output').textContent =
+`<script src="https://cdn.jsdelivr.net/npm/three/build/three.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/vanta/dist/${script}"><\/script>
+<script>
+VANTA.${type}({
+  el: "#your-element",
+${config}
+})
+<\/script>`;
+    }
+
+    function copyCode() {
+      navigator.clipboard.writeText(document.getElementById('code-output').textContent);
+      showStatus('code copied!');
+    }
+
+    function showStatus(msg) {
+      const s = document.getElementById('status');
+      s.textContent = msg;
+      s.classList.add('show');
+      setTimeout(() => s.classList.remove('show'), 2000);
+    }
+
+    updateEffect();
+  </script>
+</body>
+</html>

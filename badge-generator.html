@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Badge Generator | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    button.danger {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+
+    textarea,
+    input[type="text"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .badge-section {
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--puny);
+    }
+
+    .badge-item {
+      margin: 1rem 0;
+      padding: 1rem;
+      background-color: var(--hover);
+      border-radius: 4px;
+      border: 1px solid var(--puny);
+    }
+
+    .badge-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .badge-code {
+      font-size: 0.9rem;
+      word-break: break-all;
+      background-color: var(--bg);
+      padding: 0.5rem;
+      border-radius: 3px;
+      border: 1px solid var(--puny);
+      margin: 0.5rem 0;
+      cursor: pointer;
+    }
+
+    .badge-code:hover {
+      border-color: var(--accent);
+    }
+
+    .badge-preview {
+      margin: 0.5rem 0;
+      font-size: 0.85rem;
+      color: var(--puny);
+    }
+
+    .url-type {
+      font-size: 0.75rem;
+      color: var(--puny);
+      margin-bottom: 0.3rem;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Badge Generator</h1>
+    <p class="puny">Generate shields.io badges from GitHub URLs</p>
+
+    <div class="container">
+      <div class="info-box">
+        <strong>How to use:</strong> Paste GitHub URLs (one per line) and select badge types. Supports profile, repo, issues, pulls, actions, and more. Badges are generated using shields.io.
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">GitHub URLs (one per line)</label>
+        <textarea id="urlInput" placeholder="https://github.com/user/repo&#10;https://github.com/user/repo/issues&#10;https://github.com/user"></textarea>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Badge Type</label>
+        <select id="badgeType" style="padding: 10px; border: 1px solid var(--puny); background: var(--bg); color: var(--text); font-family: monospace; border-radius: 4px;">
+          <option value="repo-stars">Repository Stars</option>
+          <option value="repo-forks">Repository Forks</option>
+          <option value="repo-watchers">Repository Watchers</option>
+          <option value="repo-size">Repository Size</option>
+          <option value="issues-open">Open Issues</option>
+          <option value="pulls-open">Open Pull Requests</option>
+          <option value="user-followers">User Followers</option>
+          <option value="license">License</option>
+          <option value="status">GitHub Status</option>
+        </select>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" onclick="generateBadges()">Generate Badges</button>
+        <button onclick="clearAll()" class="danger">Clear All</button>
+        <button onclick="copyAllBadges()">Copy All</button>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <div class="badge-section" id="badgeSection" style="display: none;">
+        <span class="section-title">Generated Badges</span>
+        <div id="badgeOutput"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Badge Generator Script -->
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 3000);
+    }
+
+    function parseGitHubUrl(url) {
+      url = url.trim();
+      if (!url) return null;
+
+      const patterns = {
+        profileOnly: /github\.com\/([^\/]+)\/?$/,
+        repoOnly: /github\.com\/([^\/]+)\/([^\/]+)\/?$/,
+        issues: /github\.com\/([^\/]+)\/([^\/]+)\/issues/,
+        pulls: /github\.com\/([^\/]+)\/([^\/]+)\/pulls/,
+        actions: /github\.com\/([^\/]+)\/([^\/]+)\/actions/,
+        security: /github\.com\/([^\/]+)\/([^\/]+)\/security/,
+        projects: /github\.com\/([^\/]+)\/([^\/]+)\/projects/,
+        pulse: /github\.com\/([^\/]+)\/([^\/]+)\/pulse/,
+        contributors: /github\.com\/([^\/]+)\/([^\/]+)\/graphs\/contributors/,
+        community: /github\.com\/([^\/]+)\/([^\/]+)\/community/,
+        commitActivity: /github\.com\/([^\/]+)\/([^\/]+)\/graphs\/commit-activity/,
+        codeFrequency: /github\.com\/([^\/]+)\/([^\/]+)\/graphs\/code-frequency/,
+        dependencies: /github\.com\/([^\/]+)\/([^\/]+)\/network\/dependencies/,
+        network: /github\.com\/([^\/]+)\/([^\/]+)\/network/,
+        forks: /github\.com\/([^\/]+)\/([^\/]+)\/forks/,
+        metricsUsage: /github\.com\/([^\/]+)\/([^\/]+)\/actions\/metrics\/usage/,
+        metricsPerformance: /github\.com\/([^\/]+)\/([^\/]+)\/actions\/metrics\/performance/,
+        commits: /github\.com\/([^\/]+)\/([^\/]+)\/commits\?author=/
+      };
+
+      for (const [type, pattern] of Object.entries(patterns)) {
+        const match = url.match(pattern);
+        if (match) {
+          return {
+            type,
+            user: match[1],
+            repo: match[2] || null,
+            fullUrl: url
+          };
+    }
+      }
+
+      return null;
+    }
+
+    function generateBadgeUrl(parsed, badgeType) {
+      const baseUrl = 'https://img.shields.io/badge';
+      const { user, repo } = parsed;
+
+      const badges = {
+        'repo-stars': repo ? `https://img.shields.io/github/stars/${user}/${repo}?style=flat-square` : null,
+        'repo-forks': repo ? `https://img.shields.io/github/forks/${user}/${repo}?style=flat-square` : null,
+        'repo-watchers': repo ? `https://img.shields.io/github/watchers/${user}/${repo}?style=flat-square` : null,
+        'repo-size': repo ? `https://img.shields.io/github/repo-size/${user}/${repo}?style=flat-square` : null,
+        'issues-open': repo ? `https://img.shields.io/github/issues/${user}/${repo}?style=flat-square` : null,
+        'pulls-open': repo ? `https://img.shields.io/github/issues-pr/${user}/${repo}?style=flat-square` : null,
+        'user-followers': `https://img.shields.io/github/followers/${user}?style=flat-square`,
+        'license': repo ? `https://img.shields.io/github/license/${user}/${repo}?style=flat-square` : null,
+        'status': repo ? `https://img.shields.io/github/last-commit/${user}/${repo}?style=flat-square` : null
+      };
+
+      return badges[badgeType] || null;
+    }
+
+    function generateMarkdownBadge(badgeUrl, linkUrl) {
+      return `[![Badge](${badgeUrl})](${linkUrl})`;
+    }
+
+    function generateBadges() {
+      const urls = document.getElementById('urlInput').value.split('\n');
+      const badgeType = document.getElementById('badgeType').value;
+      const output = document.getElementById('badgeOutput');
+      const section = document.getElementById('badgeSection');
+
+      output.innerHTML = '';
+      let validCount = 0;
+
+      urls.forEach((url, index) => {
+        const parsed = parseGitHubUrl(url);
+        if (!parsed) return;
+
+        const badgeUrl = generateBadgeUrl(parsed, badgeType);
+        if (!badgeUrl) {
+          showStatus(`Badge type not compatible with URL type: ${parsed.type}`, 'error');
+          return;
+        }
+
+        validCount++;
+        const markdown = generateMarkdownBadge(badgeUrl, parsed.fullUrl);
+
+        const item = document.createElement('div');
+        item.className = 'badge-item';
+        item.innerHTML = `
+          <div class="url-type">${parsed.type} • ${parsed.repo ? parsed.user + '/' + parsed.repo : parsed.user}</div>
+          <div class="badge-label">Markdown</div>
+          <div class="badge-code" onclick="copyToClipboard(this)">${markdown}</div>
+          <div class="badge-preview">Click to copy</div>
+        `;
+        output.appendChild(item);
+      });
+
+      if (validCount === 0) {
+        showStatus('No valid GitHub URLs found', 'error');
+        section.style.display = 'none';
+      } else {
+        section.style.display = 'block';
+        showStatus(`Generated ${validCount} badge(s)`);
+      }
+    }
+
+    function copyToClipboard(element) {
+      const text = element.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const original = element.textContent;
+        element.textContent = 'copied!';
+        element.style.color = 'var(--accent)';
+        setTimeout(() => {
+          element.textContent = original;
+          element.style.color = '';
+        }, 1500);
+      });
+    }
+
+    function copyAllBadges() {
+      const badges = document.querySelectorAll('.badge-code');
+      if (badges.length === 0) {
+        showStatus('No badges to copy', 'error');
+        return;
+      }
+
+      const allText = Array.from(badges)
+        .map(b => b.textContent)
+        .join('\n\n');
+
+      navigator.clipboard.writeText(allText).then(() => {
+        showStatus(`Copied ${badges.length} badge(s) to clipboard`);
+      });
+    }
+
+    function clearAll() {
+      document.getElementById('urlInput').value = '';
+      document.getElementById('badgeOutput').innerHTML = '';
+      document.getElementById('badgeSection').style.display = 'none';
+      document.getElementById('status').classList.remove('show');
+    }
+  </script>
+</body>
+</html>

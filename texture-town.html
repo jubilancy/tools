@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TextureTown Picker | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .stage {
+      text-align: center;
+    }
+
+    .cat-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 2px 8px;
+      margin-bottom: 1rem;
+    }
+
+    .frame {
+      display: inline-block;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      padding: 10px;
+      margin-bottom: 1.25rem;
+    }
+
+    #texture-img {
+      display: block;
+      width: 280px;
+      height: 280px;
+      object-fit: cover;
+      background:
+        linear-gradient(45deg, var(--hover) 25%, transparent 25%) -8px 0/16px 16px,
+        linear-gradient(-45deg, var(--hover) 25%, transparent 25%) -8px 0/16px 16px,
+        linear-gradient(45deg, transparent 75%, var(--hover) 75%) -8px 0/16px 16px,
+        linear-gradient(-45deg, transparent 75%, var(--hover) 75%) -8px 0/16px 16px,
+        var(--bg);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+    }
+
+    .metabox {
+      border: 1px solid var(--puny);
+      padding: 14px 16px;
+      text-align: left;
+      margin: 0 auto 1.25rem;
+      max-width: 340px;
+    }
+
+    .metabox .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 4px 0;
+      border-bottom: 1px dashed var(--puny);
+    }
+
+    .metabox .row:last-child {
+      border-bottom: none;
+    }
+
+    .metabox .label {
+      color: var(--puny);
+    }
+
+    .metabox .val {
+      text-align: right;
+      word-break: break-all;
+      max-width: 210px;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+
+    select {
+      font-family: monospace;
+      font-size: 0.95rem;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--puny);
+      padding: 9px 10px;
+      border-radius: 4px;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button, select {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>TextureTown Picker</h1>
+    <p class="puny">a random little texture, pulled fresh from <a href="https://textures.neocities.org" target="_blank" rel="noopener">textures.neocities.org</a></p>
+
+    <div class="container">
+      <div class="stage">
+        <div id="cat-badge" class="cat-badge" style="display:none;"></div>
+
+        <div class="frame">
+          <img id="texture-img" src="" alt="a randomly picked texture" width="280" height="280">
+        </div>
+
+        <div id="metabox" class="metabox" style="display:none;">
+          <div class="row"><span class="label">category</span><span class="val" id="meta-category">—</span></div>
+          <div class="row"><span class="label">file</span><span class="val" id="meta-file">—</span></div>
+          <div class="row"><span class="label">size</span><span class="val" id="meta-size">—</span></div>
+          <div class="row"><span class="label">link</span><span class="val" id="meta-link">—</span></div>
+        </div>
+
+        <div class="button-group">
+          <select id="category-select">
+            <option value="">any category</option>
+          </select>
+          <button id="roll-btn" class="primary">new texture</button>
+          <button id="download-btn">download</button>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> pick a category from the dropdown to bias the roll, or leave it on "any category" for a fully random pull across the whole manifest.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.addEventListener('click', () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      });
+    }
+  </script>
+
+  <!-- Tool-specific script here -->
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    }
+
+    (function () {
+      const MANIFEST_URL = 'https://textures.neocities.org/manifest.json';
+      let manifest = null;
+      let currentUrl = null;
+      let currentFilename = null;
+
+      const img = document.getElementById('texture-img');
+      const catBadge = document.getElementById('cat-badge');
+      const metabox = document.getElementById('metabox');
+      const metaCategory = document.getElementById('meta-category');
+      const metaFile = document.getElementById('meta-file');
+      const metaSize = document.getElementById('meta-size');
+      const metaLink = document.getElementById('meta-link');
+      const rollBtn = document.getElementById('roll-btn');
+      const downloadBtn = document.getElementById('download-btn');
+      const categorySelect = document.getElementById('category-select');
+
+      async function loadManifest() {
+        showStatus('loading manifest…');
+        try {
+          const res = await fetch(MANIFEST_URL);
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          manifest = await res.json();
+
+          if (!manifest.catalogue || !manifest.catalogue.length) {
+            throw new Error('manifest has no categories');
+          }
+
+          manifest.catalogue.forEach((cat, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = cat.niceName || cat.name;
+            categorySelect.appendChild(opt);
+          });
+
+          showStatus(manifest.info.texture_count + ' textures across ' + manifest.catalogue.length + ' categories, ready!');
+          rollBtn.disabled = false;
+          pickRandom();
+        } catch (err) {
+          showStatus("couldn't load the manifest — " + err.message, 'error');
+        }
+      }
+
+      function pickRandom() {
+        if (!manifest) {
+          showStatus('manifest not loaded yet', 'error');
+          return;
+        }
+
+        const catIndex = categorySelect.value === ''
+          ? Math.floor(Math.random() * manifest.catalogue.length)
+          : parseInt(categorySelect.value, 10);
+
+        const cat = manifest.catalogue[catIndex];
+        const files = cat.files;
+
+        if (!files || !files.length) {
+          showStatus('that category has no files', 'error');
+          return;
+        }
+
+        const filename = files[Math.floor(Math.random() * files.length)];
+        const url = manifest.info.base_url + '/' + manifest.info.textures_folder
+          + '/' + cat.name + '/' + filename;
+
+        currentUrl = url;
+        currentFilename = filename;
+
+        showStatus('loading image…');
+        img.onload = () => {
+          showStatus('loaded ' + filename + ' — ' + img.naturalWidth + '×' + img.naturalHeight);
+        };
+        img.onerror = () => {
+          showStatus("that one didn't load — try again!", 'error');
+        };
+        img.src = url;
+
+        catBadge.textContent = cat.niceName || cat.name;
+        catBadge.style.display = 'inline-block';
+
+        metaCategory.textContent = cat.niceName || cat.name;
+        metaFile.textContent = filename;
+        metaSize.textContent = '…';
+        metaLink.innerHTML = '';
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = 'open ↗';
+        metaLink.appendChild(link);
+        metabox.style.display = 'block';
+
+        img.addEventListener('load', function updateSize() {
+          metaSize.textContent = img.naturalWidth + ' × ' + img.naturalHeight + 'px';
+          img.removeEventListener('load', updateSize);
+        });
+      }
+
+      function downloadCurrent() {
+        if (!currentUrl) {
+          showStatus('nothing to download yet — roll a texture first', 'error');
+          return;
+        }
+        const a = document.createElement('a');
+        a.href = currentUrl;
+        a.download = currentFilename || 'texture';
+        a.target = '_blank';
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+
+      rollBtn.addEventListener('click', pickRandom);
+      categorySelect.addEventListener('change', pickRandom);
+      downloadBtn.addEventListener('click', downloadCurrent);
+
+      rollBtn.disabled = true;
+      loadManifest();
+    })();
+  </script>
+</body>
+</html>

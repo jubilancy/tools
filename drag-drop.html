@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Drag & Drop Lists | tools.eliana.lol</title>
+  <link rel="stylesheet" href="../global.css" />
+  <link rel="icon" type="image/x-icon" href="../favicon.svg" />
+  <style>
+    .tool-layout { display: flex; flex-direction: column; gap: 20px; }
+    .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    label { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 5px; }
+    .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 600px) { .board { grid-template-columns: 1fr; } }
+    .column { border: 1px solid var(--puny); padding: 12px; min-height: 200px; }
+    .column-title { font-size: 0.75rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--puny); }
+    .item { border: 1px solid var(--puny); padding: 8px 10px; margin-bottom: 6px; cursor: grab; font-size: 0.85rem; background: var(--bg); }
+    .item:hover { background: var(--hover); border-color: var(--text); }
+    .item.sortable-ghost { opacity: 0.3; }
+    .item.sortable-chosen { cursor: grabbing; }
+    .add-row { display: flex; gap: 6px; margin-top: 8px; }
+    .add-row input { flex: 1; padding: 4px 8px; }
+    .add-row button { padding: 4px 10px; }
+    #export-out { font-size: 0.8rem; white-space: pre-wrap; background: var(--hover); padding: 10px; border: 1px solid var(--puny); display: none; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left"><a href="../index.html">home</a> | <a href="../extra.html">extra</a> | <a href="../credits.html">credits</a> | <a href="../changelog.html">logs</a></div>
+    <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+  </nav>
+  <main>
+    <h1>Drag & Drop Lists</h1>
+    <p class="puny">A simple kanban board. Drag cards between columns, add items, export as JSON.</p>
+    <div class="tool-layout">
+      <div class="board">
+        <div class="column">
+          <div class="column-title">To do</div>
+          <div class="sortable" id="col-todo"></div>
+          <div class="add-row"><input type="text" placeholder="New item…" onkeydown="if(event.key==='Enter')addItem('col-todo',this)" /><button onclick="addItem('col-todo',this.previousElementSibling)">+</button></div>
+        </div>
+        <div class="column">
+          <div class="column-title">In progress</div>
+          <div class="sortable" id="col-doing"></div>
+          <div class="add-row"><input type="text" placeholder="New item…" onkeydown="if(event.key==='Enter')addItem('col-doing',this)" /><button onclick="addItem('col-doing',this.previousElementSibling)">+</button></div>
+        </div>
+        <div class="column">
+          <div class="column-title">Done</div>
+          <div class="sortable" id="col-done"></div>
+          <div class="add-row"><input type="text" placeholder="New item…" onkeydown="if(event.key==='Enter')addItem('col-done',this)" /><button onclick="addItem('col-done',this.previousElementSibling)">+</button></div>
+        </div>
+      </div>
+      <div class="action-bar">
+        <button onclick="exportBoard()">Export JSON</button>
+        <button onclick="resetBoard()">Reset</button>
+      </div>
+      <pre id="export-out"></pre>
+    </div>
+  </main>
+  <footer style="margin-top: 4rem; text-align: center" class="puny">© 2026 eliana.lol • <a href="../credits.html">credits</a></footer>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => { const now = htmlEl.getAttribute('data-theme'); const next = now === 'dark' ? 'light' : 'dark'; htmlEl.setAttribute('data-theme', next); localStorage.setItem('theme', next); toggle.innerText = next === 'dark' ? '[light]' : '[dark]'; };
+
+    const defaults = {
+      'col-todo': ['Design mockups', 'Write docs', 'Set up CI'],
+      'col-doing': ['Build drag-drop tool'],
+      'col-done': ['Deploy site', 'Write global.css'],
+    };
+
+    function makeItem(text) {
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.textContent = text;
+      div.ondblclick = () => div.remove();
+      div.title = 'Double-click to delete';
+      return div;
+    }
+
+    function addItem(colId, input) {
+      const text = input.value.trim();
+      if (!text) return;
+      document.getElementById(colId).appendChild(makeItem(text));
+      input.value = '';
+    }
+
+    function resetBoard() {
+      Object.entries(defaults).forEach(([id, items]) => {
+        const el = document.getElementById(id);
+        el.innerHTML = '';
+        items.forEach(t => el.appendChild(makeItem(t)));
+      });
+    }
+
+    function exportBoard() {
+      const out = {};
+      ['col-todo','col-doing','col-done'].forEach(id => {
+        out[id] = Array.from(document.querySelectorAll(`#${id} .item`)).map(el => el.textContent);
+      });
+      const pre = document.getElementById('export-out');
+      pre.style.display = 'block';
+      pre.textContent = JSON.stringify(out, null, 2);
+    }
+
+    ['col-todo','col-doing','col-done'].forEach(id => {
+      Sortable.create(document.getElementById(id), { group: 'board', animation: 150, ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen' });
+    });
+
+    resetBoard();
+  </script>
+</body>
+</html>

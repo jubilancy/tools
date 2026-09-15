@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Code Snippets | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    select,
+    input[type="text"],
+    input[type="range"],
+    input[type="color"],
+    textarea {
+      font-family: monospace;
+      padding: 8px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+
+    select:focus,
+    input[type="text"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    input[type="range"] {
+      cursor: pointer;
+      padding: 0;
+    }
+
+    input[type="color"] {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .controls-panel {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .color-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    #bgColorText {
+      flex: 1;
+    }
+
+    .code-input {
+      width: 100%;
+      height: 200px;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: monospace;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      padding: 1rem;
+      resize: vertical;
+      font-size: 0.9rem;
+    }
+
+    .code-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .preview-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .preview-container {
+      position: relative;
+      padding: 3rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 4px;
+      border: 1px solid var(--puny);
+      transition: background-color 300ms;
+      overflow: hidden;
+    }
+
+    .code-snippet {
+      position: relative;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      min-width: 400px;
+      max-width: 800px;
+      width: fit-content;
+    }
+
+    .snippet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background: rgba(60, 60, 65, 0.95);
+    }
+
+    .window-controls {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .window-control {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .close {
+      background-color: #ff5f57;
+    }
+
+    .minimize {
+      background-color: #febc2e;
+    }
+
+    .maximize {
+      background-color: #28c840;
+    }
+
+    .file-name {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.85rem;
+      font-family: monospace;
+    }
+
+    .snippet-content {
+      background: rgba(30, 30, 32, 0.95);
+      padding: 1rem;
+      overflow: auto;
+    }
+
+    .snippet-content pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+
+    .snippet-content code {
+      font-family: monospace;
+    }
+
+    .shimmer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .hljs {
+      background: transparent !important;
+    }
+
+    .embed-code-container {
+      margin-bottom: 1.5rem;
+    }
+
+    .embed-code {
+      width: 100%;
+      height: 80px;
+      background-color: var(--bg);
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      padding: 0.75rem;
+      color: var(--text);
+      font-family: monospace;
+      font-size: 0.9rem;
+      resize: none;
+    }
+
+    .embed-size {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .embed-size input {
+      width: 80px;
+    }
+
+    /* Modal overlay */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background-color: var(--bg);
+      border-radius: 6px;
+      border: 1px solid var(--puny);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 560px;
+      padding: 1.75rem;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: var(--text);
+    }
+
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      line-height: 1;
+      color: var(--puny);
+      cursor: pointer;
+      padding: 0 0.25rem;
+      min-width: auto;
+      transition: color 150ms;
+    }
+
+    .close-modal:hover {
+      color: var(--text);
+    }
+
+    .embed-code-container p,
+    .embed-options p {
+      font-size: 0.85rem;
+      color: var(--puny);
+      margin: 0 0 0.5rem;
+    }
+
+    .embed-options {
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px dashed var(--puny);
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .code-snippet {
+        min-width: 90%;
+        max-width: 95%;
+      }
+
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Code Snippets</h1>
+    <p class="puny">Turn code into beautifully styled, shareable images with syntax highlighting.</p>
+
+    <div class="container">
+
+      <!-- CONTROLS -->
+      <div class="controls-panel">
+        <span class="input-label" style="color: var(--accent); margin-bottom: 0.75rem; display: block;">Snippet Settings</span>
+        <div class="controls-grid">
+          <div class="control-group">
+            <label for="language">Language</label>
+            <select id="language">
+              <option value="javascript">JavaScript</option>
+              <option value="html">HTML</option>
+              <option value="css">CSS</option>
+              <option value="python">Python</option>
+              <option value="java">Java</option>
+              <option value="csharp">C#</option>
+              <option value="cpp">C++</option>
+              <option value="go">Go</option>
+              <option value="ruby">Ruby</option>
+              <option value="swift">Swift</option>
+              <option value="arduino">Arduino</option>
+              <option value="bash">Bash</option>
+              <option value="json">JSON</option>
+              <option value="typescript">TypeScript</option>
+              <option value="php">PHP</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="theme">Theme</label>
+            <select id="theme">
+              <option value="default">Default (Dark)</option>
+              <option value="light">Light</option>
+              <option value="blue">Blue</option>
+              <option value="green">Green</option>
+              <option value="purple">Purple</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="filename">Filename</label>
+            <input type="text" id="filename" placeholder="example.js" />
+          </div>
+          <div class="control-group">
+            <label for="radius">Border Radius</label>
+            <input type="range" id="radius" min="4" max="24" value="12" />
+          </div>
+          <div class="control-group">
+            <label for="padding">Padding</label>
+            <input type="range" id="padding" min="8" max="40" value="16" />
+          </div>
+          <div class="control-group">
+            <label for="bgColor">Background Color</label>
+            <div class="color-input-wrapper">
+              <input type="text" id="bgColorText" placeholder="#f5f5f7" />
+              <input type="color" id="bgColorPicker" value="#f5f5f7" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CODE INPUT -->
+      <div class="input-group">
+        <span class="input-label">Your Code</span>
+        <textarea id="codeInput" class="code-input" placeholder="Paste your code here..."></textarea>
+      </div>
+
+      <!-- PREVIEW -->
+      <div class="preview-section">
+        <div class="preview-container" id="previewContainer">
+          <div class="code-snippet" id="codeSnippet">
+            <div class="snippet-header">
+              <div class="window-controls">
+                <div class="window-control close"></div>
+                <div class="window-control minimize"></div>
+                <div class="window-control maximize"></div>
+              </div>
+              <div class="file-name" id="fileNameDisplay">example.js</div>
+            </div>
+            <div class="snippet-content">
+              <pre><code id="highlightedCode" class="javascript"></code></pre>
+            </div>
+            <div class="shimmer"></div>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="downloadBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download PNG
+          </button>
+          <button id="copyBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            Copy Code
+          </button>
+          <button id="resetBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 2v6h6"></path>
+              <path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path>
+              <path d="M21 22v-6h-6"></path>
+              <path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"></path>
+            </svg>
+            Reset
+          </button>
+          <button id="embedBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 18l6-6-6-6"></path>
+              <path d="M8 6l-6 6 6 6"></path>
+            </svg>
+            Get Embed Code
+          </button>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>Code Snippets:</strong> Style code with syntax highlighting (via highlight.js), customize colors and window chrome, then export as PNG (via html2canvas) or generate an embeddable iframe URL with settings encoded in query params.
+      </div>
+    </div>
+  </main>
+
+  <!-- Embed Modal -->
+  <div class="modal" id="embedModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Embed This Snippet</h2>
+        <button class="close-modal" id="closeModal">&times;</button>
+      </div>
+      <div class="embed-code-container">
+        <p>Copy and paste this code into your website:</p>
+        <textarea class="embed-code" id="embedCodeText" readonly></textarea>
+        <button id="copyEmbedBtn" style="margin-top: 0.75rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          Copy Embed Code
+        </button>
+      </div>
+      <div class="embed-options">
+        <p>Customize size:</p>
+        <div class="embed-size">
+          <div class="control-group">
+            <label for="embedWidth">Width</label>
+            <input type="text" id="embedWidth" value="600" />
+          </div>
+          <div class="control-group">
+            <label for="embedHeight">Height</label>
+            <input type="text" id="embedHeight" value="400" />
+          </div>
+        </div>
+        <button id="updateEmbedBtn">Update Embed Code</button>
+      </div>
+    </div>
+  </div>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    &copy; 2026 eliana.lol &bull; <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Code Snippets Logic (full highlight.js language loading + html2canvas PNG export + URL param embedding preserved) -->
+  <script>
+    // Load additional languages
+    document.addEventListener('DOMContentLoaded', () => {
+      // Load additional languages dynamically
+      const languages = [
+        'javascript', 'html', 'css', 'python', 'java', 'csharp',
+        'cpp', 'go', 'ruby', 'swift', 'arduino', 'bash', 'json', 'typescript', 'php'
+      ];
+
+      languages.forEach((lang) => {
+        if (lang !== 'javascript') {
+          // Already included in the core
+          const script = document.createElement('script');
+          script.src = `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/${lang}.min.js`;
+          document.head.appendChild(script);
+        }
+      });
+
+      // Initialize highlighting
+      hljs.highlightAll();
+
+      // Parse URL parameters
+      parseUrlParams();
+    });
+
+    // Parse URL parameters and set code and other settings
+    function parseUrlParams() {
+      const urlParams = new URLSearchParams(window.location.search);
+
+      // Get code from URL
+      if (urlParams.has('code')) {
+        const encodedCode = urlParams.get('code');
+        const decodedCode = decodeURIComponent(atob(encodedCode));
+        codeInput.value = decodedCode;
+        updateCodePreview();
+      }
+
+      // Get language from URL
+      if (urlParams.has('lang')) {
+        const lang = urlParams.get('lang');
+        if (document.querySelector(`#language option[value="${lang}"]`)) {
+          languageSelect.value = lang;
+          updateCodePreview();
+          updateFilename();
+        }
+      }
+
+      // Get theme from URL
+      if (urlParams.has('theme')) {
+        const theme = urlParams.get('theme');
+        if (document.querySelector(`#theme option[value="${theme}"]`)) {
+          themeSelect.value = theme;
+          updateTheme();
+        }
+      }
+
+      // Get filename from URL
+      if (urlParams.has('filename')) {
+        filenameInput.value = urlParams.get('filename');
+        updateFilename();
+      }
+
+      // Get background color from URL
+      if (urlParams.has('bg')) {
+        const bgColor = urlParams.get('bg');
+        if (/^#([0-9A-F]{3}){1,2}$/i.test(bgColor)) {
+          bgColorPicker.value = bgColor;
+          updateBackgroundColor();
+        }
+      }
+
+      // Get border radius from URL
+      if (urlParams.has('radius')) {
+        const radius = parseInt(urlParams.get('radius'));
+        if (!isNaN(radius) && radius >= 4 && radius <= 24) {
+          radiusSlider.value = radius;
+          updateRadius();
+        }
+      }
+
+      // Get padding from URL
+      if (urlParams.has('padding')) {
+        const padding = parseInt(urlParams.get('padding'));
+        if (!isNaN(padding) && padding >= 8 && padding <= 40) {
+          paddingSlider.value = padding;
+          updatePadding();
+        }
+      }
+
+      // Check if embed mode
+      if (urlParams.has('embed') && urlParams.get('embed') === 'true') {
+        document.body.classList.add('embed-mode');
+      }
+    }
+
+    // DOM Elements
+    const codeInput = document.getElementById('codeInput');
+    const highlightedCode = document.getElementById('highlightedCode');
+    const languageSelect = document.getElementById('language');
+    const themeSelect = document.getElementById('theme');
+    const filenameInput = document.getElementById('filename');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    const radiusSlider = document.getElementById('radius');
+    const paddingSlider = document.getElementById('padding');
+    const bgColorText = document.getElementById('bgColorText');
+    const bgColorPicker = document.getElementById('bgColorPicker');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const embedBtn = document.getElementById('embedBtn');
+    const codeSnippet = document.getElementById('codeSnippet');
+    const previewContainer = document.getElementById('previewContainer');
+
+    // Modal elements
+    const embedModal = document.getElementById('embedModal');
+    const closeModal = document.getElementById('closeModal');
+    const embedCodeText = document.getElementById('embedCodeText');
+    const copyEmbedBtn = document.getElementById('copyEmbedBtn');
+    const embedWidth = document.getElementById('embedWidth');
+    const embedHeight = document.getElementById('embedHeight');
+    const updateEmbedBtn = document.getElementById('updateEmbedBtn');
+
+    // Update code preview
+    function updateCodePreview() {
+      const code = codeInput.value || '// Your code will appear here';
+      const language = languageSelect.value;
+
+      highlightedCode.className = language;
+      highlightedCode.textContent = code;
+
+      hljs.highlightElement(highlightedCode);
+    }
+
+    // Update filename
+    function updateFilename() {
+      const filename = filenameInput.value || `example.${languageSelect.value}`;
+      fileNameDisplay.textContent = filename;
+    }
+
+    // Update theme
+    function updateTheme() {
+      const theme = themeSelect.value;
+      const snippetContent = document.querySelector('.snippet-content');
+      const snippetHeader = document.querySelector('.snippet-header');
+
+      // Reset classes
+      codeSnippet.className = 'code-snippet';
+
+      // Add theme class
+      codeSnippet.classList.add(`theme-${theme}`);
+
+      // Apply theme colors
+      switch (theme) {
+        case 'light':
+          snippetContent.style.background = 'rgba(245, 245, 247, 0.95)';
+          snippetHeader.style.background = 'rgba(220, 220, 225, 0.95)';
+          fileNameDisplay.style.color = 'rgba(0, 0, 0, 0.7)';
+          bgColorPicker.value = '#e0e0e5';
+          break;
+        case 'blue':
+          snippetContent.style.background = 'rgba(25, 55, 80, 0.95)';
+          snippetHeader.style.background = 'rgba(20, 45, 65, 0.95)';
+          bgColorPicker.value = '#1a3f5c';
+          break;
+        case 'green':
+          snippetContent.style.background = 'rgba(25, 70, 50, 0.95)';
+          snippetHeader.style.background = 'rgba(20, 60, 40, 0.95)';
+          bgColorPicker.value = '#1e4a34';
+          break;
+        case 'purple':
+          snippetContent.style.background = 'rgba(60, 30, 80, 0.95)';
+          snippetHeader.style.background = 'rgba(50, 25, 70, 0.95)';
+          bgColorPicker.value = '#341c4f';
+          break;
+        default: // Dark theme
+          snippetContent.style.background = 'rgba(30, 30, 32, 0.95)';
+          snippetHeader.style.background = 'rgba(60, 60, 65, 0.95)';
+          fileNameDisplay.style.color = 'rgba(255, 255, 255, 0.7)';
+          bgColorPicker.value = '#252528';
+      }
+
+      // Update background color text and preview
+      bgColorText.value = bgColorPicker.value;
+      updateBackgroundColor();
+    }
+
+    // Update border radius
+    function updateRadius() {
+      const radius = radiusSlider.value + 'px';
+      codeSnippet.style.borderRadius = radius;
+
+      // Also update the header radius
+      const snippetHeader = document.querySelector('.snippet-header');
+      snippetHeader.style.borderTopLeftRadius = radius;
+      snippetHeader.style.borderTopRightRadius = radius;
+    }
+
+    // Update padding
+    function updatePadding() {
+      const padding = paddingSlider.value + 'px';
+      document.querySelector('.snippet-content').style.padding = padding;
+    }
+
+    // Update background color
+    function updateBackgroundColor() {
+      const color = bgColorPicker.value;
+      previewContainer.style.backgroundColor = color;
+      bgColorText.value = color;
+    }
+
+    // Download as PNG
+    function downloadAsPNG() {
+      // Add loading state
+      downloadBtn.textContent = 'Generating...';
+      downloadBtn.disabled = true;
+
+      // Check if we're in embed mode
+      const urlParams = new URLSearchParams(window.location.search);
+      const isEmbed = urlParams.has('embed') && urlParams.get('embed') === 'true';
+
+      // Create a temporary container with fixed dimensions
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '-9999px';
+      tempContainer.style.width = '800px';
+      tempContainer.style.height = 'auto';
+      tempContainer.style.padding = '40px';
+      tempContainer.style.background = isEmbed ? 'transparent' : bgColorPicker.value;
+      tempContainer.style.borderRadius = '8px';
+      tempContainer.style.zIndex = '-1';
+
+      // Clone the code snippet
+      const snippetClone = codeSnippet.cloneNode(true);
+      tempContainer.appendChild(snippetClone);
+      document.body.appendChild(tempContainer);
+
+      // Use html2canvas to create an image
+      html2canvas(snippetClone, {
+        backgroundColor: null,
+        scale: 2
+      }).then((canvas) => {
+        // Convert to PNG and download
+        const link = document.createElement('a');
+        link.download = (filenameInput.value || 'code-snippet') + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        // Clean up
+        document.body.removeChild(tempContainer);
+        downloadBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg> Download PNG`;
+        downloadBtn.disabled = false;
+      });
+    }
+
+    // Copy code to clipboard
+    function copyCodeToClipboard() {
+      const code = codeInput.value;
+      navigator.clipboard.writeText(code).then(() => {
+        const originalText = copyBtn.innerHTML;
+        copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg> Copied!`;
+
+        setTimeout(() => {
+          copyBtn.innerHTML = originalText;
+        }, 2000);
+      });
+    }
+
+    // Reset all settings
+    function resetSettings() {
+      codeInput.value = '';
+      languageSelect.value = 'javascript';
+      themeSelect.value = 'default';
+      filenameInput.value = '';
+      radiusSlider.value = 12;
+      paddingSlider.value = 16;
+      bgColorPicker.value = '#252528';
+      bgColorText.value = '#252528';
+
+      updateCodePreview();
+      updateFilename();
+      updateTheme();
+      updateRadius();
+      updatePadding();
+      updateBackgroundColor();
+    }
+
+    // Event listeners
+    codeInput.addEventListener('input', updateCodePreview);
+    languageSelect.addEventListener('change', () => {
+      updateCodePreview();
+      updateFilename();
+    });
+    themeSelect.addEventListener('change', updateTheme);
+    filenameInput.addEventListener('input', updateFilename);
+    radiusSlider.addEventListener('input', updateRadius);
+    paddingSlider.addEventListener('input', updatePadding);
+    bgColorPicker.addEventListener('input', updateBackgroundColor);
+    bgColorText.addEventListener('input', () => {
+      try {
+        // Validate hex color
+        if (/^#([0-9A-F]{3}){1,2}$/i.test(bgColorText.value)) {
+          bgColorPicker.value = bgColorText.value;
+          updateBackgroundColor();
+        }
+      } catch (e) {
+        // Invalid color, ignore
+      }
+    });
+    downloadBtn.addEventListener('click', downloadAsPNG);
+    copyBtn.addEventListener('click', copyCodeToClipboard);
+    resetBtn.addEventListener('click', resetSettings);
+    embedBtn.addEventListener('click', showEmbedModal);
+    closeModal.addEventListener('click', () => embedModal.classList.remove('show'));
+    copyEmbedBtn.addEventListener('click', copyEmbedCode);
+    updateEmbedBtn.addEventListener('click', updateEmbedCode);
+
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+      if (e.target === embedModal) {
+        embedModal.classList.remove('show');
+      }
+    });
+
+    // Generate embed URL
+    function generateEmbedUrl() {
+      const code = codeInput.value;
+      if (!code) return '';
+
+      // Base64 encode the code to handle special characters
+      const encodedCode = btoa(encodeURIComponent(code));
+
+      // Build URL with parameters
+      const url = new URL(window.location.href.split('?')[0]);
+      url.searchParams.append('embed', 'true');
+      url.searchParams.append('code', encodedCode);
+      url.searchParams.append('lang', languageSelect.value);
+      url.searchParams.append('theme', themeSelect.value);
+
+      if (filenameInput.value) {
+        url.searchParams.append('filename', filenameInput.value);
+      }
+
+      url.searchParams.append('bg', bgColorPicker.value);
+      url.searchParams.append('radius', radiusSlider.value);
+      url.searchParams.append('padding', paddingSlider.value);
+
+      return url.toString();
+    }
+
+    // Show embed modal
+    function showEmbedModal() {
+      if (!codeInput.value) {
+        alert('Please enter some code first.');
+        return;
+      }
+
+      updateEmbedCode();
+      embedModal.classList.add('show');
+    }
+
+    // Update embed code in the modal
+    function updateEmbedCode() {
+      const embedUrl = generateEmbedUrl();
+      const width = embedWidth.value || '600';
+      const height = embedHeight.value || '400';
+
+      const embedCode = `<iframe src="${embedUrl}" width="${width}" height="${height}" frameborder="0" allowtransparency="true"></iframe>`;
+      embedCodeText.value = embedCode;
+    }
+
+    // Copy embed code to clipboard
+    function copyEmbedCode() {
+      embedCodeText.select();
+      document.execCommand('copy');
+
+      const originalText = copyEmbedBtn.innerHTML;
+      copyEmbedBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg> Copied!`;
+
+      setTimeout(() => {
+        copyEmbedBtn.innerHTML = originalText;
+      }, 2000);
+    }
+
+    // Initialize
+    updateCodePreview();
+    updateFilename();
+    updateTheme();
+    updateRadius();
+    updatePadding();
+    updateBackgroundColor();
+
+    // Add shimmer effect on mouse move
+    previewContainer.addEventListener('mousemove', (e) => {
+      const shimmer = document.querySelector('.shimmer');
+      const rect = previewContainer.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // Update shimmer effect based on mouse position
+      shimmer.style.background = `radial-gradient(
+                circle at ${x}px ${y}px,
+                rgba(255, 255, 255, 0.1) 0%,
+                rgba(255, 255, 255, 0) 70%
+            )`;
+    });
+  </script>
+</body>
+</html>

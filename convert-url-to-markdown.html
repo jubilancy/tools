@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>URL to Markdown | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+      display: block;
+      margin-bottom: 0.35rem;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    button.danger {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    input[type="url"],
+    textarea {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    input[type="url"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 400px;
+      resize: vertical;
+    }
+
+    /* backend radio row */
+    .radio-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.85rem;
+    }
+
+    .radio-group label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      color: var(--text);
+    }
+
+    .radio-group input[type="radio"] { accent-color: var(--accent); cursor: pointer; }
+
+    /* urltomarkdown extra options */
+    .utm-options {
+      display: none;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.82rem;
+      color: var(--puny);
+    }
+
+    .utm-options.show { display: flex; }
+
+    .utm-options label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      color: var(--puny);
+    }
+
+    .utm-options label:hover { color: var(--text); }
+
+    .utm-options input[type="checkbox"] { accent-color: var(--accent); }
+
+    .url-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: stretch;
+    }
+
+    .url-row input { flex: 1; }
+    .url-row button { min-width: unset; white-space: nowrap; }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      display: none;
+      font-size: 0.9rem;
+    }
+    .status.show  { display: block; }
+    .status.success { background-color: rgba(16, 185, 129, 0.1); border-left: 3px solid var(--accent); color: var(--accent); }
+    .status.error   { background-color: rgba(239, 68, 68, 0.1);  border-left: 3px solid #ef4444; color: #ef4444; }
+    .status.loading { background-color: var(--highlight); border-left: 3px solid var(--puny); color: var(--puny); }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .word-count {
+      font-size: 0.78rem;
+      color: var(--puny);
+    }
+
+    @media (max-width: 600px) {
+      .button-group { flex-direction: column; }
+      button { width: 100%; min-width: unset; }
+      .url-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>URL to Markdown</h1>
+    <p class="puny">Fetch any web page and convert it to clean Markdown.</p>
+
+    <div class="container">
+
+      <!-- Backend selector -->
+      <div>
+        <label class="input-label">Backend</label>
+        <div class="radio-group">
+          <label>
+            <input type="radio" name="backend" value="jina" checked>
+            Jina.ai <span style="color:var(--puny);font-size:0.8em;">(r.reader — simple, no options)</span>
+          </label>
+          <label>
+            <input type="radio" name="backend" value="urltomarkdown">
+            urltomarkdown <span style="color:var(--puny);font-size:0.8em;">(Heroku/Turndown — more control)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- urltomarkdown-only options -->
+      <div class="utm-options" id="utm-options">
+        <label><input type="checkbox" id="opt-title" checked> include title</label>
+        <label><input type="checkbox" id="opt-links"> ignore links</label>
+        <label><input type="checkbox" id="opt-clean" checked> clean / filter</label>
+      </div>
+
+      <!-- URL input + fetch button -->
+      <div>
+        <label class="input-label" for="url-input">Source URL</label>
+        <div class="url-row">
+          <input type="url" id="url-input" placeholder="https://example.com/article" />
+          <button class="primary" id="fetch-btn">Fetch &amp; convert</button>
+        </div>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <!-- Output -->
+      <div>
+        <label class="input-label" for="output">Markdown output</label>
+        <textarea id="output" readonly placeholder="Converted Markdown will appear here…" onclick="this.select()"></textarea>
+        <div class="word-count" id="word-count"></div>
+      </div>
+
+      <div class="button-group">
+        <button id="copy-btn" onclick="copyMd()">Copy</button>
+        <button id="download-btn" onclick="downloadMd()">Download .md</button>
+        <button class="danger" onclick="clearAll()">Clear</button>
+      </div>
+
+      <div class="info-box">
+        <strong>Backends:</strong>
+        <a href="https://jina.ai/" target="_blank">Jina.ai</a> (r.jina.ai) fetches most pages cleanly with no options needed.
+        <a href="https://github.com/macsplit/urltomarkdown" target="_blank">urltomarkdown</a> uses Turndown + Mozilla Readability for more control, but runs on Heroku free tier and may be asleep.
+        If a page blocks both, try the browser extension: <a href="https://addons.mozilla.org/en-GB/firefox/addon/tomarkdown/" target="_blank">Firefox</a> · <a href="https://apps.apple.com/us/app/tomarkdown/id1619533216" target="_blank">Safari</a>.
+      </div>
+
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme toggle -->
+  <script>
+    const html  = document.documentElement
+    const toggle = document.getElementById('theme-toggle')
+    const saved  = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    html.setAttribute('data-theme', saved)
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]'
+    if (toggle) {
+      toggle.onclick = () => {
+        const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
+        html.setAttribute('data-theme', next)
+        localStorage.setItem('theme', next)
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]'
+      }
+    }
+  </script>
+
+  <script>
+    // Backend toggle shows/hides UTM options
+    document.querySelectorAll('input[name="backend"]').forEach(r =>
+      r.addEventListener('change', () => {
+        const isUtm = getBackend() === 'urltomarkdown'
+        document.getElementById('utm-options').classList.toggle('show', isUtm)
+        setStatus('', '')
+      })
+    )
+
+    function getBackend() {
+      return document.querySelector('input[name="backend"]:checked').value
+    }
+
+    function setStatus(msg, type) {
+      const s = document.getElementById('status')
+      s.textContent = msg
+      s.className = 'status' + (msg ? ' show ' + type : '')
+    }
+
+    function updateWordCount() {
+      const text = document.getElementById('output').value
+      if (!text.trim()) { document.getElementById('word-count').textContent = ''; return }
+      const words = (text.trim().match(/\S+/g) || []).length
+      document.getElementById('word-count').textContent =
+        text.split(/\n/).length + ' lines · ' + words + ' words · ' + text.length + ' chars'
+    }
+
+    function blockedMsg(url) {
+      return 'Access to ' + url + ' was blocked by the source site.\n\n' +
+        'Try switching backends, or use the browser extension links in the info box below.'
+    }
+
+    document.getElementById('fetch-btn').addEventListener('click', fetchMd)
+    document.getElementById('url-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') fetchMd()
+    })
+
+    function fetchMd() {
+      const url = document.getElementById('url-input').value.trim()
+      if (!url) { setStatus('Please enter a URL.', 'error'); return }
+
+      const btn = document.getElementById('fetch-btn')
+      btn.disabled = true
+      document.getElementById('output').value = ''
+      updateWordCount()
+      setStatus('Fetching…', 'loading')
+
+      if (getBackend() === 'jina') {
+        fetchJina(url, btn)
+      } else {
+        fetchUtm(url, btn)
+      }
+    }
+
+    function fetchJina(url, btn) {
+      fetch('https://r.jina.ai/' + encodeURIComponent(url))
+        .then(r => {
+          if (!r.ok) throw new Error(r.status + ' ' + r.statusText)
+          return r.text()
+        })
+        .then(data => {
+          document.getElementById('output').value = data
+          updateWordCount()
+          setStatus('Done.', 'success')
+          btn.disabled = false
+        })
+        .catch(err => {
+          const msg = String(err).includes('403') ? blockedMsg(url) : 'Error: ' + err.message
+          document.getElementById('output').value = msg
+          updateWordCount()
+          setStatus(String(err).includes('403') ? 'Blocked by source site.' : err.message, 'error')
+          btn.disabled = false
+        })
+    }
+
+    function fetchUtm(url, btn) {
+      const params = new URLSearchParams({
+        url,
+        title: document.getElementById('opt-title').checked,
+        links: !document.getElementById('opt-links').checked,
+        clean: document.getElementById('opt-clean').checked
+      })
+      fetch('https://urltomarkdown.herokuapp.com?' + params)
+        .then(r => {
+          if (!r.ok) throw new Error(r.status + ' ' + r.statusText)
+          return r.text()
+        })
+        .then(data => {
+          document.getElementById('output').value = data
+          updateWordCount()
+          setStatus('Done.', 'success')
+          btn.disabled = false
+        })
+        .catch(err => {
+          const msg = String(err).includes('403')
+            ? blockedMsg(url)
+            : 'Error: ' + err.message + '\n\nurltomarkdown may be sleeping (Heroku free tier) — try Jina.'
+          document.getElementById('output').value = msg
+          updateWordCount()
+          setStatus('Error — try switching to Jina.', 'error')
+          btn.disabled = false
+        })
+    }
+
+    function copyMd() {
+      const text = document.getElementById('output').value
+      if (!text) return
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copy-btn')
+        const orig = btn.textContent
+        btn.textContent = 'Copied!'
+        setTimeout(() => { btn.textContent = orig }, 1500)
+      })
+    }
+
+    function downloadMd() {
+      const text = document.getElementById('output').value
+      if (!text) return
+      const url = document.getElementById('url-input').value.trim()
+      let filename = 'output.md'
+      try {
+        const u = new URL(url)
+        const slug = (u.pathname.split('/').filter(Boolean).pop() || u.hostname)
+          .replace(/[^a-z0-9\-]/gi, '-').toLowerCase()
+        filename = (slug || 'output') + '.md'
+      } catch (_) {}
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(new Blob([text], { type: 'text/markdown' }))
+      a.download = filename
+      a.click()
+    }
+
+    function clearAll() {
+      document.getElementById('url-input').value = ''
+      document.getElementById('output').value = ''
+      updateWordCount()
+      setStatus('', '')
+    }
+  </script>
+</body>
+</html>

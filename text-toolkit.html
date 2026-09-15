@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Text Toolkit | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .tool-section {
+      border: 1px solid var(--puny);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .tool-section h2 {
+      font-size: 0.9rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin: 0 0 0.75rem 0;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--puny);
+      color: var(--accent);
+    }
+
+    .tool-section textarea {
+      min-height: 100px;
+      resize: vertical;
+      margin-bottom: 0.5rem;
+    }
+
+    .tool-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.5rem;
+    }
+
+    .tool-row label {
+      font-size: 0.85rem;
+      color: var(--puny);
+    }
+
+    .tool-row input[type="text"],
+    .tool-row input[type="number"] {
+      width: auto;
+      padding: 4px 8px;
+    }
+
+    .res-box {
+      background: var(--highlight);
+      border: 1px dashed var(--accent);
+      padding: 0.75rem;
+      font-family: monospace;
+      font-size: 0.9rem;
+      min-height: 2rem;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 2rem;
+      padding: 0.75rem;
+      border: 1px solid var(--puny);
+      font-size: 0.8rem;
+    }
+
+    .section-nav a {
+      border-bottom: none;
+      padding: 2px 6px;
+      border: 1px dotted var(--puny);
+    }
+
+    .section-nav a:hover {
+      background: var(--hover);
+      border-color: var(--text);
+    }
+
+    @media (max-width: 600px) {
+      .compare-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Text Toolkit</h1>
+    <p class="puny">18 client-side text manipulation tools — no data leaves your browser.</p>
+
+    <div class="section-nav">
+      <a href="#strip-html">Strip HTML</a>
+      <a href="#char-counter">Char Count</a>
+      <a href="#convert-case">Case</a>
+      <a href="#text-compare">Compare</a>
+      <a href="#escape">Escape</a>
+      <a href="#accents">Accents</a>
+      <a href="#entity">Entity</a>
+      <a href="#text-to-p">Text → P</a>
+      <a href="#spaces">Spaces</a>
+      <a href="#line-breaks">Line Breaks</a>
+      <a href="#sort">Sort</a>
+      <a href="#split">Split</a>
+      <a href="#count-letters">Letters</a>
+      <a href="#base64">Base64</a>
+      <a href="#pass-gen">Password</a>
+      <a href="#whitespace">Whitespace</a>
+      <a href="#unix">Unix Time</a>
+      <a href="#fun-text">Fun Text</a>
+    </div>
+
+    <!-- 1. Strip HTML -->
+    <div class="tool-section" id="strip-html">
+      <h2>Strip HTML Tags</h2>
+      <textarea id="stripIn" placeholder="Paste HTML here..."></textarea>
+      <button onclick="doStripHTML()">Strip Tags</button>
+      <textarea id="stripOut" readonly placeholder="Plain text output..."></textarea>
+    </div>
+
+    <!-- 2. Character Counter -->
+    <div class="tool-section" id="char-counter">
+      <h2>Character Counter</h2>
+      <textarea id="charIn" oninput="doCharCount()" placeholder="Type or paste text..."></textarea>
+      <div class="res-box" id="charStats">Characters: 0 | Words: 0 | Lines: 0</div>
+    </div>
+
+    <!-- 3. Convert Case -->
+    <div class="tool-section" id="convert-case">
+      <h2>Convert Case</h2>
+      <textarea id="caseIn" placeholder="Enter text..."></textarea>
+      <div class="tool-row">
+        <button onclick="doCase('upper')">UPPER</button>
+        <button onclick="doCase('lower')">lower</button>
+        <button onclick="doCase('title')">Title Case</button>
+      </div>
+    </div>
+
+    <!-- 4. Text Compare -->
+    <div class="tool-section" id="text-compare">
+      <h2>Text Compare</h2>
+      <div class="compare-grid">
+        <textarea id="cmpA" placeholder="Original..."></textarea>
+        <textarea id="cmpB" placeholder="Changed..."></textarea>
+      </div>
+      <button onclick="doCompare()">Compare</button>
+      <div class="res-box" id="cmpRes" style="margin-top:0.5rem"></div>
+    </div>
+
+    <!-- 5. Escape Text -->
+    <div class="tool-section" id="escape">
+      <h2>Escape Text</h2>
+      <textarea id="escIn" placeholder="Enter text with special characters..."></textarea>
+      <button onclick="doEscape()">Escape \, ", '</button>
+    </div>
+
+    <!-- 6. Remove Accents -->
+    <div class="tool-section" id="accents">
+      <h2>Remove Accents</h2>
+      <textarea id="accIn" placeholder="café résumé naïve..."></textarea>
+      <button onclick="doAccents()">Normalize (é → e)</button>
+    </div>
+
+    <!-- 7. HTML Entity -->
+    <div class="tool-section" id="entity">
+      <h2>HTML Entity Encode / Decode</h2>
+      <textarea id="entIn" placeholder="Enter text or HTML entities..."></textarea>
+      <div class="tool-row">
+        <button onclick="doEntity('enc')">Encode</button>
+        <button onclick="doEntity('dec')">Decode</button>
+      </div>
+    </div>
+
+    <!-- 8. Text to Paragraphs -->
+    <div class="tool-section" id="text-to-p">
+      <h2>Text to HTML Paragraphs</h2>
+      <textarea id="t2pIn" placeholder="Enter plain text with line breaks..."></textarea>
+      <button onclick="doT2P()">Wrap in &lt;p&gt; tags</button>
+    </div>
+
+    <!-- 9. Remove / Replace Spaces -->
+    <div class="tool-section" id="spaces">
+      <h2>Remove or Replace Spaces</h2>
+      <textarea id="spaceIn" placeholder="Text with spaces..."></textarea>
+      <div class="tool-row">
+        <label>Replace with:</label>
+        <input type="text" id="spaceRep" value="_" style="width:60px">
+        <button onclick="doSpaces()">Process</button>
+        <button onclick="doCondenseSpaces()">Condense</button>
+      </div>
+    </div>
+
+    <!-- 10. Remove / Replace Line Breaks -->
+    <div class="tool-section" id="line-breaks">
+      <h2>Remove or Replace Line Breaks</h2>
+      <textarea id="brIn" placeholder="Text with line breaks..."></textarea>
+      <div class="tool-row">
+        <label>Replace with:</label>
+        <input type="text" id="brRep" value=" " style="width:60px">
+        <button onclick="doLineBreaks()">Process</button>
+      </div>
+    </div>
+
+    <!-- 11. Sort Text -->
+    <div class="tool-section" id="sort">
+      <h2>Sort Text Alphabetically</h2>
+      <textarea id="sortIn" placeholder="One item per line..."></textarea>
+      <div class="tool-row">
+        <button onclick="doSort(false)">Sort A–Z</button>
+        <button onclick="doSort(true)">Sort Z–A</button>
+      </div>
+    </div>
+
+    <!-- 12. Split Text -->
+    <div class="tool-section" id="split">
+      <h2>Split Text by Delimiter</h2>
+      <textarea id="splitIn" placeholder="apple,orange,banana"></textarea>
+      <div class="tool-row">
+        <label>Delimiter:</label>
+        <input type="text" id="splitDelim" value="," style="width:50px">
+        <button onclick="doSplit()">Split to Lines</button>
+      </div>
+    </div>
+
+    <!-- 13. Count Letters -->
+    <div class="tool-section" id="count-letters">
+      <h2>Count Letters</h2>
+      <textarea id="letIn" oninput="doLetters()" placeholder="Type or paste text..."></textarea>
+      <div class="res-box" id="letStats">Vowels: 0 | Consonants: 0 | Total Letters: 0</div>
+    </div>
+
+    <!-- 14. Base64 -->
+    <div class="tool-section" id="base64">
+      <h2>Base64 Encode / Decode</h2>
+      <textarea id="b64In" placeholder="Enter text or Base64..."></textarea>
+      <div class="tool-row">
+        <button onclick="doBase64('e')">Encode</button>
+        <button onclick="doBase64('d')">Decode</button>
+      </div>
+    </div>
+
+    <!-- 15. Password Generator -->
+    <div class="tool-section" id="pass-gen">
+      <h2>Password Generator</h2>
+      <div class="tool-row">
+        <label>Length:</label>
+        <input type="number" id="passLen" value="20" min="4" max="128" style="width:70px">
+        <button onclick="doPassword()">Generate</button>
+      </div>
+      <div class="tool-row">
+        <label><input type="checkbox" id="passUpper" checked> Uppercase</label>
+        <label><input type="checkbox" id="passLower" checked> Lowercase</label>
+        <label><input type="checkbox" id="passNums" checked> Numbers</label>
+        <label><input type="checkbox" id="passSpecial"> Symbols</label>
+      </div>
+      <div class="res-box" id="passResult" style="font-size:1.1rem;cursor:pointer" onclick="copyPass()" title="Click to copy"></div>
+    </div>
+
+    <!-- 16. Whitespace Cleanup -->
+    <div class="tool-section" id="whitespace">
+      <h2>Whitespace Cleanup</h2>
+      <textarea id="wsIn" placeholder="Text with extra whitespace..."></textarea>
+      <button onclick="doWhitespace()">Clean Whitespace</button>
+    </div>
+
+    <!-- 17. Unix Timestamp -->
+    <div class="tool-section" id="unix">
+      <h2>Unix Timestamp Converter</h2>
+      <div class="tool-row">
+        <input type="text" id="unixIn" placeholder="e.g. 1712328439" style="flex:1">
+        <button onclick="doUnix()">→ Date</button>
+        <button onclick="doUnixNow()">Now</button>
+      </div>
+      <div class="res-box" id="unixRes"></div>
+    </div>
+
+    <!-- 18. Fun Text -->
+    <div class="tool-section" id="fun-text">
+      <h2>Fun Text (Upside Down / Bubble / Bold)</h2>
+      <textarea id="funIn" placeholder="Enter text to transform..."></textarea>
+      <div class="tool-row">
+        <button onclick="doFun('flip')">Upside Down</button>
+        <button onclick="doFun('bubble')">Ⓑⓤⓑⓑⓛⓔ</button>
+        <button onclick="doFun('bold')">𝗕𝗼𝗹𝗱</button>
+      </div>
+      <div class="res-box" id="funRes"></div>
+    </div>
+
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    // Theme toggle
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+
+    // 1. Strip HTML
+    function doStripHTML() {
+      const d = document.createElement('div');
+      d.innerHTML = document.getElementById('stripIn').value;
+      document.getElementById('stripOut').value = d.textContent || d.innerText || '';
+    }
+
+    // 2. Character Counter
+    function doCharCount() {
+      const v = document.getElementById('charIn').value;
+      const words = v.trim() ? v.trim().split(/\s+/).length : 0;
+      document.getElementById('charStats').innerText =
+        `Characters: ${v.length} | Words: ${words} | Lines: ${v.split('\n').length}`;
+    }
+
+    // 3. Convert Case
+    function doCase(m) {
+      const a = document.getElementById('caseIn');
+      if (m === 'upper') a.value = a.value.toUpperCase();
+      else if (m === 'lower') a.value = a.value.toLowerCase();
+      else a.value = a.value.replace(/\w\S*/g, x => x.charAt(0).toUpperCase() + x.substr(1).toLowerCase());
+    }
+
+    // 4. Compare
+    function doCompare() {
+      const a = document.getElementById('cmpA').value;
+      const b = document.getElementById('cmpB').value;
+      if (a === b) {
+        document.getElementById('cmpRes').innerText = '✓ Identical';
+        return;
+      }
+      const aLines = a.split('\n');
+      const bLines = b.split('\n');
+      const diffs = [];
+      const len = Math.max(aLines.length, bLines.length);
+      for (let i = 0; i < len; i++) {
+        if (aLines[i] !== bLines[i]) diffs.push(`Line ${i + 1}: "${aLines[i] ?? ''}" → "${bLines[i] ?? ''}"`);
+      }
+      document.getElementById('cmpRes').innerText = `${diffs.length} difference(s):\n` + diffs.slice(0, 20).join('\n');
+    }
+
+    // 5. Escape
+    function doEscape() {
+      const a = document.getElementById('escIn');
+      a.value = a.value.replace(/[\\"']/g, '\\$&');
+    }
+
+    // 6. Accents
+    function doAccents() {
+      const a = document.getElementById('accIn');
+      a.value = a.value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    // 7. HTML Entity
+    function doEntity(m) {
+      const a = document.getElementById('entIn');
+      const d = document.createElement('div');
+      if (m === 'enc') { d.textContent = a.value; a.value = d.innerHTML; }
+      else { d.innerHTML = a.value; a.value = d.textContent; }
+    }
+
+    // 8. Text to P
+    function doT2P() {
+      const a = document.getElementById('t2pIn');
+      a.value = a.value.split('\n').filter(s => s.trim()).map(s => `<p>${s.trim()}</p>`).join('\n');
+    }
+
+    // 9. Spaces
+    function doSpaces() {
+      const a = document.getElementById('spaceIn');
+      a.value = a.value.split(' ').join(document.getElementById('spaceRep').value);
+    }
+    function doCondenseSpaces() {
+      const a = document.getElementById('spaceIn');
+      a.value = a.value.replace(/  +/g, ' ').trim();
+    }
+
+    // 10. Line Breaks
+    function doLineBreaks() {
+      const a = document.getElementById('brIn');
+      a.value = a.value.replace(/\r?\n|\r/g, document.getElementById('brRep').value);
+    }
+
+    // 11. Sort
+    function doSort(reverse) {
+      const a = document.getElementById('sortIn');
+      let lines = a.value.split('\n').filter(x => x.trim());
+      lines.sort((x, y) => x.localeCompare(y, undefined, { numeric: true, sensitivity: 'base' }));
+      if (reverse) lines.reverse();
+      a.value = lines.join('\n');
+    }
+
+    // 12. Split
+    function doSplit() {
+      const a = document.getElementById('splitIn');
+      const delim = document.getElementById('splitDelim').value;
+      a.value = a.value.split(delim).map(s => s.trim()).join('\n');
+    }
+
+    // 13. Count Letters
+    function doLetters() {
+      const v = document.getElementById('letIn').value;
+      const vowels = (v.match(/[aeiou]/gi) || []).length;
+      const consonants = (v.match(/[bcdfghjklmnpqrstvwxyz]/gi) || []).length;
+      document.getElementById('letStats').innerText =
+        `Vowels: ${vowels} | Consonants: ${consonants} | Total Letters: ${vowels + consonants}`;
+    }
+
+    // 14. Base64
+    function doBase64(m) {
+      const a = document.getElementById('b64In');
+      try { a.value = m === 'e' ? btoa(unescape(encodeURIComponent(a.value))) : decodeURIComponent(escape(atob(a.value))); }
+      catch (e) { alert('Invalid Base64 input.'); }
+    }
+
+    // 15. Password
+    function doPassword() {
+      const len = parseInt(document.getElementById('passLen').value) || 20;
+      let charset = '';
+      if (document.getElementById('passUpper').checked) charset += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      if (document.getElementById('passLower').checked) charset += 'abcdefghijklmnopqrstuvwxyz';
+      if (document.getElementById('passNums').checked) charset += '0123456789';
+      if (document.getElementById('passSpecial').checked) charset += '!@#$%^&*()_+-=[]{}|;:,.<>?';
+      if (!charset) { alert('Select at least one character type.'); return; }
+      const arr = new Uint32Array(len);
+      crypto.getRandomValues(arr);
+      document.getElementById('passResult').innerText = Array.from(arr).map(x => charset[x % charset.length]).join('');
+    }
+    function copyPass() {
+      const t = document.getElementById('passResult').innerText;
+      if (!t) return;
+      navigator.clipboard.writeText(t).then(() => {
+        const el = document.getElementById('passResult');
+        const orig = el.title;
+        el.title = 'Copied!';
+        setTimeout(() => el.title = orig, 1500);
+      });
+    }
+
+    // 16. Whitespace
+    function doWhitespace() {
+      const a = document.getElementById('wsIn');
+      a.value = a.value.replace(/\t/g, ' ').replace(/ {2,}/g, ' ').replace(/^\s+|\s+$/gm, '').trim();
+    }
+
+    // 17. Unix
+    function doUnix() {
+      const v = document.getElementById('unixIn').value.trim();
+      if (!v) return;
+      const ms = v.length <= 10 ? parseInt(v) * 1000 : parseInt(v);
+      const d = new Date(ms);
+      document.getElementById('unixRes').innerText = isNaN(d) ? 'Invalid timestamp' :
+        `${d.toLocaleString()} (UTC: ${d.toUTCString()})`;
+    }
+    function doUnixNow() {
+      const now = Math.floor(Date.now() / 1000);
+      document.getElementById('unixIn').value = now;
+      document.getElementById('unixRes').innerText = `Current Unix time: ${now}`;
+    }
+
+    // 18. Fun Text
+    function doFun(t) {
+      const i = document.getElementById('funIn').value;
+      let r = i;
+
+      if (t === 'flip') {
+        const m = { a:'ɐ',b:'q',c:'ɔ',d:'p',e:'ǝ',f:'ɟ',g:'ƃ',h:'ɥ',i:'ᴉ',j:'ɾ',k:'ʞ',l:'l',m:'ɯ',
+          n:'u',o:'o',p:'d',q:'b',r:'ɹ',s:'s',t:'ʇ',u:'n',v:'ʌ',w:'ʍ',x:'x',y:'ʎ',z:'z' };
+        r = i.toLowerCase().split('').reverse().map(c => m[c] || c).join('');
+      }
+
+      if (t === 'bubble') {
+        r = i.toUpperCase().split('').map(c => {
+          const cd = c.charCodeAt(0);
+          return cd >= 65 && cd <= 90 ? String.fromCodePoint(cd + 9333) : c;
+        }).join('');
+      }
+
+      if (t === 'bold') {
+        const boldOffset = { upper: 0x1D400 - 0x41, lower: 0x1D41A - 0x61 };
+        r = i.split('').map(c => {
+          const cu = c.charCodeAt(0);
+          if (cu >= 65 && cu <= 90) return String.fromCodePoint(cu + boldOffset.upper);
+          if (cu >= 97 && cu <= 122) return String.fromCodePoint(cu + boldOffset.lower);
+          return c;
+        }).join('');
+      }
+
+      document.getElementById('funRes').innerText = r;
+    }
+  </script>
+</body>
+</html>

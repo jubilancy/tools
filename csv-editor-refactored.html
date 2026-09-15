@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CSV Editor | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 6px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: monospace;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--puny);
+      padding: 6px;
+      text-align: left;
+      min-width: 100px;
+    }
+
+    th {
+      background-color: var(--highlight);
+      font-weight: bold;
+    }
+
+    .stats {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px dashed var(--puny);
+    }
+
+    .stat-row:last-child {
+      border-bottom: none;
+    }
+
+    .stat-value {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>CSV Editor</h1>
+    <p class="puny">Upload, edit, and export CSV or Excel files directly in your browser with a spreadsheet-style interface.</p>
+
+    <div class="container">
+
+      <!-- CONTROLS -->
+      <div class="button-group">
+        <button class="primary" id="uploadBtn">Upload CSV/Excel</button>
+        <button id="addRowBtn">Add Row</button>
+        <button id="addColBtn">Add Column</button>
+        <button id="downloadBtn">Download CSV</button>
+      </div>
+
+      <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" />
+
+      <!-- TABLE -->
+      <div class="input-group">
+        <span class="input-label">Data Table</span>
+        <div class="table-wrapper">
+          <table id="dataTable">
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats" id="stats">
+        <div class="stat-row">
+          <span>Rows</span>
+          <span class="stat-value" id="rowCount">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Columns</span>
+          <span class="stat-value" id="colCount">0</span>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>CSV Editor:</strong> Upload a CSV or Excel file (.xlsx/.xls) to edit it in a table interface. Add rows and columns as needed, then download the result as CSV. All processing happens locally in your browser using SheetJS.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    &copy; 2026 eliana.lol &bull; <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- CSV Editor Logic with XLSX.js -->
+  <script>
+    let data = [['Name', 'Age', 'City']];
+
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status show ' + (type || 'success');
+      setTimeout(() => status.classList.remove('show'), 3000);
+    }
+
+    function renderTable() {
+      const tableHead = document.getElementById('tableHead');
+      const tableBody = document.getElementById('tableBody');
+      tableHead.innerHTML = '';
+      tableBody.innerHTML = '';
+
+      // Headers
+      const headerRow = document.createElement('tr');
+      data[0].forEach((cell, colIdx) => {
+        const th = document.createElement('th');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = cell;
+        input.addEventListener('change', (e) => updateCell(0, colIdx, e.target.value));
+        th.appendChild(input);
+        headerRow.appendChild(th);
+      });
+      tableHead.appendChild(headerRow);
+
+      // Rows
+      for (let i = 1; i < data.length; i++) {
+        const row = document.createElement('tr');
+        data[i].forEach((cell, colIdx) => {
+          const td = document.createElement('td');
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = cell || '';
+          input.addEventListener('change', (e) => updateCell(i, colIdx, e.target.value));
+          td.appendChild(input);
+          row.appendChild(td);
+        });
+        tableBody.appendChild(row);
+      }
+
+      updateStats();
+    }
+
+    function updateCell(row, col, value) {
+      if (!data[row]) data[row] = [];
+      data[row][col] = value;
+    }
+
+    function updateStats() {
+      document.getElementById('rowCount').textContent = Math.max(0, data.length - 1);
+      document.getElementById('colCount').textContent = data[0] ? data[0].length : 0;
+    }
+
+    function addRow() {
+      const newRow = new Array(data[0].length).fill('');
+      data.push(newRow);
+      renderTable();
+      showStatus('Row added', 'success');
+    }
+
+    function addColumn() {
+      data.forEach((row) => row.push(''));
+      renderTable();
+      showStatus('Column added', 'success');
+    }
+
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        try {
+          if (file.name.endsWith('.csv')) {
+            const text = e.target.result;
+            data = text.split('\n').map((line) => line.split(',').map((cell) => cell.trim()));
+          } else {
+            const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+            data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+          }
+          renderTable();
+          showStatus('File loaded: ' + file.name, 'success');
+        } catch (err) {
+          showStatus('Error loading file: ' + err.message, 'error');
+        }
+      };
+
+      reader.onerror = () => showStatus('Error reading file', 'error');
+
+      if (file.name.endsWith('.csv')) {
+        reader.readAsText(file);
+      } else {
+        reader.readAsArrayBuffer(file);
+      }
+    }
+
+    function downloadCSV() {
+      let csv = data.map((row) => row.map((cell) => `"${cell}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'data.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      showStatus('Downloaded data.csv', 'success');
+    }
+
+    // Event listeners
+    document.getElementById('uploadBtn').addEventListener('click', () => {
+      document.getElementById('fileInput').click();
+    });
+    document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+    document.getElementById('addRowBtn').addEventListener('click', addRow);
+    document.getElementById('addColBtn').addEventListener('click', addColumn);
+    document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
+
+    renderTable();
+  </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Advanced Math | tools.eliana.lol</title>
+  <link rel="stylesheet" href="../global.css" />
+  <link rel="icon" type="image/x-icon" href="../favicon.svg" />
+  <style>
+    .tool-layout { display: flex; flex-direction: column; gap: 20px; }
+    .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    label { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 5px; }
+    #history { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; }
+    #history li { border-bottom: 1px solid var(--puny); padding: 8px 0; font-size: 0.85rem; display: flex; justify-content: space-between; }
+    #history li .expr { color: var(--puny); }
+    #history li .res { font-weight: bold; color: var(--accent); }
+    #history li:hover { background: var(--hover); }
+    #error { color: var(--accent); font-size: 0.8rem; min-height: 1.2rem; }
+    .examples { display: flex; flex-wrap: wrap; gap: 6px; }
+    .examples button { font-size: 0.75rem; padding: 3px 8px; font-family: monospace; }
+    #result-big { font-size: 1.4rem; font-weight: bold; min-height: 2rem; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left"><a href="../index.html">home</a> | <a href="../extra.html">extra</a> | <a href="../credits.html">credits</a> | <a href="../changelog.html">logs</a></div>
+    <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+  </nav>
+  <main>
+    <h1>Advanced Math</h1>
+    <p class="puny">Evaluate expressions, matrices, units, statistics. Powered by Math.js.</p>
+    <div class="tool-layout">
+      <div>
+        <label>Expression</label>
+        <input type="text" id="expr" placeholder="e.g. sqrt(144) + 3^2" onkeydown="if(event.key==='Enter')evaluate()" />
+        <div id="error"></div>
+        <div id="result-big"></div>
+      </div>
+      <div>
+        <label>Examples — click to try</label>
+        <div class="examples">
+          <button onclick="setExpr('sqrt(2) * pi')">√2 × π</button>
+          <button onclick="setExpr('det([[1,2],[3,4]])')">Matrix det</button>
+          <button onclick="setExpr('mean([4, 8, 15, 16, 23, 42])')">Mean</button>
+          <button onclick="setExpr('1 kg * 9.81 m/s^2')">Units</button>
+          <button onclick="setExpr('factorial(10)')">10!</button>
+          <button onclick="setExpr('log(1000, 10)')">log₁₀(1000)</button>
+          <button onclick="setExpr('cos(45 deg)')">cos(45°)</button>
+          <button onclick="setExpr('simplify(\"2x + 3x\")')">Simplify</button>
+          <button onclick="setExpr('12 inch to cm')">Unit convert</button>
+          <button onclick="setExpr('std([2,4,4,4,5,5,7,9])')">Std dev</button>
+        </div>
+      </div>
+      <div class="action-bar">
+        <button onclick="evaluate()">Evaluate</button>
+        <button onclick="clearHistory()">Clear history</button>
+      </div>
+      <div>
+        <label>History</label>
+        <ul id="history"><li style="color:var(--puny);font-size:0.8rem">Results appear here…</li></ul>
+      </div>
+    </div>
+  </main>
+  <footer style="margin-top: 4rem; text-align: center" class="puny">© 2026 eliana.lol • <a href="../credits.html">credits</a></footer>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.3/math.min.js"></script>
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => { const now = htmlEl.getAttribute('data-theme'); const next = now === 'dark' ? 'light' : 'dark'; htmlEl.setAttribute('data-theme', next); localStorage.setItem('theme', next); toggle.innerText = next === 'dark' ? '[light]' : '[dark]'; };
+
+    let history = [];
+
+    function setExpr(e) { document.getElementById('expr').value = e; evaluate(); }
+
+    function evaluate() {
+      const expr = document.getElementById('expr').value.trim();
+      if (!expr) return;
+      try {
+        const result = math.evaluate(expr);
+        const resultStr = math.format(result, { precision: 14 });
+        document.getElementById('result-big').textContent = '= ' + resultStr;
+        document.getElementById('error').textContent = '';
+        history.unshift({ expr, result: resultStr });
+        renderHistory();
+      } catch(e) {
+        document.getElementById('error').textContent = e.message;
+        document.getElementById('result-big').textContent = '';
+      }
+    }
+
+    function renderHistory() {
+      const ul = document.getElementById('history');
+      if (!history.length) { ul.innerHTML = '<li style="color:var(--puny);font-size:0.8rem">Results appear here…</li>'; return; }
+      ul.innerHTML = history.map(h => `<li onclick="document.getElementById('expr').value='${h.expr.replace(/'/g,"\\'")}'" style="cursor:pointer"><span class="expr">${h.expr}</span><span class="res">${h.result}</span></li>`).join('');
+    }
+
+    function clearHistory() { history = []; renderHistory(); document.getElementById('result-big').textContent = ''; }
+  </script>
+</body>
+</html>

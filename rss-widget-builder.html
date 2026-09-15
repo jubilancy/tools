@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RSS Widget Builder | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 0.9rem;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 0;
+      transition: all 100ms;
+    }
+
+    button:hover { background-color: var(--hover); border-color: var(--accent); }
+    button.primary { border-color: var(--accent); font-weight: bold; color: var(--accent); }
+    button.danger { border-style: dashed; opacity: 0.7; }
+    button.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+    textarea, input[type="text"], input[type="url"], select {
+      width: 100%;
+      font-family: monospace;
+      padding: 8px 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      font-size: 0.9rem;
+    }
+
+    textarea:focus, input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea { min-height: 120px; resize: vertical; }
+
+    select { cursor: pointer; }
+
+    .status {
+      padding: 0.6rem 1rem;
+      display: none;
+      font-size: 0.85rem;
+    }
+    .status.show { display: block; }
+    .status.success { background: rgba(16,185,129,0.1); border-left: 3px solid var(--accent); color: var(--accent); }
+    .status.error { background: rgba(239,68,68,0.1); border-left: 3px solid #ef4444; color: #ef4444; }
+
+    .info-box {
+      padding: 0.75rem 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--puny);
+      margin-bottom: 1.5rem;
+    }
+    .tab {
+      padding: 6px 16px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+      border-bottom: none;
+      background: none;
+      color: var(--puny);
+      margin: 0;
+      min-width: unset;
+    }
+    .tab:hover { color: var(--text); background: var(--hover); border-color: transparent; }
+    .tab.active { color: var(--text); border-color: var(--puny); background: var(--bg); margin-bottom: -1px; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Feed list */
+    .feed-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .feed-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      border: 1px solid var(--puny);
+      font-size: 0.85rem;
+    }
+    .feed-item .feed-name { flex: 1; font-weight: bold; }
+    .feed-item .feed-url { flex: 2; color: var(--puny); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .feed-item button { margin: 0; padding: 2px 8px; min-width: unset; font-size: 0.8rem; }
+    .feed-item .drag-handle { cursor: grab; color: var(--puny); user-select: none; }
+
+    /* Style options grid */
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 600px) { .options-grid { grid-template-columns: 1fr; } }
+
+    .option-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    /* Preview */
+    .preview-container {
+      border: 1px solid var(--puny);
+      padding: 1rem;
+    }
+    .preview-label {
+      font-size: 0.75rem;
+      color: var(--puny);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Output code */
+    .code-output {
+      font-family: monospace;
+      font-size: 0.8rem;
+      background: var(--highlight);
+      padding: 1rem;
+      overflow-x: auto;
+      white-space: pre;
+      border: 1px solid var(--puny);
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    /* The actual widget preview rendered inside */
+    .widget-preview-frame {
+      border: 1px dashed var(--puny);
+      padding: 1rem;
+      background: var(--bg);
+    }
+
+    /* Range with value display */
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .range-row input[type=range] {
+      flex: 1;
+      width: auto;
+      padding: 0;
+      border: none;
+      accent-color: var(--accent);
+    }
+    .range-val {
+      font-size: 0.8rem;
+      color: var(--puny);
+      min-width: 2.5rem;
+      text-align: right;
+    }
+
+    /* Color swatch */
+    input[type="color"] {
+      width: 40px;
+      height: 28px;
+      padding: 1px;
+      border: 1px solid var(--puny);
+      background: none;
+      cursor: pointer;
+    }
+
+    .color-row { display: flex; align-items: center; gap: 0.5rem; }
+    .color-row input[type="text"] { flex: 1; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>RSS Widget Builder</h1>
+    <p class="puny">Import an OPML file or add feeds manually. Style your widget, preview it live, then download a self-contained HTML file to embed anywhere.</p>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('feeds')">1. feeds</button>
+      <button class="tab" onclick="switchTab('style')">2. style</button>
+      <button class="tab" onclick="switchTab('preview')">3. preview</button>
+      <button class="tab" onclick="switchTab('export')">4. export</button>
+    </div>
+
+    <!-- TAB 1: FEEDS -->
+    <div class="tab-panel active" id="tab-feeds">
+      <div class="container">
+
+        <div class="info-box">
+          Import an <strong>OPML</strong> file from your feed reader, or add RSS/Atom URLs one at a time. Drag to reorder.
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">Import OPML</span>
+          <input type="file" id="opml-file" accept=".opml,.xml" onchange="importOPML(this)" style="border:none;padding:0;font-size:0.85rem;" />
+        </div>
+
+        <div style="text-align:center;color:var(--puny);font-size:0.8rem;">— or add manually —</div>
+
+        <div class="input-group">
+          <span class="input-label">Feed Name</span>
+          <input type="text" id="new-feed-name" placeholder="e.g. Kottke" />
+        </div>
+        <div class="input-group">
+          <span class="input-label">Feed URL</span>
+          <input type="url" id="new-feed-url" placeholder="https://kottke.org/feed" onkeydown="if(event.key==='Enter')addFeed()" />
+        </div>
+        <div class="button-group">
+          <button class="primary" onclick="addFeed()">[+ add feed]</button>
+          <button onclick="loadSampleFeeds()">[load samples]</button>
+          <button class="danger" onclick="clearAllFeeds()">[clear all]</button>
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">Your Feeds (<span id="feed-count">0</span>)</span>
+          <div class="feed-list" id="feed-list">
+            <div style="color:var(--puny);font-size:0.85rem;padding:0.5rem 0;">No feeds added yet.</div>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" onclick="switchTab('style')">[next: style →]</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 2: STYLE -->
+    <div class="tab-panel" id="tab-style">
+      <div class="container">
+
+        <div class="options-grid">
+
+          <div class="option-row">
+            <span class="input-label">Widget title</span>
+            <input type="text" id="opt-title" value="My Reading List" oninput="updatePreview()" />
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Layout</span>
+            <select id="opt-layout" onchange="updatePreview()">
+              <option value="list">List (one feed at a time)</option>
+              <option value="tabs">Tabbed (switch between feeds)</option>
+              <option value="combined">Combined (all feeds merged)</option>
+              <option value="grid">Card grid</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Items per feed</span>
+            <div class="range-row">
+              <input type="range" id="opt-items" min="1" max="20" value="5" oninput="this.nextElementSibling.textContent=this.value;updatePreview()" />
+              <span class="range-val">5</span>
+            </div>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Show dates</span>
+            <select id="opt-dates" onchange="updatePreview()">
+              <option value="relative">Relative (2 days ago)</option>
+              <option value="short">Short (Jun 23)</option>
+              <option value="none">None</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Font</span>
+            <select id="opt-font" onchange="updatePreview()">
+              <option value="monospace">Monospace</option>
+              <option value="sans-serif">Sans-serif</option>
+              <option value="serif">Serif</option>
+              <option value="'Georgia', serif">Georgia</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Show descriptions</span>
+            <select id="opt-desc" onchange="updatePreview()">
+              <option value="none">None</option>
+              <option value="short">Short (1 line)</option>
+              <option value="full">Full</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Border style</span>
+            <select id="opt-border" onchange="updatePreview()">
+              <option value="left">Left accent bar</option>
+              <option value="full">Full border</option>
+              <option value="bottom">Bottom divider only</option>
+              <option value="none">None</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Max widget width</span>
+            <select id="opt-width" onchange="updatePreview()">
+              <option value="100%">Full width</option>
+              <option value="600px">600px</option>
+              <option value="480px">480px</option>
+              <option value="360px">360px (sidebar)</option>
+            </select>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Accent color</span>
+            <div class="color-row">
+              <input type="color" id="opt-color-pick" value="#ff6600" oninput="document.getElementById('opt-color').value=this.value;updatePreview()" />
+              <input type="text" id="opt-color" value="#ff6600" oninput="document.getElementById('opt-color-pick').value=this.value;updatePreview()" />
+            </div>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Background</span>
+            <div class="color-row">
+              <input type="color" id="opt-bg-pick" value="#ffffff" oninput="document.getElementById('opt-bg').value=this.value;updatePreview()" />
+              <input type="text" id="opt-bg" value="#ffffff" oninput="document.getElementById('opt-bg-pick').value=this.value;updatePreview()" />
+            </div>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">Text color</span>
+            <div class="color-row">
+              <input type="color" id="opt-text-pick" value="#000000" oninput="document.getElementById('opt-text').value=this.value;updatePreview()" />
+              <input type="text" id="opt-text" value="#000000" oninput="document.getElementById('opt-text-pick').value=this.value;updatePreview()" />
+            </div>
+          </div>
+
+          <div class="option-row">
+            <span class="input-label">CORS proxy</span>
+            <select id="opt-proxy" onchange="updatePreview()">
+              <option value="https://api.allorigins.win/get?url=">allorigins.win</option>
+              <option value="https://corsproxy.io/?">corsproxy.io</option>
+              <option value="">None (same-origin feeds only)</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="button-group">
+          <button onclick="switchTab('feeds')">[ ← back]</button>
+          <button class="primary" onclick="switchTab('preview')">[next: preview →]</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 3: PREVIEW -->
+    <div class="tab-panel" id="tab-preview">
+      <div class="container">
+        <div class="info-box">
+          This is a live preview using your actual feed URLs. Feeds load via the selected CORS proxy — if a feed fails, try a different proxy in the Style tab.
+        </div>
+
+        <div class="button-group">
+          <button class="primary" onclick="renderLivePreview()">[▶ load feeds]</button>
+          <button onclick="switchTab('style')">[ ← back to style]</button>
+          <button onclick="switchTab('export')">[next: export →]</button>
+        </div>
+
+        <div class="preview-container">
+          <div class="preview-label">preview</div>
+          <div id="live-preview">
+            <span style="color:var(--puny);font-size:0.85rem;">Click [▶ load feeds] to fetch and preview your widget.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 4: EXPORT -->
+    <div class="tab-panel" id="tab-export">
+      <div class="container">
+
+        <div class="info-box">
+          Download a <strong>self-contained HTML file</strong> — drop it anywhere. Or copy the embed snippet to paste into an existing page. The widget fetches feeds live on each page load.
+        </div>
+
+        <div class="button-group">
+          <button class="primary" onclick="downloadWidget()">[↓ download widget.html]</button>
+          <button onclick="copyEmbedSnippet()">[copy embed snippet]</button>
+          <button onclick="copyFullCode()">[copy full code]</button>
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">Generated code</span>
+          <div class="code-output" id="code-output"><!-- click a button above to generate --></div>
+        </div>
+
+        <div class="status" id="status"></div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    // ── Theme toggle ──────────────────────────────────────────────
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+    };
+
+    // ── State ─────────────────────────────────────────────────────
+    let feeds = [];
+
+    // ── Tabs ──────────────────────────────────────────────────────
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach((t, i) => {
+        const names = ['feeds','style','preview','export'];
+        t.classList.toggle('active', names[i] === name);
+      });
+      document.querySelectorAll('.tab-panel').forEach(p => {
+        p.classList.toggle('active', p.id === 'tab-' + name);
+      });
+      if (name === 'export') generateCode();
+    }
+
+    // ── Feed management ───────────────────────────────────────────
+    function addFeed() {
+      const name = document.getElementById('new-feed-name').value.trim();
+      const url  = document.getElementById('new-feed-url').value.trim();
+      if (!url) { showStatus('Enter a feed URL.', 'error'); return; }
+      feeds.push({ name: name || url, url });
+      document.getElementById('new-feed-name').value = '';
+      document.getElementById('new-feed-url').value = '';
+      renderFeedList();
+    }
+
+    function removeFeed(i) {
+      feeds.splice(i, 1);
+      renderFeedList();
+    }
+
+    function clearAllFeeds() {
+      if (!feeds.length || confirm('Clear all feeds?')) { feeds = []; renderFeedList(); }
+    }
+
+    function loadSampleFeeds() {
+      feeds = [
+        { name: 'Kottke', url: 'https://feeds.kottke.org/main' },
+        { name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml' },
+        { name: 'CSS-Tricks', url: 'https://css-tricks.com/feed/' },
+        { name: 'Hacker News', url: 'https://news.ycombinator.com/rss' },
+        { name: 'Smashing Magazine', url: 'https://www.smashingmagazine.com/feed/' },
+      ];
+      renderFeedList();
+    }
+
+    function renderFeedList() {
+      const el = document.getElementById('feed-list');
+      document.getElementById('feed-count').textContent = feeds.length;
+      if (!feeds.length) {
+        el.innerHTML = '<div style="color:var(--puny);font-size:0.85rem;padding:0.5rem 0;">No feeds added yet.</div>';
+        return;
+      }
+      el.innerHTML = feeds.map((f, i) => `
+        <div class="feed-item">
+          <span class="drag-handle" title="drag to reorder">≡</span>
+          <span class="feed-name">${esc(f.name)}</span>
+          <span class="feed-url">${esc(f.url)}</span>
+          <button onclick="removeFeed(${i})" title="remove">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function importOPML(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(e.target.result, 'text/xml');
+          const outlines = doc.querySelectorAll('outline[xmlUrl], outline[xmlurl]');
+          let added = 0;
+          outlines.forEach(o => {
+            const url = o.getAttribute('xmlUrl') || o.getAttribute('xmlurl');
+            const name = o.getAttribute('title') || o.getAttribute('text') || url;
+            if (url) { feeds.push({ name, url }); added++; }
+          });
+          renderFeedList();
+          showStatus(`Imported ${added} feed${added !== 1 ? 's' : ''} from OPML.`, 'success');
+        } catch(err) {
+          showStatus('Could not parse OPML file.', 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // ── Live preview ──────────────────────────────────────────────
+    async function renderLivePreview() {
+      if (!feeds.length) { showStatus('Add some feeds first.', 'error'); return; }
+      const el = document.getElementById('live-preview');
+      el.innerHTML = '<span style="color:var(--puny);font-size:0.85rem;">Loading feeds...</span>';
+      const opts = getOpts();
+      const results = await fetchAllFeeds(feeds, opts.proxy, opts.items);
+      el.innerHTML = buildWidgetHTML(results, opts, true);
+      if (opts.layout === 'tabs') initTabs(el);
+    }
+
+    async function fetchAllFeeds(feedList, proxy, maxItems) {
+      return Promise.all(feedList.map(async f => {
+        try {
+          const url = proxy
+            ? (proxy.includes('allorigins') ? proxy + encodeURIComponent(f.url) : proxy + encodeURIComponent(f.url))
+            : f.url;
+          const res = await fetch(url);
+          const text = proxy && proxy.includes('allorigins')
+            ? JSON.parse(await res.text()).contents
+            : await res.text();
+          const items = parseRSS(text, maxItems);
+          return { name: f.name, url: f.url, items, ok: true };
+        } catch(e) {
+          return { name: f.name, url: f.url, items: [], ok: false, error: e.message };
+        }
+      }));
+    }
+
+    function parseRSS(xml, max) {
+      const doc = new DOMParser().parseFromString(xml, 'text/xml');
+      // RSS 2.0
+      let items = [...doc.querySelectorAll('item')].slice(0, max).map(item => ({
+        title: text(item, 'title'),
+        link:  text(item, 'link') || item.querySelector('link')?.getAttribute('href') || '',
+        date:  text(item, 'pubDate') || text(item, 'dc\\:date') || text(item, 'date') || '',
+        desc:  stripHTML(text(item, 'description') || text(item, 'summary') || ''),
+      }));
+      // Atom fallback
+      if (!items.length) {
+        items = [...doc.querySelectorAll('entry')].slice(0, max).map(entry => ({
+          title: text(entry, 'title'),
+          link:  entry.querySelector('link')?.getAttribute('href') || text(entry, 'link') || '',
+          date:  text(entry, 'updated') || text(entry, 'published') || '',
+          desc:  stripHTML(text(entry, 'summary') || text(entry, 'content') || ''),
+        }));
+      }
+      return items;
+    }
+
+    function text(el, tag) {
+      return el.querySelector(tag)?.textContent?.trim() || '';
+    }
+
+    function stripHTML(s) {
+      const d = document.createElement('div');
+      d.innerHTML = s;
+      return d.textContent || '';
+    }
+
+    // ── Widget HTML builder ───────────────────────────────────────
+    function getOpts() {
+      return {
+        title:   document.getElementById('opt-title').value,
+        layout:  document.getElementById('opt-layout').value,
+        items:   parseInt(document.getElementById('opt-items').value),
+        dates:   document.getElementById('opt-dates').value,
+        font:    document.getElementById('opt-font').value,
+        desc:    document.getElementById('opt-desc').value,
+        border:  document.getElementById('opt-border').value,
+        width:   document.getElementById('opt-width').value,
+        color:   document.getElementById('opt-color').value,
+        bg:      document.getElementById('opt-bg').value,
+        textCol: document.getElementById('opt-text').value,
+        proxy:   document.getElementById('opt-proxy').value,
+      };
+    }
+
+    function buildWidgetHTML(results, opts, isPreview) {
+      const borderCSS = {
+        left:   'border-left: 3px solid ' + opts.color + '; padding-left: 0.6em;',
+        full:   'border: 1px solid #ccc; padding: 0.5em;',
+        bottom: 'border-bottom: 1px solid #eee; padding-bottom: 0.4em;',
+        none:   '',
+      }[opts.border];
+
+      const descStyle = {
+        none:  'display:none',
+        short: 'overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:100%;',
+        full:  '',
+      }[opts.desc];
+
+      function fmtDate(s) {
+        if (!s || opts.dates === 'none') return '';
+        try {
+          const d = new Date(s);
+          if (isNaN(d)) return '';
+          if (opts.dates === 'relative') {
+            const diff = Date.now() - d;
+            const mins = Math.floor(diff / 60000);
+            if (mins < 60) return mins + 'm ago';
+            const hrs = Math.floor(mins / 60);
+            if (hrs < 24) return hrs + 'h ago';
+            const days = Math.floor(hrs / 24);
+            if (days < 30) return days + 'd ago';
+            return d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+          }
+          return d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+        } catch(e) { return ''; }
+      }
+
+      function itemsHTML(items, feedName) {
+        if (!items.length) return '<p style="color:#999;font-size:0.8em;">No items loaded.</p>';
+        return items.map(it => `
+          <div style="margin-bottom:0.75em;${borderCSS}">
+            <a href="${esc(it.link)}" target="_blank" rel="noopener"
+               style="color:${opts.color};text-decoration:none;font-weight:bold;font-size:0.9em;">
+              ${esc(it.title || 'Untitled')}
+            </a>
+            ${opts.dates !== 'none' && it.date ? `<span style="color:#999;font-size:0.75em;margin-left:0.5em;">${fmtDate(it.date)}</span>` : ''}
+            ${opts.desc !== 'none' && it.desc ? `<div style="font-size:0.8em;color:#666;margin-top:0.2em;${descStyle}">${esc(it.desc.slice(0, 200))}</div>` : ''}
+          </div>
+        `).join('');
+      }
+
+      let inner = '';
+
+      if (opts.layout === 'list') {
+        inner = results.map(r => `
+          <div style="margin-bottom:1.5em;">
+            <div style="font-size:0.75em;text-transform:uppercase;letter-spacing:0.05em;color:#999;margin-bottom:0.4em;">
+              <a href="${esc(r.url)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">${esc(r.name)}</a>
+              ${!r.ok ? '<span style="color:#f00;"> (failed)</span>' : ''}
+            </div>
+            ${itemsHTML(r.items, r.name)}
+          </div>
+        `).join('');
+
+      } else if (opts.layout === 'tabs') {
+        const tabBtns = results.map((r, i) => `
+          <button onclick="wTab(this,${i},'wtabs-${isPreview?'p':'e'}')"
+            style="font-family:${opts.font};font-size:0.8em;padding:4px 10px;cursor:pointer;
+                   background:${i===0?opts.color:'transparent'};
+                   color:${i===0?opts.bg:opts.textCol};
+                   border:1px solid ${opts.color};margin:0 2px 0 0;"
+          >${esc(r.name)}</button>
+        `).join('');
+        const panels = results.map((r, i) => `
+          <div id="wtabs-${isPreview?'p':'e'}-${i}" style="display:${i===0?'block':'none'};padding-top:0.75em;">
+            ${itemsHTML(r.items, r.name)}
+          </div>
+        `).join('');
+        inner = `<div style="margin-bottom:0.75em;">${tabBtns}</div>${panels}`;
+
+      } else if (opts.layout === 'combined') {
+        const all = results.flatMap(r => r.items.map(it => ({ ...it, feed: r.name })))
+          .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+          .slice(0, opts.items * 2);
+        inner = all.map(it => `
+          <div style="margin-bottom:0.75em;${borderCSS}">
+            <div style="font-size:0.7em;color:#999;text-transform:uppercase;">${esc(it.feed)}</div>
+            <a href="${esc(it.link)}" target="_blank" rel="noopener"
+               style="color:${opts.color};text-decoration:none;font-weight:bold;font-size:0.9em;">
+              ${esc(it.title || 'Untitled')}
+            </a>
+            ${opts.dates !== 'none' && it.date ? `<span style="color:#999;font-size:0.75em;margin-left:0.5em;">${fmtDate(it.date)}</span>` : ''}
+          </div>
+        `).join('');
+
+      } else if (opts.layout === 'grid') {
+        inner = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.75em;">
+          ${results.map(r => `
+            <div style="border:1px solid #ddd;padding:0.75em;">
+              <div style="font-size:0.75em;font-weight:bold;color:${opts.color};text-transform:uppercase;margin-bottom:0.5em;">${esc(r.name)}</div>
+              ${itemsHTML(r.items.slice(0, 3), r.name)}
+            </div>
+          `).join('')}
+        </div>`;
+      }
+
+      return `
+        <div style="font-family:${opts.font};background:${opts.bg};color:${opts.textCol};max-width:${opts.width};padding:1em;box-sizing:border-box;">
+          ${opts.title ? `<div style="font-weight:bold;font-size:1em;margin-bottom:1em;border-bottom:2px solid ${opts.color};padding-bottom:0.4em;">${esc(opts.title)}</div>` : ''}
+          ${inner}
+          <div style="font-size:0.7em;color:#aaa;text-align:right;margin-top:0.5em;">
+            updated <span id="rss-ts-${isPreview?'p':'e'}">${new Date().toLocaleTimeString()}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function initTabs(container) {
+      // already handled via inline onclick
+    }
+
+    // ── Code generation ───────────────────────────────────────────
+    function generateCode() {
+      const opts = getOpts();
+      const feedsJSON = JSON.stringify(feeds);
+      const proxyVal = opts.proxy;
+
+      const code = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${esc(opts.title)}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 1em; font-family: ${opts.font}; background: ${opts.bg}; color: ${opts.textCol}; }
+    #rss-widget a { color: ${opts.color}; }
+    #rss-widget a:hover { opacity: 0.8; }
+    .rss-loading { color: #999; font-size: 0.85em; }
+    .rss-error { color: #f44; font-size: 0.8em; }
+    .wt-btn { font-family: ${opts.font}; font-size: 0.8em; padding: 4px 10px; cursor: pointer; margin: 0 2px 0 0; border: 1px solid ${opts.color}; }
+    .wt-btn.active { background: ${opts.color}; color: ${opts.bg}; }
+    .wt-btn:not(.active) { background: transparent; color: ${opts.textCol}; }
+    .wt-panel { display: none; padding-top: 0.75em; }
+    .wt-panel.active { display: block; }
+  </style>
+</head>
+<body>
+<div id="rss-widget">
+  <p class="rss-loading">Loading feeds...</p>
+</div>
+<script>
+const FEEDS = ${feedsJSON};
+const PROXY = "${proxyVal}";
+const OPTS = ${JSON.stringify(opts)};
+
+async function fetchFeed(f) {
+  try {
+    const url = PROXY
+      ? (PROXY.includes('allorigins') ? PROXY + encodeURIComponent(f.url) : PROXY + encodeURIComponent(f.url))
+      : f.url;
+    const res = await fetch(url);
+    const text = PROXY && PROXY.includes('allorigins')
+      ? JSON.parse(await res.text()).contents
+      : await res.text();
+    return { ...f, items: parseRSS(text), ok: true };
+  } catch(e) {
+    return { ...f, items: [], ok: false };
+  }
+}
+
+function parseRSS(xml) {
+  const doc = new DOMParser().parseFromString(xml, 'text/xml');
+  const t = (el, tag) => el.querySelector(tag)?.textContent?.trim() || '';
+  const strip = s => { const d = document.createElement('div'); d.innerHTML = s; return d.textContent || ''; };
+  let items = [...doc.querySelectorAll('item')].slice(0, OPTS.items).map(el => ({
+    title: t(el,'title'), link: t(el,'link') || el.querySelector('link')?.getAttribute('href') || '',
+    date: t(el,'pubDate') || t(el,'date') || '', desc: strip(t(el,'description') || t(el,'summary') || '')
+  }));
+  if (!items.length) items = [...doc.querySelectorAll('entry')].slice(0, OPTS.items).map(el => ({
+    title: t(el,'title'), link: el.querySelector('link')?.getAttribute('href') || '',
+    date: t(el,'updated') || t(el,'published') || '', desc: strip(t(el,'summary') || t(el,'content') || '')
+  }));
+  return items;
+}
+
+function fmtDate(s) {
+  if (!s || OPTS.dates === 'none') return '';
+  try {
+    const d = new Date(s); if (isNaN(d)) return '';
+    if (OPTS.dates === 'relative') {
+      const diff = Date.now() - d;
+      const mins = Math.floor(diff/60000);
+      if (mins < 60) return mins + 'm ago';
+      const hrs = Math.floor(mins/60);
+      if (hrs < 24) return hrs + 'h ago';
+      const days = Math.floor(hrs/24);
+      if (days < 30) return days + 'd ago';
+    }
+    return d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+  } catch(e) { return ''; }
+}
+
+const border = {
+  left: 'border-left:3px solid ' + OPTS.color + ';padding-left:0.6em;',
+  full: 'border:1px solid #ccc;padding:0.5em;',
+  bottom: 'border-bottom:1px solid #eee;padding-bottom:0.4em;',
+  none: ''
+}[OPTS.border];
+
+const descStyle = {
+  none: 'display:none',
+  short: 'overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:100%;',
+  full: ''
+}[OPTS.desc];
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function itemsHTML(items) {
+  if (!items.length) return '<p style="color:#999;font-size:0.8em;">No items.</p>';
+  return items.map(it => \`
+    <div style="margin-bottom:0.75em;\${border}">
+      <a href="\${esc(it.link)}" target="_blank" rel="noopener"
+         style="color:\${OPTS.color};text-decoration:none;font-weight:bold;font-size:0.9em;">
+        \${esc(it.title || 'Untitled')}
+      </a>
+      \${OPTS.dates !== 'none' && it.date ? \`<span style="color:#999;font-size:0.75em;margin-left:0.5em;">\${fmtDate(it.date)}</span>\` : ''}
+      \${OPTS.desc !== 'none' && it.desc ? \`<div style="font-size:0.8em;color:#666;margin-top:0.2em;\${descStyle}">\${esc(it.desc.slice(0,200))}</div>\` : ''}
+    </div>
+  \`).join('');
+}
+
+async function init() {
+  const widget = document.getElementById('rss-widget');
+  const results = await Promise.all(FEEDS.map(fetchFeed));
+  let inner = '';
+
+  if (OPTS.layout === 'list') {
+    inner = results.map(r => \`
+      <div style="margin-bottom:1.5em;">
+        <div style="font-size:0.75em;text-transform:uppercase;letter-spacing:0.05em;color:#999;margin-bottom:0.4em;">
+          \${esc(r.name)}\${!r.ok?' <span style="color:#f44">(failed)</span>':''}
+        </div>
+        \${itemsHTML(r.items)}
+      </div>
+    \`).join('');
+  } else if (OPTS.layout === 'tabs') {
+    const btns = results.map((r,i) => \`<button class="wt-btn\${i===0?' active':''}" onclick="wTab(this,\${i})">\${esc(r.name)}</button>\`).join('');
+    const panels = results.map((r,i) => \`<div class="wt-panel\${i===0?' active':''}" id="wp\${i}">\${itemsHTML(r.items)}</div>\`).join('');
+    inner = \`<div style="margin-bottom:0.75em;">\${btns}</div>\${panels}\`;
+  } else if (OPTS.layout === 'combined') {
+    const all = results.flatMap(r => r.items.map(it => ({...it, feed: r.name})))
+      .sort((a,b) => new Date(b.date||0) - new Date(a.date||0)).slice(0, OPTS.items * 2);
+    inner = all.map(it => \`
+      <div style="margin-bottom:0.75em;\${border}">
+        <div style="font-size:0.7em;color:#999;text-transform:uppercase;">\${esc(it.feed)}</div>
+        <a href="\${esc(it.link)}" target="_blank" rel="noopener"
+           style="color:\${OPTS.color};text-decoration:none;font-weight:bold;font-size:0.9em;">
+          \${esc(it.title||'Untitled')}
+        </a>
+        \${OPTS.dates !== 'none' && it.date ? \`<span style="color:#999;font-size:0.75em;margin-left:0.5em;">\${fmtDate(it.date)}</span>\` : ''}
+      </div>
+    \`).join('');
+  } else if (OPTS.layout === 'grid') {
+    inner = \`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.75em;">\${
+      results.map(r => \`<div style="border:1px solid #ddd;padding:0.75em;">
+        <div style="font-size:0.75em;font-weight:bold;color:\${OPTS.color};text-transform:uppercase;margin-bottom:0.5em;">\${esc(r.name)}</div>
+        \${itemsHTML(r.items.slice(0,3))}
+      </div>\`).join('')
+    }</div>\`;
+  }
+
+  widget.innerHTML = \`
+    <div style="max-width:\${OPTS.width};padding:1em;">
+      \${OPTS.title ? \`<div style="font-weight:bold;font-size:1em;margin-bottom:1em;border-bottom:2px solid \${OPTS.color};padding-bottom:0.4em;">\${esc(OPTS.title)}</div>\` : ''}
+      \${inner}
+      <div style="font-size:0.7em;color:#aaa;text-align:right;margin-top:0.5em;">updated \${new Date().toLocaleTimeString()}</div>
+    </div>
+  \`;
+}
+
+function wTab(btn, idx) {
+  document.querySelectorAll('.wt-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.wt-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('wp' + idx).classList.add('active');
+}
+
+init();
+<\/script>
+</body>
+</html>`;
+
+      document.getElementById('code-output').textContent = code;
+      return code;
+    }
+
+    function downloadWidget() {
+      const code = generateCode();
+      const blob = new Blob([code], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      const title = document.getElementById('opt-title').value.trim().replace(/\s+/g, '-').toLowerCase() || 'rss-widget';
+      a.download = title + '.html';
+      a.click();
+      showStatus('Downloaded!', 'success');
+    }
+
+    function copyEmbedSnippet() {
+      const opts = getOpts();
+      const snippet = `<iframe src="./rss-widget.html" width="${opts.width}" height="500" frameborder="0" scrolling="auto"></iframe>`;
+      navigator.clipboard.writeText(snippet).then(() => showStatus('Embed snippet copied!', 'success'));
+    }
+
+    function copyFullCode() {
+      const code = generateCode();
+      navigator.clipboard.writeText(code).then(() => showStatus('Full code copied!', 'success'));
+    }
+
+    // ── Preview tab wTab helper (for preview iframe) ──────────────
+    function wTab(btn, idx, prefix) {
+      const container = btn.closest('div').parentElement;
+      container.querySelectorAll('button').forEach(b => {
+        const opts = getOpts();
+        b.style.background = 'transparent';
+        b.style.color = opts.textCol;
+      });
+      btn.style.background = getOpts().color;
+      btn.style.color = getOpts().bg;
+      const panels = container.querySelectorAll('[id^="wtabs-"]');
+      panels.forEach(p => p.style.display = 'none');
+      const target = document.getElementById(`wtabs-${prefix}-${idx}`);
+      if (target) target.style.display = 'block';
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────
+    function esc(s) {
+      return String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function updatePreview() {
+      // re-render if we're on preview tab
+      const previewActive = document.getElementById('tab-preview').classList.contains('active');
+      if (previewActive) renderLivePreview();
+    }
+
+    function showStatus(msg, type = 'success') {
+      const el = document.getElementById('status');
+      if (!el) return;
+      el.textContent = msg;
+      el.className = `status show ${type}`;
+      setTimeout(() => el.classList.remove('show'), 2500);
+    }
+  </script>
+</body>
+</html>

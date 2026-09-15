@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Regex Visual Explainer | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea,
+    input[type="text"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+      .flags-row {
+        flex-wrap: wrap;
+      }
+    }
+
+    /* Tool-specific styles */
+    .regex-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      font-family: monospace;
+      font-size: 1.1rem;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      padding: 10px;
+      background: var(--bg);
+    }
+
+    .regex-row .slash {
+      color: var(--puny);
+    }
+
+    .regex-row input {
+      border: none;
+      padding: 0 4px;
+      flex: 1;
+    }
+
+    .flags-row {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .flag-check {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+    }
+
+    .flag-check input {
+      width: auto;
+    }
+
+    #token-breakdown {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-family: monospace;
+      font-size: 1rem;
+      line-height: 2;
+    }
+
+    .token-chip {
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: default;
+      border: 1px solid transparent;
+      position: relative;
+    }
+
+    .token-chip:hover {
+      border-color: var(--text);
+    }
+
+    .token-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .token-list-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-size: 0.85rem;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--hover);
+    }
+
+    .token-list-item .tcode {
+      font-family: monospace;
+      font-weight: bold;
+      min-width: 70px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .token-list-item .tdesc {
+      color: var(--text);
+    }
+
+    .match-result {
+      font-family: monospace;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.8;
+    }
+
+    mark {
+      background: var(--accent);
+      color: var(--bg);
+      border-radius: 2px;
+      padding: 0 1px;
+    }
+
+    .match-count {
+      font-size: 0.85rem;
+      color: var(--puny);
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Regex Visual Explainer</h1>
+    <p class="puny">Paste a regex and see each token highlighted with a plain English explanation and a live match tester.</p>
+
+    <div class="container">
+      <div class="input-group">
+        <span class="input-label">Pattern</span>
+        <div class="regex-row">
+          <span class="slash">/</span>
+          <input type="text" id="pattern-input" placeholder="\b[A-Z][a-z]+\b" value="\b[A-Z][a-z]+\b" />
+          <span class="slash">/</span>
+          <span id="flags-display" class="slash">g</span>
+        </div>
+        <div class="flags-row">
+          <span class="puny">Flags:</span>
+          <label class="flag-check"><input type="checkbox" id="flag-g" checked /> g (global)</label>
+          <label class="flag-check"><input type="checkbox" id="flag-i" /> i (ignore case)</label>
+          <label class="flag-check"><input type="checkbox" id="flag-m" /> m (multiline)</label>
+          <label class="flag-check"><input type="checkbox" id="flag-s" /> s (dotall)</label>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">Token breakdown</span>
+        <div id="token-breakdown"></div>
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">Explanation</span>
+        <div class="token-list" id="token-list"></div>
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">Test string</span>
+        <textarea id="test-string" placeholder="Paste text here to test matches against your pattern...">The Quick brown Fox jumps over the Lazy Dog near Park Avenue.</textarea>
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">Matches</span>
+        <span class="match-count" id="match-count">No matches yet</span>
+        <div class="match-result" id="match-result"></div>
+      </div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> Hover any highlighted token in the breakdown to see its color matched against the explanation list below. Invalid patterns will show an error instead of crashing the match tester.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool-specific script -->
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    }
+
+    const COLORS = ['#ff6600', '#0ea5e9', '#22c55e', '#a855f7', '#ec4899', '#f59e0b', '#14b8a6', '#ef4444'];
+
+    // Tokenize a regex pattern into a flat list of meaningful chunks
+    function tokenizeRegex(pattern) {
+      const tokens = [];
+      let i = 0;
+      const len = pattern.length;
+
+      function peek(offset = 0) { return pattern[i + offset]; }
+
+      while (i < len) {
+        const ch = pattern[i];
+
+        if (ch === '\\') {
+          // escape sequence
+          const next = pattern[i + 1] || '';
+          tokens.push({ text: ch + next, type: 'escape' });
+          i += 2;
+          continue;
+        }
+
+        if (ch === '[') {
+          // character class
+          let j = i + 1;
+          if (pattern[j] === '^') j++;
+          while (j < len && pattern[j] !== ']') {
+            if (pattern[j] === '\\') j++;
+            j++;
+          }
+          j++; // include closing bracket
+          tokens.push({ text: pattern.slice(i, j), type: 'class' });
+          i = j;
+          continue;
+        }
+
+        if (ch === '(') {
+          // group open - capture whole prefix like (?: (?<name> (?=
+          let j = i + 1;
+          let groupType = 'group-open';
+          let label = '(';
+          if (pattern[j] === '?') {
+            if (pattern[j + 1] === ':') { label = '(?:'; j += 2; groupType = 'noncap-open'; }
+            else if (pattern[j + 1] === '=') { label = '(?='; j += 2; groupType = 'lookahead-open'; }
+            else if (pattern[j + 1] === '!') { label = '(?!'; j += 2; groupType = 'neglookahead-open'; }
+            else if (pattern[j + 1] === '<' && pattern[j + 2] === '=') { label = '(?<='; j += 3; groupType = 'lookbehind-open'; }
+            else if (pattern[j + 1] === '<' && pattern[j + 2] === '!') { label = '(?<!'; j += 3; groupType = 'neglookbehind-open'; }
+            else if (pattern[j + 1] === '<') {
+              let k = j + 2;
+              while (k < len && pattern[k] !== '>') k++;
+              label = pattern.slice(i, k + 1);
+              j = k + 1;
+              groupType = 'namedgroup-open';
+            }
+          } else {
+            j = i + 1;
+          }
+          tokens.push({ text: label, type: groupType });
+          i = j;
+          continue;
+        }
+
+        if (ch === ')') {
+          tokens.push({ text: ')', type: 'group-close' });
+          i++;
+          continue;
+        }
+
+        if (ch === '{') {
+          let j = i + 1;
+          while (j < len && pattern[j] !== '}') j++;
+          j++;
+          tokens.push({ text: pattern.slice(i, j), type: 'quantifier' });
+          i = j;
+          continue;
+        }
+
+        if ('*+?'.includes(ch)) {
+          let text = ch;
+          if (pattern[i + 1] === '?') { text += '?'; i++; }
+          tokens.push({ text, type: 'quantifier' });
+          i++;
+          continue;
+        }
+
+        if (ch === '|') {
+          tokens.push({ text: '|', type: 'alternation' });
+          i++;
+          continue;
+        }
+
+        if (ch === '^' || ch === '$') {
+          tokens.push({ text: ch, type: 'anchor' });
+          i++;
+          continue;
+        }
+
+        if (ch === '.') {
+          tokens.push({ text: '.', type: 'dot' });
+          i++;
+          continue;
+        }
+
+        // literal run - accumulate plain characters
+        let j = i;
+        while (j < len && !'\\[](){}*+?|^$.'.includes(pattern[j])) j++;
+        if (j === i) j++; // safety
+        tokens.push({ text: pattern.slice(i, j), type: 'literal' });
+        i = j;
+      }
+
+      return tokens;
+    }
+
+    function explainToken(token) {
+      const t = token.text;
+      switch (token.type) {
+        case 'escape':
+          return explainEscape(t);
+        case 'class':
+          return explainClass(t);
+        case 'group-open':
+          return 'Start of a capturing group — remembers the matched text for later reference.';
+        case 'noncap-open':
+          return 'Start of a non-capturing group — groups the pattern without saving it as a match group.';
+        case 'lookahead-open':
+          return 'Start of a positive lookahead — asserts what follows, without consuming characters.';
+        case 'neglookahead-open':
+          return 'Start of a negative lookahead — asserts what does NOT follow, without consuming characters.';
+        case 'lookbehind-open':
+          return 'Start of a positive lookbehind — asserts what precedes, without consuming characters.';
+        case 'neglookbehind-open':
+          return 'Start of a negative lookbehind — asserts what does NOT precede, without consuming characters.';
+        case 'namedgroup-open':
+          return `Start of a named capturing group called "${t.slice(3, -1)}".`;
+        case 'group-close':
+          return 'Closes the most recently opened group.';
+        case 'quantifier':
+          return explainQuantifier(t);
+        case 'alternation':
+          return 'Alternation — matches whatever is on either side ("or").';
+        case 'anchor':
+          return t === '^' ? 'Anchors the match to the start of the string (or line, with the m flag).' : 'Anchors the match to the end of the string (or line, with the m flag).';
+        case 'dot':
+          return 'Matches any single character except a newline (unless the s flag is set).';
+        case 'literal':
+          return `Matches the literal text "${t}" exactly.`;
+        default:
+          return 'Unrecognized token.';
+      }
+    }
+
+    function explainEscape(t) {
+      const map = {
+        '\\d': 'Matches any digit (0-9).',
+        '\\D': 'Matches any character that is NOT a digit.',
+        '\\w': 'Matches any word character (letters, digits, underscore).',
+        '\\W': 'Matches any character that is NOT a word character.',
+        '\\s': 'Matches any whitespace character (space, tab, newline).',
+        '\\S': 'Matches any character that is NOT whitespace.',
+        '\\b': 'Word boundary — matches the position between a word character and a non-word character.',
+        '\\B': 'Non-word boundary — the opposite of \\b.',
+        '\\n': 'Matches a newline character.',
+        '\\t': 'Matches a tab character.',
+        '\\r': 'Matches a carriage return character.',
+        '\\0': 'Matches a NUL character.'
+      };
+      if (map[t]) return map[t];
+      if (/^\\\d$/.test(t)) return `Backreference to capturing group ${t[1]} — matches whatever that group previously matched.`;
+      if (/^\\[.^$*+?()[\]{}|\\\/]$/.test(t)) return `Escaped literal — matches the literal "${t[1]}" character.`;
+      return `Escaped character — matches "${t[1]}" literally.`;
+    }
+
+    function explainClass(t) {
+      const negated = t[1] === '^';
+      const body = negated ? t.slice(2, -1) : t.slice(1, -1);
+      return `Character class — matches ${negated ? 'any character NOT' : 'any single character'} in the set: ${body || '(empty)'}`;
+    }
+
+    function explainQuantifier(t) {
+      if (t === '*') return 'Zero or more of the preceding token (greedy).';
+      if (t === '*?') return 'Zero or more of the preceding token (lazy — matches as few as possible).';
+      if (t === '+') return 'One or more of the preceding token (greedy).';
+      if (t === '+?') return 'One or more of the preceding token (lazy — matches as few as possible).';
+      if (t === '?') return 'Zero or one of the preceding token (optional).';
+      if (t === '??') return 'Zero or one of the preceding token (lazy).';
+      const m = t.match(/^\{(\d+)(,)?(\d+)?\}\??$/);
+      if (m) {
+        const min = m[1];
+        const hasComma = !!m[2];
+        const max = m[3];
+        const lazy = t.endsWith('?');
+        if (!hasComma) return `Exactly ${min} of the preceding token${lazy ? ' (lazy)' : ''}.`;
+        if (hasComma && !max) return `${min} or more of the preceding token${lazy ? ' (lazy)' : ''}.`;
+        return `Between ${min} and ${max} of the preceding token${lazy ? ' (lazy)' : ''}.`;
+      }
+      return `Quantifier: ${t}`;
+    }
+
+    function getFlags() {
+      let flags = '';
+      if (document.getElementById('flag-g').checked) flags += 'g';
+      if (document.getElementById('flag-i').checked) flags += 'i';
+      if (document.getElementById('flag-m').checked) flags += 'm';
+      if (document.getElementById('flag-s').checked) flags += 's';
+      return flags;
+    }
+
+    function render() {
+      const pattern = document.getElementById('pattern-input').value;
+      const flags = getFlags();
+      document.getElementById('flags-display').textContent = flags;
+
+      const breakdownEl = document.getElementById('token-breakdown');
+      const listEl = document.getElementById('token-list');
+      breakdownEl.innerHTML = '';
+      listEl.innerHTML = '';
+
+      if (!pattern) {
+        breakdownEl.innerHTML = '<span class="puny">Enter a pattern above.</span>';
+        return;
+      }
+
+      let tokens;
+      try {
+        tokens = tokenizeRegex(pattern);
+      } catch (err) {
+        breakdownEl.innerHTML = '<span class="puny">Could not parse pattern.</span>';
+        return;
+      }
+
+      tokens.forEach((token, idx) => {
+        const color = COLORS[idx % COLORS.length];
+        const chip = document.createElement('span');
+        chip.className = 'token-chip';
+        chip.textContent = token.text;
+        chip.style.background = color + '33';
+        chip.style.color = color;
+        chip.title = explainToken(token);
+        breakdownEl.appendChild(chip);
+
+        const item = document.createElement('div');
+        item.className = 'token-list-item';
+        const code = document.createElement('span');
+        code.className = 'tcode';
+        code.textContent = token.text;
+        code.style.background = color + '33';
+        code.style.color = color;
+        const desc = document.createElement('span');
+        desc.className = 'tdesc';
+        desc.textContent = explainToken(token);
+        item.appendChild(code);
+        item.appendChild(desc);
+        listEl.appendChild(item);
+      });
+
+      runMatch(pattern, flags);
+    }
+
+    function runMatch(pattern, flags) {
+      const testString = document.getElementById('test-string').value;
+      const matchResultEl = document.getElementById('match-result');
+      const matchCountEl = document.getElementById('match-count');
+
+      let regex;
+      try {
+        regex = new RegExp(pattern, flags);
+      } catch (err) {
+        matchResultEl.textContent = '';
+        matchCountEl.textContent = 'Invalid pattern: ' + err.message;
+        return;
+      }
+
+      if (!testString) {
+        matchResultEl.textContent = '';
+        matchCountEl.textContent = 'No test string provided.';
+        return;
+      }
+
+      let matches = [];
+      if (flags.includes('g')) {
+        matches = [...testString.matchAll(regex)];
+      } else {
+        const m = testString.match(regex);
+        if (m) matches = [m];
+      }
+
+      matchCountEl.textContent = matches.length === 0
+        ? 'No matches found.'
+        : `${matches.length} match${matches.length === 1 ? '' : 'es'} found.`;
+
+      if (matches.length === 0) {
+        matchResultEl.textContent = escapeHtml(testString);
+        return;
+      }
+
+      let result = '';
+      let lastIndex = 0;
+      matches.forEach((m) => {
+        const start = m.index;
+        const end = start + m[0].length;
+        result += escapeHtml(testString.slice(lastIndex, start));
+        result += `<mark>${escapeHtml(m[0])}</mark>`;
+        lastIndex = end;
+      });
+      result += escapeHtml(testString.slice(lastIndex));
+      matchResultEl.innerHTML = result;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    document.getElementById('pattern-input').addEventListener('input', render);
+    document.getElementById('test-string').addEventListener('input', render);
+    ['flag-g', 'flag-i', 'flag-m', 'flag-s'].forEach((id) => {
+      document.getElementById(id).addEventListener('change', render);
+    });
+
+    render();
+  </script>
+</body>
+</html>

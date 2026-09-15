@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Data Charts | tools.eliana.lol</title>
+  <link rel="stylesheet" href="../global.css" />
+  <link rel="icon" type="image/x-icon" href="../favicon.svg" />
+  <style>
+    .tool-layout { display: flex; flex-direction: column; gap: 20px; }
+    .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    label { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 5px; }
+    #chart-wrap { border: 1px solid var(--puny); padding: 16px; max-height: 400px; }
+    select { background: var(--bg); color: var(--text); border: 1px solid var(--puny); font-family: monospace; padding: 4px 8px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left"><a href="../index.html">home</a> | <a href="../extra.html">extra</a> | <a href="../credits.html">credits</a> | <a href="../changelog.html">logs</a></div>
+    <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+  </nav>
+  <main>
+    <h1>Data Charts</h1>
+    <p class="puny">Paste labels and values, pick a chart type, and visualize instantly.</p>
+    <div class="tool-layout">
+      <div class="two-col">
+        <div>
+          <label>Labels (one per line)</label>
+          <textarea id="labels" rows="8" placeholder="Jan&#10;Feb&#10;Mar&#10;Apr&#10;May"></textarea>
+        </div>
+        <div>
+          <label>Values (one per line)</label>
+          <textarea id="values" rows="8" placeholder="12&#10;19&#10;8&#10;25&#10;14"></textarea>
+        </div>
+      </div>
+      <div class="action-bar">
+        <label style="display:inline-flex;align-items:center;gap:6px;text-transform:none;font-weight:normal;color:var(--text)">
+          Type: <select id="chart-type">
+            <option value="bar">Bar</option>
+            <option value="line">Line</option>
+            <option value="pie">Pie</option>
+            <option value="doughnut">Doughnut</option>
+            <option value="radar">Radar</option>
+            <option value="polarArea">Polar Area</option>
+          </select>
+        </label>
+        <button onclick="renderChart()">Render</button>
+        <button onclick="loadSample()">Sample</button>
+        <button onclick="downloadPNG()">Download PNG</button>
+      </div>
+      <div id="chart-wrap"><canvas id="chart"></canvas></div>
+    </div>
+  </main>
+  <footer style="margin-top: 4rem; text-align: center" class="puny">© 2026 eliana.lol • <a href="../credits.html">credits</a></footer>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => { const now = htmlEl.getAttribute('data-theme'); const next = now === 'dark' ? 'light' : 'dark'; htmlEl.setAttribute('data-theme', next); localStorage.setItem('theme', next); toggle.innerText = next === 'dark' ? '[light]' : '[dark]'; };
+
+    let chart = null;
+    const COLORS = ['#ff6600','#ffff99','#eaddca','#a0c4ff','#b9fbc0','#ffc6ff','#ffd6a5','#caffbf'];
+
+    function renderChart() {
+      const labels = document.getElementById('labels').value.split('\n').map(s=>s.trim()).filter(Boolean);
+      const values = document.getElementById('values').value.split('\n').map(Number).filter(v=>!isNaN(v));
+      const type = document.getElementById('chart-type').value;
+      if (!labels.length || !values.length) return;
+      if (chart) chart.destroy();
+      const textColor = getComputedStyle(htmlEl).getPropertyValue('--text').trim();
+      const gridColor = getComputedStyle(htmlEl).getPropertyValue('--puny').trim();
+      chart = new Chart(document.getElementById('chart'), {
+        type,
+        data: {
+          labels,
+          datasets: [{ label: 'Value', data: values, backgroundColor: COLORS, borderColor: COLORS, borderWidth: 1 }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { labels: { color: textColor, font: { family: 'monospace' } } } },
+          scales: type === 'pie' || type === 'doughnut' || type === 'polarArea' ? {} : {
+            x: { ticks: { color: textColor, font: { family: 'monospace' } }, grid: { color: gridColor } },
+            y: { ticks: { color: textColor, font: { family: 'monospace' } }, grid: { color: gridColor } }
+          }
+        }
+      });
+    }
+
+    function loadSample() {
+      document.getElementById('labels').value = 'Jan\nFeb\nMar\nApr\nMay\nJun';
+      document.getElementById('values').value = '42\n58\n35\n71\n63\n49';
+      renderChart();
+    }
+
+    function downloadPNG() {
+      if (!chart) return;
+      const a = document.createElement('a');
+      a.href = document.getElementById('chart').toDataURL('image/png');
+      a.download = 'chart.png';
+      a.click();
+    }
+
+    loadSample();
+  </script>
+</body>
+</html>

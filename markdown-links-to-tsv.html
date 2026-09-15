@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Markdown Links to TSV | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .io-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    textarea {
+      min-height: 280px;
+      resize: vertical;
+    }
+
+    pre#output {
+      background: var(--highlight);
+      border: 1px dashed var(--accent);
+      padding: 0.75rem;
+      font-family: monospace;
+      font-size: 0.85rem;
+      min-height: 280px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 0;
+      color: var(--text);
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    input[type="file"] {
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: var(--puny);
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 640px) {
+      .io-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Markdown Links to TSV</h1>
+    <p class="puny">Extract <code>[anchor](url)</code> links from Markdown and export as TSV for Google Sheets.</p>
+
+    <div class="container">
+      <div class="info-box">
+        Paste Markdown or load <code>.md</code> files. Handles standard links, broken links, and bare URLs.
+        Output columns: <strong>source · anchor · url</strong>
+      </div>
+
+      <div>
+        <div class="input-label" style="margin-bottom:0.4rem">Load .md / .txt files</div>
+        <input id="fileInput" type="file" accept=".md,.markdown,.txt" multiple />
+      </div>
+
+      <div class="button-group">
+        <button class="primary" onclick="parseAll()">Parse</button>
+        <button onclick="downloadTSV()">Download TSV</button>
+        <button onclick="copyTSV()">Copy TSV</button>
+        <button onclick="doClear()">Clear</button>
+      </div>
+
+      <div class="io-grid">
+        <div class="input-group">
+          <span class="input-label">Input</span>
+          <textarea id="input" placeholder="Paste markdown here..."></textarea>
+        </div>
+        <div class="input-group">
+          <span class="input-label">TSV Output</span>
+          <pre id="output"></pre>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    // Theme toggle
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+
+    function esc(v) { return String(v ?? '').replace(/\t/g, ' ').replace(/\r?\n/g, ' '); }
+    function uniq(rows) {
+      const seen = new Set();
+      return rows.filter(r => { const k = r.join('\u0000'); if (seen.has(k)) return false; seen.add(k); return true; });
+    }
+
+    function extractLinks(text, source = 'paste') {
+      const rows = [];
+      const patterns = [
+        /\[([^\]]*?)\]\(([^)\n]*?)\)/g,
+        /\[([^\]]+?)\]\s*\(([^)\n]+)$/gm,
+        /\[([^\]]+)\]\s+((?:https?:\/\/|\/)[^\s]+)/g,
+        /(?<!\]\()(?<!\]\s)(https?:\/\/[^\s)]+)/g
+      ];
+      for (const re of patterns) {
+        let m;
+        while ((m = re.exec(text)) !== null) {
+          if (re === patterns[3]) rows.push([source, '', m[1]]);
+          else rows.push([source, m[1] || '', m[2] || '']);
+        }
+      }
+      return uniq(rows);
+    }
+
+    function parseAll() {
+      const rows = extractLinks(document.getElementById('input').value, 'input');
+      const tsv = ['source\tanchor\turl', ...rows.map(r => r.map(esc).join('\t'))].join('\n');
+      document.getElementById('output').textContent = tsv;
+      return tsv;
+    }
+
+    function downloadTSV() {
+      const tsv = parseAll();
+      const blob = new Blob([tsv], { type: 'text/tab-separated-values;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'markdown-links.tsv';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    async function copyTSV() {
+      const tsv = parseAll();
+      await navigator.clipboard.writeText(tsv);
+    }
+
+    document.getElementById('fileInput').addEventListener('change', async () => {
+      const files = [...document.getElementById('fileInput').files];
+      const texts = await Promise.all(files.map(f => f.text().then(t => `<!-- FILE: ${f.name} -->\n` + t)));
+      document.getElementById('input').value = texts.join('\n\n');
+      parseAll();
+    });
+
+    function doClear() {
+      document.getElementById('input').value = '';
+      document.getElementById('output').textContent = '';
+      document.getElementById('fileInput').value = '';
+    }
+  </script>
+</body>
+</html>

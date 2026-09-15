@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Chat Exporter | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turndown/7.1.2/turndown.min.js"></script>
+  <style>
+    .container { display: flex; flex-direction: column; gap: 1.5rem; }
+    .input-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .input-label { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: var(--puny); letter-spacing: 0.05em; }
+    .button-group { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    button { font-family: monospace; padding: 8px 16px; cursor: pointer; background: var(--bg); color: var(--text); border: 1px solid var(--text); }
+    button.primary { border-color: var(--accent); color: var(--accent); font-weight: bold; }
+    button:hover { background-color: var(--hover); }
+    textarea { min-height: 160px; resize: vertical; }
+    #output { min-height: 200px; background: var(--bg); color: var(--text); border: 1px solid var(--puny); font-family: monospace; padding: 10px; box-sizing: border-box; white-space: pre-wrap; font-size: 0.85rem; overflow: auto; resize: vertical; }
+    .info-box { padding: 1rem; background-color: var(--highlight); border-left: 3px solid var(--accent); font-size: 0.9rem; line-height: 1.6; }
+    .status { padding: 0.5rem 0.75rem; font-size: 0.85rem; display: none; border-left: 3px solid var(--accent); background: var(--highlight); }
+    .status.show { display: block; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>AI Chat Exporter</h1>
+    <p class="puny">Convert pasted AI chat HTML (ChatGPT, Claude, Gemini, etc.) into clean Markdown.</p>
+
+    <div class="container">
+      <div class="info-box">
+        <strong>How to use:</strong> In your AI chat, select all (Ctrl+A), copy (Ctrl+C), then right-click → "View Page Source" and copy that instead for best results. Or paste the raw HTML below.
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">Paste HTML here</span>
+        <textarea id="input" placeholder="Paste chat HTML here..."></textarea>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" id="convertBtn">Convert to Markdown</button>
+        <button id="copyBtn" onclick="copyOutput()">Copy Result</button>
+        <button id="clearBtn" onclick="clearAll()">Clear</button>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <div class="input-group">
+        <span class="input-label">Markdown Output</span>
+        <div id="output" contenteditable="true"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => {
+      const now = htmlEl.getAttribute('data-theme');
+      const next = now === 'dark' ? 'light' : 'dark';
+      htmlEl.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+    };
+  </script>
+
+  <script>
+    const turndownService = new TurndownService({
+      headingStyle: 'atx',
+      codeBlockStyle: 'fenced',
+      bulletListMarker: '-'
+    });
+
+    // Keep code blocks intact
+    turndownService.addRule('pre', {
+      filter: 'pre',
+      replacement: (content, node) => {
+        const code = node.querySelector('code');
+        const lang = code ? (code.className.match(/language-(\S+)/)?.[1] || '') : '';
+        return `\n\`\`\`${lang}\n${node.textContent}\n\`\`\`\n`;
+      }
+    });
+
+    document.getElementById('convertBtn').addEventListener('click', () => {
+      const html = document.getElementById('input').value.trim();
+      if (!html) { showStatus('Nothing to convert — paste some HTML first.'); return; }
+      try {
+        // Light cleanup: strip script/style tags
+        const cleaned = html
+          .replace(/<script[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[\s\S]*?<\/style>/gi, '');
+        const markdown = turndownService.turndown(cleaned);
+        document.getElementById('output').textContent = markdown;
+        showStatus(`✓ Converted! ${markdown.split('\n').length} lines of Markdown.`);
+      } catch (e) {
+        showStatus('Error: ' + e.message);
+      }
+    });
+
+    function copyOutput() {
+      const text = document.getElementById('output').textContent;
+      if (!text) { showStatus('Nothing to copy yet.'); return; }
+      navigator.clipboard.writeText(text).then(() => showStatus('✓ Copied to clipboard!'));
+    }
+
+    function clearAll() {
+      document.getElementById('input').value = '';
+      document.getElementById('output').textContent = '';
+      document.getElementById('status').classList.remove('show');
+    }
+
+    function showStatus(msg) {
+      const s = document.getElementById('status');
+      s.textContent = msg;
+      s.classList.add('show');
+      setTimeout(() => s.classList.remove('show'), 3000);
+    }
+  </script>
+</body>
+</html>

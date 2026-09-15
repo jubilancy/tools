@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Diagram Editor | tools.eliana.lol</title>
+  <link rel="stylesheet" href="../global.css" />
+  <link rel="icon" type="image/x-icon" href="../favicon.svg" />
+  <style>
+    .tool-layout { display: flex; flex-direction: column; gap: 20px; }
+    .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    label { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 5px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+    #preview { border: 1px solid var(--puny); padding: 16px; min-height: 200px; overflow-x: auto; background: var(--bg); }
+    #preview svg { max-width: 100%; }
+    #error { color: var(--accent); font-size: 0.8rem; min-height: 1.2rem; }
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; }
+    .examples button { font-size: 0.75rem; padding: 3px 8px; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left"><a href="../index.html">home</a> | <a href="../extra.html">extra</a> | <a href="../credits.html">credits</a> | <a href="../changelog.html">logs</a></div>
+    <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+  </nav>
+  <main>
+    <h1>Diagram Editor</h1>
+    <p class="puny">Write Mermaid syntax, get a diagram. Flowcharts, sequences, Gantt, ER, and more.</p>
+    <div class="tool-layout">
+      <div>
+        <label>Examples</label>
+        <div class="examples">
+          <button onclick="setExample('flowchart')">Flowchart</button>
+          <button onclick="setExample('sequence')">Sequence</button>
+          <button onclick="setExample('gantt')">Gantt</button>
+          <button onclick="setExample('er')">ER diagram</button>
+        </div>
+      </div>
+      <div class="two-col">
+        <div>
+          <label>Mermaid syntax</label>
+          <textarea id="mmd-input" rows="16" oninput="debounceRender()" placeholder="flowchart TD&#10;  A --> B"></textarea>
+        </div>
+        <div>
+          <label>Preview</label>
+          <div id="preview"><span class="puny">Diagram appears here…</span></div>
+          <div id="error"></div>
+        </div>
+      </div>
+      <div class="action-bar">
+        <button onclick="downloadSVG()">Download SVG</button>
+      </div>
+    </div>
+  </main>
+  <footer style="margin-top: 4rem; text-align: center" class="puny">© 2026 eliana.lol • <a href="../credits.html">credits</a></footer>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => { const now = html.getAttribute('data-theme'); const next = now === 'dark' ? 'light' : 'dark'; html.setAttribute('data-theme', next); localStorage.setItem('theme', next); toggle.innerText = next === 'dark' ? '[light]' : '[dark]'; };
+
+    mermaid.initialize({ startOnLoad: false, theme: saved === 'dark' ? 'dark' : 'default' });
+
+    const examples = {
+      flowchart: `flowchart TD\n  A[Start] --> B{Is it working?}\n  B -- Yes --> C[Ship it]\n  B -- No --> D[Debug]\n  D --> B`,
+      sequence: `sequenceDiagram\n  Alice->>Bob: Hey, are you there?\n  Bob-->>Alice: Yes, what's up?\n  Alice->>Bob: Can you review my PR?\n  Bob-->>Alice: On it!`,
+      gantt: `gantt\n  title Project Timeline\n  dateFormat YYYY-MM-DD\n  section Design\n  Wireframes :a1, 2024-01-01, 7d\n  Mockups :a2, after a1, 5d\n  section Dev\n  Frontend :b1, after a2, 10d\n  Backend :b2, after a2, 8d`,
+      er: `erDiagram\n  USER ||--o{ POST : writes\n  POST ||--|{ TAG : has\n  USER { string name\n  string email }\n  POST { string title\n  text body }`,
+    };
+
+    window.setExample = (key) => {
+      document.getElementById('mmd-input').value = examples[key];
+      renderDiagram();
+    };
+
+    async function renderDiagram() {
+      const src = document.getElementById('mmd-input').value.trim();
+      const preview = document.getElementById('preview');
+      const err = document.getElementById('error');
+      if (!src) { preview.innerHTML = '<span class="puny">Diagram appears here…</span>'; err.textContent = ''; return; }
+      try {
+        const { svg } = await mermaid.render('mmd-svg', src);
+        preview.innerHTML = svg;
+        err.textContent = '';
+      } catch(e) {
+        err.textContent = 'Parse error: ' + e.message;
+      }
+    }
+
+    let timer;
+    window.debounceRender = () => { clearTimeout(timer); timer = setTimeout(renderDiagram, 400); };
+    window.downloadSVG = () => {
+      const svg = document.querySelector('#preview svg');
+      if (!svg) return;
+      const a = document.createElement('a');
+      a.href = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg.outerHTML);
+      a.download = 'diagram.svg';
+      a.click();
+    };
+
+    setExample('flowchart');
+  </script>
+</body>
+</html>

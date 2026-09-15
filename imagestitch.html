@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>image stitch | tools.eliana.lol</title>
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    /* ── global.css inlined ── */
+    html {
+      font-family: monospace;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 20px;
+      overflow-y: scroll;
+    }
+
+    :root {
+      --bg: #ffffff;
+      --text: #000000;
+      --hover: #eaddca;
+      --puny: grey;
+      --accent: #ff6600;
+      --highlight: #ffff99;
+    }
+
+    html[data-theme='dark'] {
+      --bg: #1c1c1c;
+      --text: #d4d4d4;
+      --hover: #3a3a3a;
+      --puny: #a0a0a0;
+      --accent: #ff9900;
+      --highlight: #444;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme='light']) {
+        --bg: #1c1c1c;
+        --text: #d4d4d4;
+        --hover: #3a3a3a;
+        --puny: #a0a0a0;
+        --accent: #ff9900;
+        --highlight: #444;
+      }
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      margin: 0;
+      padding: 20px 0;
+    }
+
+    main { width: 100%; }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--puny);
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+      min-height: 1.5rem;
+    }
+
+    nav .left { display: flex; gap: 15px; }
+    nav .right { display: flex; align-items: center; gap: 10px; }
+
+    a {
+      color: var(--text);
+      text-decoration: none;
+      border-bottom: 1px dotted var(--text);
+    }
+    a:hover { background-color: var(--hover); }
+
+    #theme-toggle {
+      background: none;
+      border: none;
+      color: inherit;
+      font-family: monospace;
+      cursor: pointer;
+      padding: 0;
+      border-bottom: 1px dotted var(--text);
+    }
+    #theme-toggle:hover { background-color: var(--hover); }
+
+    .puny { color: var(--puny); font-size: 0.75rem; }
+
+    h1 { font-size: 1.2rem; text-transform: uppercase; margin-top: 2rem; }
+
+    .section-title {
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+      display: block;
+      border-bottom: 1px solid var(--puny);
+      margin-top: 2rem;
+      padding-bottom: 5px;
+    }
+
+    textarea, input {
+      width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--puny);
+      font-family: monospace;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    button {
+      font-family: monospace;
+      padding: 5px 10px;
+      margin: 10px 5px 10px 0;
+      cursor: pointer;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--text);
+    }
+    button:hover { background-color: var(--hover); }
+
+    /* ── tool-specific styles ── */
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+      display: block;
+      margin-bottom: 0.4rem;
+    }
+
+    /* Drop zone */
+    #drop-zone {
+      border: 2px dashed var(--puny);
+      padding: 2rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 150ms, background 150ms;
+      font-size: 0.9rem;
+    }
+    #drop-zone:hover,
+    #drop-zone.dragover {
+      border-color: var(--accent);
+      background: var(--highlight);
+    }
+    #drop-zone input[type="file"] { display: none; }
+
+    /* Thumbnail list */
+    #thumb-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .thumb-item {
+      position: relative;
+      width: 80px;
+    }
+    .thumb-item img {
+      width: 80px;
+      height: 60px;
+      object-fit: cover;
+      border: 1px solid var(--puny);
+      display: block;
+    }
+    .thumb-item .remove-btn {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      font-size: 0.65rem;
+      padding: 1px 4px;
+      cursor: pointer;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .thumb-item .remove-btn:hover { background: #cc4400; }
+    .thumb-label {
+      font-size: 0.65rem;
+      color: var(--puny);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Settings grid */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem 2rem;
+    }
+
+    @media (max-width: 520px) {
+      .settings-grid { grid-template-columns: 1fr; }
+    }
+
+    .setting-group { display: flex; flex-direction: column; gap: 0.4rem; }
+
+    select {
+      font-family: monospace;
+      font-size: 0.9rem;
+      padding: 6px 8px;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--puny);
+      cursor: pointer;
+      width: 100%;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      padding: 0;
+      border: none;
+      accent-color: var(--accent);
+    }
+
+    input[type="color"] {
+      width: 40px;
+      height: 30px;
+      padding: 2px;
+      border: 1px solid var(--puny);
+      cursor: pointer;
+      background: var(--bg);
+    }
+
+    .color-row { display: flex; align-items: center; gap: 0.6rem; }
+    .color-row span { font-size: 0.85rem; }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+    button.danger { border-style: dashed; opacity: 0.7; }
+
+    /* Preview */
+    #preview-wrap {
+      display: none;
+    }
+    #preview-wrap.show { display: block; }
+
+    #preview-canvas {
+      max-width: 100%;
+      border: 1px solid var(--puny);
+      display: block;
+      margin-top: 0.5rem;
+    }
+
+    .dim-label {
+      font-size: 0.75rem;
+      color: var(--puny);
+      margin-top: 0.3rem;
+    }
+
+    .download-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    /* Status */
+    .status {
+      padding: 0.75rem 1rem;
+      margin: 0;
+      display: none;
+      font-size: 0.9rem;
+      border-left: 3px solid var(--accent);
+      background-color: var(--highlight);
+    }
+    .status.show { display: block; }
+    .status.error {
+      border-color: #ef4444;
+      background-color: rgba(239,68,68,0.08);
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>image stitch</h1>
+    <p class="puny">combine multiple images into one — vertically or horizontally. everything happens on your device, nothing is uploaded.</p>
+
+    <div class="container">
+
+      <!-- 1. Upload -->
+      <div>
+        <span class="section-title">1. add images</span>
+        <div id="drop-zone">
+          <div>drag &amp; drop images here, or <u>click to select</u></div>
+          <div class="puny" style="margin-top:0.4rem">jpg · png · webp · gif · bmp &nbsp;|&nbsp; up to 20 images</div>
+          <input type="file" id="file-input" accept="image/*" multiple />
+        </div>
+        <div id="thumb-list"></div>
+      </div>
+
+      <!-- 2. Settings -->
+      <div>
+        <span class="section-title">2. settings</span>
+        <div class="settings-grid">
+
+          <div class="setting-group">
+            <label class="input-label" for="direction">direction</label>
+            <select id="direction">
+              <option value="vertical">vertical (stack top→bottom)</option>
+              <option value="horizontal">horizontal (stack left→right)</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label class="input-label" for="format">output format</label>
+            <select id="format">
+              <option value="jpeg">jpeg (smaller file)</option>
+              <option value="png">png (lossless)</option>
+              <option value="webp">webp (best compression)</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label class="input-label">quality: <span id="quality-val">0.85</span></label>
+            <input type="range" id="quality" min="0.1" max="1" step="0.05" value="0.85" />
+            <div class="puny">only applies to jpeg / webp</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="input-label">gap between images: <span id="margin-val">0</span>px</label>
+            <input type="range" id="margin" min="0" max="40" step="2" value="0" />
+          </div>
+
+          <div class="setting-group">
+            <label class="input-label">gap / background color</label>
+            <div class="color-row">
+              <input type="color" id="bg-color" value="#ffffff" />
+              <span id="bg-hex">#ffffff</span>
+              <select id="bg-presets" style="flex:1">
+                <option value="#ffffff">white</option>
+                <option value="#000000">black</option>
+                <option value="#f0f0f0">light gray</option>
+                <option value="#888888">gray</option>
+                <option value="#333333">dark gray</option>
+                <option value="transparent">transparent (png)</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 3. Process -->
+      <div>
+        <span class="section-title">3. stitch</span>
+        <div class="button-row">
+          <button class="primary" id="stitch-btn">[ stitch images ]</button>
+          <button class="danger" id="clear-btn">[ clear all ]</button>
+        </div>
+        <div class="status" id="status"></div>
+      </div>
+
+      <!-- 4. Preview + Download -->
+      <div id="preview-wrap">
+        <span class="section-title">4. preview &amp; download</span>
+        <canvas id="preview-canvas"></canvas>
+        <div class="dim-label" id="dim-label"></div>
+        <div class="download-grid" id="download-btns"></div>
+      </div>
+
+      <div class="info-box">
+        <strong>tip:</strong> drag images into the drop zone in the order you want them stitched.
+        use png + transparent background for overlays. nothing leaves your browser.
+      </div>
+
+    </div><!-- .container -->
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool Logic -->
+  <script>
+    // ── State ──
+    const images = []; // { file, img, name }
+
+    // ── DOM refs ──
+    const dropZone   = document.getElementById('drop-zone');
+    const fileInput  = document.getElementById('file-input');
+    const thumbList  = document.getElementById('thumb-list');
+    const stitchBtn  = document.getElementById('stitch-btn');
+    const clearBtn   = document.getElementById('clear-btn');
+    const statusEl   = document.getElementById('status');
+    const previewWrap= document.getElementById('preview-wrap');
+    const canvas     = document.getElementById('preview-canvas');
+    const dimLabel   = document.getElementById('dim-label');
+    const dlBtns     = document.getElementById('download-btns');
+
+    const dirSel     = document.getElementById('direction');
+    const fmtSel     = document.getElementById('format');
+    const qualRange  = document.getElementById('quality');
+    const qualVal    = document.getElementById('quality-val');
+    const marginRange= document.getElementById('margin');
+    const marginVal  = document.getElementById('margin-val');
+    const bgColor    = document.getElementById('bg-color');
+    const bgHex      = document.getElementById('bg-hex');
+    const bgPresets  = document.getElementById('bg-presets');
+
+    qualRange.addEventListener('input', () => qualVal.textContent = parseFloat(qualRange.value).toFixed(2));
+    marginRange.addEventListener('input', () => marginVal.textContent = marginRange.value);
+    bgColor.addEventListener('input', () => {
+      bgHex.textContent = bgColor.value;
+      bgPresets.value = bgColor.value;
+    });
+    bgPresets.addEventListener('change', () => {
+      if (bgPresets.value !== 'transparent') {
+        bgColor.value = bgPresets.value;
+        bgHex.textContent = bgPresets.value;
+      } else {
+        bgHex.textContent = 'transparent';
+      }
+    });
+
+    // ── Drop zone ──
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      addFiles(Array.from(e.dataTransfer.files));
+    });
+    fileInput.addEventListener('change', () => addFiles(Array.from(fileInput.files)));
+
+    function addFiles(files) {
+      const imageFiles = files.filter(f => f.type.startsWith('image/'));
+      if (images.length + imageFiles.length > 20) {
+        showStatus('max 20 images allowed', 'error'); return;
+      }
+      let pending = imageFiles.length;
+      if (!pending) return;
+      imageFiles.forEach(file => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          images.push({ file, img, name: file.name, url });
+          renderThumbs();
+          pending--;
+        };
+        img.src = url;
+      });
+      fileInput.value = '';
+    }
+
+    function renderThumbs() {
+      thumbList.innerHTML = '';
+      images.forEach((item, i) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'thumb-item';
+
+        const img = document.createElement('img');
+        img.src = item.url;
+        img.alt = item.name;
+
+        const rm = document.createElement('button');
+        rm.className = 'remove-btn';
+        rm.textContent = '✕';
+        rm.title = 'remove';
+        rm.onclick = (e) => { e.stopPropagation(); images.splice(i, 1); renderThumbs(); };
+
+        const lbl = document.createElement('div');
+        lbl.className = 'thumb-label';
+        lbl.textContent = item.name;
+
+        wrap.appendChild(img);
+        wrap.appendChild(rm);
+        wrap.appendChild(lbl);
+        thumbList.appendChild(wrap);
+      });
+    }
+
+    // ── Clear ──
+    clearBtn.addEventListener('click', () => {
+      images.length = 0;
+      renderThumbs();
+      previewWrap.classList.remove('show');
+      dlBtns.innerHTML = '';
+    });
+
+    // ── Stitch ──
+    stitchBtn.addEventListener('click', stitch);
+
+    function stitch() {
+      if (images.length < 2) { showStatus('add at least 2 images', 'error'); return; }
+
+      const dir    = dirSel.value;
+      const gap    = parseInt(marginRange.value, 10);
+      const bg     = bgPresets.value === 'transparent' ? null : bgColor.value;
+      const fmt    = fmtSel.value;
+      const qual   = parseFloat(qualRange.value);
+
+      const imgs = images.map(i => i.img);
+
+      let totalW, totalH;
+      if (dir === 'vertical') {
+        totalW = Math.max(...imgs.map(i => i.naturalWidth));
+        totalH = imgs.reduce((s, i) => s + i.naturalHeight, 0) + gap * (imgs.length - 1);
+      } else {
+        totalW = imgs.reduce((s, i) => s + i.naturalWidth, 0) + gap * (imgs.length - 1);
+        totalH = Math.max(...imgs.map(i => i.naturalHeight));
+      }
+
+      canvas.width  = totalW;
+      canvas.height = totalH;
+
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, totalW, totalH);
+
+      if (bg) {
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, totalW, totalH);
+      }
+
+      let offset = 0;
+      imgs.forEach(img => {
+        if (dir === 'vertical') {
+          const x = Math.floor((totalW - img.naturalWidth) / 2);
+          ctx.drawImage(img, x, offset, img.naturalWidth, img.naturalHeight);
+          offset += img.naturalHeight + gap;
+        } else {
+          const y = Math.floor((totalH - img.naturalHeight) / 2);
+          ctx.drawImage(img, offset, y, img.naturalWidth, img.naturalHeight);
+          offset += img.naturalWidth + gap;
+        }
+      });
+
+      dimLabel.textContent = `${totalW} × ${totalH}px`;
+      previewWrap.classList.add('show');
+      buildDownloadButtons(fmt, qual, totalW, totalH);
+      showStatus(`stitched ${imgs.length} images → ${totalW}×${totalH}px`);
+    }
+
+    function buildDownloadButtons(fmt, qual, w, h) {
+      dlBtns.innerHTML = '';
+      const mimeMap = { jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+      const mime = mimeMap[fmt];
+
+      const sizes = [
+        { label: `[ download original  ${w}×${h} ]`, scale: 1 },
+        { label: '[ download hd  1920px wide ]',     scale: 1920 / w },
+        { label: '[ download web  1280px wide ]',    scale: 1280 / w },
+      ].filter(s => s.scale <= 1 || s.scale > 1); // keep all; large originals OK
+
+      sizes.forEach(({ label, scale }) => {
+        const btn = document.createElement('button');
+        btn.textContent = label;
+        btn.onclick = () => downloadAt(scale, mime, fmt, qual);
+        dlBtns.appendChild(btn);
+      });
+    }
+
+    function downloadAt(scale, mime, ext, qual) {
+      const oc = document.createElement('canvas');
+      oc.width  = Math.round(canvas.width  * scale);
+      oc.height = Math.round(canvas.height * scale);
+      const oc2 = oc.getContext('2d');
+      oc2.drawImage(canvas, 0, 0, oc.width, oc.height);
+      const url = oc.toDataURL(mime, qual);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `stitched.${ext}`;
+      a.click();
+    }
+
+    // ── Status helper ──
+    function showStatus(msg, type = 'success') {
+      statusEl.textContent = msg;
+      statusEl.className = `status show ${type === 'error' ? 'error' : ''}`;
+      if (type !== 'error') {
+        setTimeout(() => statusEl.classList.remove('show'), 3000);
+      }
+    }
+  </script>
+</body>
+</html>

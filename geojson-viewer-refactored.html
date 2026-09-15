@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GeoJSON Viewer | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    button {
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      min-height: 300px;
+      resize: vertical;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    #canvas {
+      width: 100%;
+      height: 400px;
+      background-color: var(--bg);
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+    }
+
+    .info-panel {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+    }
+
+    .info-panel h3 {
+      margin-bottom: 0.75rem;
+      color: var(--accent);
+      font-size: 1rem;
+    }
+
+    .feature-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .feature-list li {
+      padding: 0.5rem 0.75rem;
+      background-color: var(--bg);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    @media (max-width: 600px) {
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>GeoJSON Viewer</h1>
+    <p class="puny">Paste GeoJSON data to render it on a canvas and inspect feature properties.</p>
+
+    <div class="container">
+
+      <!-- EDITOR + CANVAS -->
+      <div class="two-col">
+        <div class="input-group">
+          <span class="input-label">GeoJSON Data</span>
+          <textarea id="geojsonInput" placeholder='{"type":"FeatureCollection","features":[...]}'>{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-74.006, 40.7128]
+      },
+      "properties": {
+        "name": "New York",
+        "population": 8336817
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-118.2437, 34.0522]
+      },
+      "properties": {
+        "name": "Los Angeles",
+        "population": 3979576
+      }
+    }
+  ]
+}</textarea>
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">Canvas Preview</span>
+          <canvas id="canvas"></canvas>
+        </div>
+      </div>
+
+      <button class="primary" id="renderBtn">Render GeoJSON</button>
+
+      <!-- INFO -->
+      <div class="info-panel" id="info"></div>
+
+      <div class="info-box">
+        <strong>GeoJSON Viewer:</strong> Supports Point, LineString, and Polygon geometries. Coordinates are auto-scaled to fit the canvas based on the bounding box of all features.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    &copy; 2026 eliana.lol &bull; <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- GeoJSON Viewer Logic -->
+  <script>
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status show ' + (type || 'error');
+      setTimeout(() => status.classList.remove('show'), 3000);
+    }
+
+    function getAccentColor() {
+      return getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#4facfe';
+    }
+
+    function renderGeoJSON() {
+      try {
+        const geojsonInput = document.getElementById('geojsonInput').value;
+        const geojson = JSON.parse(geojsonInput);
+
+        const canvas = document.getElementById('canvas');
+        // Match canvas internal resolution to displayed size
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+
+        const ctx = canvas.getContext('2d');
+        const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#ffffff';
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Find bounds
+        let minLng = 180,
+          maxLng = -180,
+          minLat = 90,
+          maxLat = -90;
+        const features = geojson.features || [];
+
+        features.forEach((feature) => {
+          const coords = getCoordinates(feature.geometry);
+          coords.forEach((coord) => {
+            minLng = Math.min(minLng, coord[0]);
+            maxLng = Math.max(maxLng, coord[0]);
+            minLat = Math.min(minLat, coord[1]);
+            maxLat = Math.max(maxLat, coord[1]);
+          });
+        });
+
+        // Draw features
+        const accentColor = getAccentColor();
+        ctx.strokeStyle = accentColor;
+        ctx.fillStyle = accentColor + '4D'; // ~30% opacity
+        ctx.lineWidth = 2;
+
+        features.forEach((feature) => {
+          drawGeometry(ctx, feature.geometry, minLng, maxLng, minLat, maxLat, canvas);
+        });
+
+        // Display info
+        let infoHtml = '<h3>GeoJSON Information</h3>';
+        infoHtml += '<ul class="feature-list">';
+        features.forEach((feature, idx) => {
+          const props = feature.properties || {};
+          const name = props.name || `Feature ${idx + 1}`;
+          const type = feature.geometry.type;
+          infoHtml += `<li><strong>${escapeHtml(name)}</strong> (${type})</li>`;
+        });
+        infoHtml += '</ul>';
+        document.getElementById('info').innerHTML = infoHtml;
+      } catch (e) {
+        showStatus('Error: ' + e.message, 'error');
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = String(text);
+      return div.innerHTML;
+    }
+
+    function getCoordinates(geometry) {
+      if (geometry.type === 'Point') {
+        return [geometry.coordinates];
+      } else if (geometry.type === 'LineString') {
+        return geometry.coordinates;
+      } else if (geometry.type === 'Polygon') {
+        return geometry.coordinates[0];
+      }
+      return [];
+    }
+
+    function drawGeometry(ctx, geometry, minLng, maxLng, minLat, maxLat, canvas) {
+      const lngRange = maxLng - minLng || 1;
+      const latRange = maxLat - minLat || 1;
+
+      function project(lng, lat) {
+        const x = ((lng - minLng) / lngRange) * canvas.width;
+        const y = ((maxLat - lat) / latRange) * canvas.height;
+        return [x, y];
+      }
+
+      if (geometry.type === 'Point') {
+        const [x, y] = project(geometry.coordinates[0], geometry.coordinates[1]);
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else if (geometry.type === 'LineString') {
+        ctx.beginPath();
+        geometry.coordinates.forEach((coord, idx) => {
+          const [x, y] = project(coord[0], coord[1]);
+          if (idx === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      } else if (geometry.type === 'Polygon') {
+        ctx.beginPath();
+        geometry.coordinates[0].forEach((coord, idx) => {
+          const [x, y] = project(coord[0], coord[1]);
+          if (idx === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+
+    document.getElementById('renderBtn').addEventListener('click', renderGeoJSON);
+
+    // Initial render
+    renderGeoJSON();
+  </script>
+</body>
+</html>

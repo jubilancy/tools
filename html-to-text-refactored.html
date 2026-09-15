@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HTML to Text | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea,
+    input[type="text"],
+    input[type="file"] {
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 200px;
+      resize: vertical;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .mode-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--puny);
+      padding-bottom: 1rem;
+    }
+
+    .mode-tabs button {
+      min-width: auto;
+      border-style: dashed;
+    }
+
+    .mode-tabs button.active {
+      border-style: solid;
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .mode-panel {
+      display: none;
+    }
+
+    .mode-panel.active {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .options-panel {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      gap: 0.5rem;
+    }
+
+    input[type="checkbox"] {
+      cursor: pointer;
+      width: auto;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .stats {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px dashed var(--puny);
+    }
+
+    .stat-row:last-child {
+      border-bottom: none;
+    }
+
+    .stat-value {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>HTML to Text</h1>
+    <p class="puny">Convert HTML to plain text from paste, URL, or file. Control which elements to preserve.</p>
+
+    <div class="container">
+
+      <!-- OPTIONS -->
+      <div class="options-panel">
+        <span class="input-label" style="color: var(--accent); margin-bottom: 0.75rem; display: block;">Conversion Options</span>
+        <div class="checkbox-group">
+          <input type="checkbox" id="removeScripts" checked />
+          <label for="removeScripts">Remove scripts & styles</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="preserveLinks" checked />
+          <label for="preserveLinks">Preserve links as [text](url)</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="preserveHeadings" checked />
+          <label for="preserveHeadings">Preserve headings with #</label>
+        </div>
+      </div>
+
+      <!-- MODE TABS -->
+      <div class="mode-tabs" id="modeTabs">
+        <button data-mode="paste" class="active">Paste HTML</button>
+        <button data-mode="url">Fetch from URL</button>
+        <button data-mode="file">Upload File</button>
+      </div>
+
+      <!-- PASTE MODE -->
+      <div class="mode-panel active" id="panel-paste">
+        <div class="two-col">
+          <div class="input-group">
+            <span class="input-label">HTML Input</span>
+            <textarea id="htmlInput" placeholder="Paste HTML code here..."></textarea>
+          </div>
+          <div class="input-group">
+            <span class="input-label">Text Output</span>
+            <textarea id="pasteOutput" readonly></textarea>
+          </div>
+        </div>
+        <div class="button-group">
+          <button class="primary" id="convertPasteBtn">Convert</button>
+          <button id="copyPasteBtn">Copy</button>
+          <button id="downloadPasteBtn">Download</button>
+        </div>
+      </div>
+
+      <!-- URL MODE -->
+      <div class="mode-panel hidden" id="panel-url">
+        <div class="input-group">
+          <span class="input-label">URL</span>
+          <input type="text" id="urlInput" placeholder="https://example.com" />
+        </div>
+        <div class="two-col">
+          <div class="input-group">
+            <span class="input-label">Fetched HTML</span>
+            <textarea id="urlFetched" readonly placeholder="HTML content from URL will appear here..."></textarea>
+          </div>
+          <div class="input-group">
+            <span class="input-label">Text Output</span>
+            <textarea id="urlOutput" readonly></textarea>
+          </div>
+        </div>
+        <div class="button-group">
+          <button class="primary" id="fetchUrlBtn">Fetch & Convert</button>
+          <button id="copyUrlBtn">Copy</button>
+          <button id="downloadUrlBtn">Download</button>
+        </div>
+      </div>
+
+      <!-- FILE MODE -->
+      <div class="mode-panel hidden" id="panel-file">
+        <div class="input-group">
+          <span class="input-label">Upload HTML File</span>
+          <button id="filePickBtn">Choose File</button>
+          <input type="file" id="fileInput" accept=".html,.htm" />
+        </div>
+        <div class="two-col">
+          <div class="input-group">
+            <span class="input-label">File HTML</span>
+            <textarea id="fileFetched" readonly placeholder="HTML content from file will appear here..."></textarea>
+          </div>
+          <div class="input-group">
+            <span class="input-label">Text Output</span>
+            <textarea id="fileOutput" readonly></textarea>
+          </div>
+        </div>
+        <div class="button-group">
+          <button class="primary" id="convertFileBtn">Convert</button>
+          <button id="copyFileBtn">Copy</button>
+          <button id="downloadFileBtn">Download</button>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats" id="stats">
+        <div class="stat-row">
+          <span>Input Characters</span>
+          <span class="stat-value" id="inputChars">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Output Characters</span>
+          <span class="stat-value" id="outputChars">0</span>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>HTML to Text Converter:</strong> Paste HTML, provide a URL, or upload a file. The tool strips HTML tags and optionally preserves links, headings, and structure.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    &copy; 2026 eliana.lol &bull; <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- HTML to Text Logic -->
+  <script>
+    let currentMode = 'paste';
+    const modeTabs = document.getElementById('modeTabs');
+    const panels = {
+      paste: document.getElementById('panel-paste'),
+      url: document.getElementById('panel-url'),
+      file: document.getElementById('panel-file')
+    };
+
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status show ' + (type || 'success');
+      setTimeout(() => status.classList.remove('show'), 3000);
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      Object.keys(panels).forEach((key) => {
+        panels[key].classList.toggle('hidden', key !== mode);
+      });
+      Array.from(modeTabs.querySelectorAll('button')).forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+    }
+
+    modeTabs.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-mode]');
+      if (btn) setMode(btn.dataset.mode);
+    });
+
+    function htmlToPlainText(htmlText) {
+      const removeScripts = document.getElementById('removeScripts').checked;
+      const preserveLinks = document.getElementById('preserveLinks').checked;
+      const preserveHeadings = document.getElementById('preserveHeadings').checked;
+
+      let text = htmlText;
+
+      // Remove script and style tags
+      if (removeScripts) {
+        text = text.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+        text = text.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+      }
+
+      // Convert links
+      if (preserveLinks) {
+        text = text.replace(/<a\s+href=["']([^"']+)["']>([^<]+)<\/a>/gi, '$2 ($1)');
+      }
+
+      // Convert headings
+      if (preserveHeadings) {
+        text = text.replace(/<h1[^>]*>([^<]+)<\/h1>/gi, '\n# $1\n');
+        text = text.replace(/<h2[^>]*>([^<]+)<\/h2>/gi, '\n## $1\n');
+        text = text.replace(/<h3[^>]*>([^<]+)<\/h3>/gi, '\n### $1\n');
+      }
+
+      // Remove remaining tags
+      text = text.replace(/<br\s*\/?>/gi, '\n');
+      text = text.replace(/<p[^>]*>/gi, '');
+      text = text.replace(/<\/p>/gi, '\n');
+      text = text.replace(/<[^>]+>/g, '');
+
+      // Decode HTML entities
+      const textarea = document.createElement('textarea');
+      textarea.innerHTML = text;
+      text = textarea.value;
+
+      // Clean up whitespace
+      text = text.replace(/\n\n+/g, '\n\n').trim();
+
+      return text;
+    }
+
+    function updateStats(inputText, outputText) {
+      document.getElementById('inputChars').textContent = inputText.length;
+      document.getElementById('outputChars').textContent = outputText.length;
+    }
+
+    // PASTE MODE
+    document.getElementById('convertPasteBtn').addEventListener('click', () => {
+      const html = document.getElementById('htmlInput').value;
+      if (!html) {
+        showStatus('No HTML to convert', 'error');
+        return;
+      }
+      const text = htmlToPlainText(html);
+      document.getElementById('pasteOutput').value = text;
+      updateStats(html, text);
+      showStatus('Converted', 'success');
+    });
+
+    document.getElementById('copyPasteBtn').addEventListener('click', () => {
+      const text = document.getElementById('pasteOutput').value;
+      if (!text) {
+        showStatus('Nothing to copy', 'error');
+        return;
+      }
+      navigator.clipboard.writeText(text);
+      showStatus('Copied', 'success');
+    });
+
+    document.getElementById('downloadPasteBtn').addEventListener('click', () => {
+      const text = document.getElementById('pasteOutput').value;
+      if (!text) {
+        showStatus('Nothing to download', 'error');
+        return;
+      }
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'converted.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+      showStatus('Downloaded converted.txt', 'success');
+    });
+
+    // URL MODE
+    document.getElementById('fetchUrlBtn').addEventListener('click', async () => {
+      const url = document.getElementById('urlInput').value;
+      if (!url) {
+        showStatus('Enter a URL', 'error');
+        return;
+      }
+      try {
+        const response = await fetch(url, { mode: 'cors' });
+        if (!response.ok) throw new Error('Failed to fetch');
+        const htmlText = await response.text();
+        document.getElementById('urlFetched').value = htmlText;
+        const text = htmlToPlainText(htmlText);
+        document.getElementById('urlOutput').value = text;
+        updateStats(htmlText, text);
+        showStatus('Fetched and converted', 'success');
+      } catch (err) {
+        showStatus('Error fetching URL: ' + err.message, 'error');
+      }
+    });
+
+    document.getElementById('copyUrlBtn').addEventListener('click', () => {
+      const text = document.getElementById('urlOutput').value;
+      if (!text) {
+        showStatus('Nothing to copy', 'error');
+        return;
+      }
+      navigator.clipboard.writeText(text);
+      showStatus('Copied', 'success');
+    });
+
+    document.getElementById('downloadUrlBtn').addEventListener('click', () => {
+      const text = document.getElementById('urlOutput').value;
+      if (!text) {
+        showStatus('Nothing to download', 'error');
+        return;
+      }
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'converted.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+      showStatus('Downloaded converted.txt', 'success');
+    });
+
+    // FILE MODE
+    document.getElementById('filePickBtn').addEventListener('click', () => {
+      document.getElementById('fileInput').click();
+    });
+
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const htmlText = evt.target.result;
+        document.getElementById('fileFetched').value = htmlText;
+        showStatus('File loaded. Click Convert to process.', 'success');
+      };
+      reader.onerror = () => showStatus('Error reading file', 'error');
+      reader.readAsText(file);
+    });
+
+    document.getElementById('convertFileBtn').addEventListener('click', () => {
+      const htmlText = document.getElementById('fileFetched').value;
+      if (!htmlText) {
+        showStatus('Upload a file first', 'error');
+        return;
+      }
+      const text = htmlToPlainText(htmlText);
+      document.getElementById('fileOutput').value = text;
+      updateStats(htmlText, text);
+      showStatus('Converted', 'success');
+    });
+
+    document.getElementById('copyFileBtn').addEventListener('click', () => {
+      const text = document.getElementById('fileOutput').value;
+      if (!text) {
+        showStatus('Nothing to copy', 'error');
+        return;
+      }
+      navigator.clipboard.writeText(text);
+      showStatus('Copied', 'success');
+    });
+
+    document.getElementById('downloadFileBtn').addEventListener('click', () => {
+      const text = document.getElementById('fileOutput').value;
+      if (!text) {
+        showStatus('Nothing to download', 'error');
+        return;
+      }
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'converted.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+      showStatus('Downloaded converted.txt', 'success');
+    });
+  </script>
+</body>
+</html>

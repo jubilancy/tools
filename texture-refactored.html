@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SVG Texture Generator | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .controls-panel {
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      padding: 1.25rem;
+      height: fit-content;
+      position: sticky;
+      top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .preview-panel {
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      padding: 1.5rem;
+      min-height: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .control-group label {
+      display: block;
+      color: var(--text);
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--puny);
+    }
+
+    .pattern-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+    }
+
+    .pattern-btn,
+    .shape-btn {
+      aspect-ratio: 1;
+      border: 1px dashed var(--puny);
+      border-radius: 4px;
+      background: var(--bg);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 150ms;
+      font-size: 1.1rem;
+      color: var(--text);
+    }
+
+    .pattern-btn:hover,
+    .shape-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .pattern-btn.active,
+    .shape-btn.active {
+      border-style: solid;
+      border-color: var(--accent);
+      background-color: var(--accent);
+      color: var(--bg);
+    }
+
+    .tone-options {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+
+    .tone-btn {
+      padding: 0.5rem;
+      border: 1px dashed var(--puny);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-family: monospace;
+      transition: all 150ms;
+    }
+
+    .tone-btn.active {
+      border-style: solid;
+      border-color: var(--accent);
+      background-color: var(--accent);
+      color: var(--bg);
+    }
+
+    .shape-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.4rem;
+    }
+
+    input[type="color"] {
+      width: 100%;
+      height: 36px;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      cursor: pointer;
+      background: none;
+      padding: 2px;
+    }
+
+    select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: monospace;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .slider-value {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    .slider-value label {
+      margin-bottom: 0;
+    }
+
+    .value-display {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .preview-area {
+      flex: 1;
+      position: relative;
+      border: 1px dashed var(--puny);
+      border-radius: 4px;
+      overflow: hidden;
+      min-height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--bg);
+    }
+
+    #texturePreview {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 4px;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+      .layout-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .controls-panel {
+        position: static;
+      }
+
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>SVG Texture Generator</h1>
+    <p class="puny">Generate procedural SVG texture patterns using noise algorithms — Perlin-like, pixel, turbulence, and fractal.</p>
+
+    <div class="layout-grid">
+
+      <!-- CONTROLS -->
+      <div class="controls-panel">
+        <div class="control-group">
+          <label>Noise Pattern</label>
+          <div class="pattern-grid" id="patternGrid">
+            <button class="pattern-btn active" data-pattern="perlin">🌊</button>
+            <button class="pattern-btn" data-pattern="pixels">⚡</button>
+            <button class="pattern-btn" data-pattern="turbulence">💨</button>
+            <button class="pattern-btn" data-pattern="fractal">❄️</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Tone</label>
+          <div class="tone-options">
+            <button class="tone-btn" data-tone="mono">Mono</button>
+            <button class="tone-btn active" data-tone="duo">Duo</button>
+            <button class="tone-btn" data-tone="multi">Multi</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Color</label>
+          <input type="color" id="primaryColor" value="#333333" />
+          <div style="margin-top: 0.5rem;">
+            <input type="color" id="secondaryColor" value="#ffffff" />
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="slider-value">
+            <label>Size</label>
+            <span class="value-display" id="sizeValue">50px</span>
+          </div>
+          <input type="range" id="sizeSlider" min="10" max="200" value="50" />
+        </div>
+
+        <div class="control-group">
+          <div class="slider-value">
+            <label>Density</label>
+            <span class="value-display" id="densityValue">50%</span>
+          </div>
+          <input type="range" id="densitySlider" min="10" max="100" value="50" />
+        </div>
+
+        <div class="control-group">
+          <label>Shape</label>
+          <div class="shape-grid">
+            <button class="shape-btn active" data-shape="square">⬜</button>
+            <button class="shape-btn" data-shape="circle">●</button>
+            <button class="shape-btn" data-shape="triangle">△</button>
+            <button class="shape-btn" data-shape="diamond">◆</button>
+            <button class="shape-btn" data-shape="star">★</button>
+            <button class="shape-btn" data-shape="plus">+</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="slider-value">
+            <label>Opacity</label>
+            <span class="value-display" id="opacityValue">80%</span>
+          </div>
+          <input type="range" id="opacitySlider" min="10" max="100" value="80" />
+        </div>
+
+        <div class="control-group">
+          <label>Blend Mode</label>
+          <select id="blendMode">
+            <option value="normal">Normal</option>
+            <option value="multiply">Multiply</option>
+            <option value="screen">Screen</option>
+            <option value="overlay">Overlay</option>
+            <option value="soft-light">Soft Light</option>
+            <option value="hard-light">Hard Light</option>
+            <option value="color-dodge">Color Dodge</option>
+            <option value="color-burn">Color Burn</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <div class="slider-value">
+            <label>Canvas Size</label>
+            <span class="value-display" id="canvasSizeValue">800px</span>
+          </div>
+          <input type="range" id="canvasSizeSlider" min="200" max="2000" value="800" />
+        </div>
+      </div>
+
+      <!-- PREVIEW -->
+      <div class="preview-panel">
+        <h2 style="margin-top: 0;">Preview</h2>
+        <div class="preview-area">
+          <svg id="texturePreview" width="600" height="400" viewBox="0 0 600 400">
+            <!-- Generated pattern will be inserted here -->
+          </svg>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="generateBtn">🎲 Generate New</button>
+          <button id="downloadBtn">⬇️ Download SVG</button>
+          <button id="copyBtn">📋 Copy SVG</button>
+        </div>
+
+        <div class="info-box">
+          <strong>SVG Texture Generator:</strong> Choose a noise pattern (Perlin-like sine/cosine blend, random pixels, turbulence, or multi-octave fractal), pick colors/tone, and adjust density, size, opacity, and blend mode. All output is pure SVG — download or copy the markup directly.
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    &copy; 2026 eliana.lol &bull; <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- SVG Texture Generator Logic (all 4 noise algorithms preserved exactly) -->
+  <script>
+    // Configuration object storing all current settings
+    const config = {
+      pattern: 'perlin',
+      tone: 'duo',
+      primaryColor: '#333333',
+      secondaryColor: '#ffffff',
+      size: 50,
+      density: 50,
+      shape: 'square',
+      opacity: 80,
+      blendMode: 'normal',
+      canvasSize: 800
+    };
+
+    // Initialize the texture generator
+    function init() {
+      setupEventListeners();
+      generateTexture();
+    }
+
+    // Set up all event listeners
+    function setupEventListeners() {
+      // Pattern buttons
+      document.querySelectorAll('.pattern-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.pattern-btn').forEach((b) => b.classList.remove('active'));
+          e.target.classList.add('active');
+          config.pattern = e.target.dataset.pattern;
+          generateTexture();
+        });
+      });
+
+      // Tone buttons
+      document.querySelectorAll('.tone-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.tone-btn').forEach((b) => b.classList.remove('active'));
+          e.target.classList.add('active');
+          config.tone = e.target.dataset.tone;
+          generateTexture();
+        });
+      });
+
+      // Shape buttons
+      document.querySelectorAll('.shape-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.shape-btn').forEach((b) => b.classList.remove('active'));
+          e.target.classList.add('active');
+          config.shape = e.target.dataset.shape;
+          generateTexture();
+        });
+      });
+
+      // Color inputs
+      document.getElementById('primaryColor').addEventListener('change', (e) => {
+        config.primaryColor = e.target.value;
+        generateTexture();
+      });
+
+      document.getElementById('secondaryColor').addEventListener('change', (e) => {
+        config.secondaryColor = e.target.value;
+        generateTexture();
+      });
+
+      // Sliders
+      setupSlider('sizeSlider', 'sizeValue', 'size', 'px');
+      setupSlider('densitySlider', 'densityValue', 'density', '%');
+      setupSlider('opacitySlider', 'opacityValue', 'opacity', '%');
+      setupSlider('canvasSizeSlider', 'canvasSizeValue', 'canvasSize', 'px');
+
+      // Blend mode
+      document.getElementById('blendMode').addEventListener('change', (e) => {
+        config.blendMode = e.target.value;
+        generateTexture();
+      });
+
+      // Action buttons
+      document.getElementById('generateBtn').addEventListener('click', generateTexture);
+      document.getElementById('downloadBtn').addEventListener('click', downloadSVG);
+      document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
+    }
+
+    function setupSlider(sliderId, valueId, configKey, unit) {
+      const slider = document.getElementById(sliderId);
+      const valueDisplay = document.getElementById(valueId);
+
+      slider.addEventListener('input', (e) => {
+        const value = parseInt(e.target.value);
+        config[configKey] = value;
+        valueDisplay.textContent = value + unit;
+        generateTexture();
+      });
+    }
+
+    // Generate the SVG texture based on current configuration
+    function generateTexture() {
+      const svg = document.getElementById('texturePreview');
+      svg.setAttribute('width', config.canvasSize);
+      svg.setAttribute('height', config.canvasSize);
+      svg.setAttribute('viewBox', `0 0 ${config.canvasSize} ${config.canvasSize}`);
+
+      let svgContent = '';
+
+      switch (config.pattern) {
+        case 'perlin':
+          svgContent = generatePerlinNoise();
+          break;
+        case 'pixels':
+          svgContent = generatePixelNoise();
+          break;
+        case 'turbulence':
+          svgContent = generateTurbulence();
+          break;
+        case 'fractal':
+          svgContent = generateFractalNoise();
+          break;
+        default:
+          svgContent = generatePerlinNoise();
+      }
+
+      svg.innerHTML = svgContent;
+    }
+
+    function getColors() {
+      if (config.tone === 'mono') {
+        return [config.primaryColor];
+      } else if (config.tone === 'duo') {
+        return [config.primaryColor, config.secondaryColor];
+      } else {
+        // Multi-tone: generate rainbow colors
+        return ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
+      }
+    }
+
+    function getRandomColor(colors) {
+      return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    // Simplified noise function for creating a 2D noise pattern
+    function noise2D(x, y, scale = 1) {
+      let value = 0;
+      let amplitude = 1;
+      let frequency = scale;
+
+      for (let i = 0; i < 4; i++) {
+        value += Math.sin(x * frequency) * Math.cos(y * frequency) * amplitude;
+        frequency *= 2;
+        amplitude *= 0.5;
+      }
+
+      return (value + 1) / 2; // Normalize to 0-1
+    }
+
+    function generatePerlinNoise() {
+      const colors = getColors();
+      let elements = '';
+      const pixelSize = Math.max(1, config.size / 10);
+      const noiseScale = 0.01;
+      const opacity = config.opacity / 100;
+      const fillThreshold = config.density / 100;
+
+      for (let x = 0; x < config.canvasSize; x += pixelSize) {
+        for (let y = 0; y < config.canvasSize; y += pixelSize) {
+          const noiseValue = noise2D(x * noiseScale, y * noiseScale, config.size * 0.01);
+
+          if (noiseValue > 1 - fillThreshold) {
+            const colorIntensity = Math.floor(noiseValue * colors.length);
+            const color = colors[Math.min(colorIntensity, colors.length - 1)];
+
+            if (config.shape === 'circle') {
+              elements += `<circle cx="${x + pixelSize / 2}" cy="${y + pixelSize / 2}" r="${pixelSize / 2}" fill="${color}" opacity="${opacity}" mix-blend-mode="${config.blendMode}"/>`;
+            } else {
+              elements += `<rect x="${x}" y="${y}" width="${pixelSize}" height="${pixelSize}" fill="${color}" opacity="${opacity}" mix-blend-mode="${config.blendMode}"/>`;
+            }
+          }
+        }
+      }
+
+      return elements;
+    }
+
+    function generatePixelNoise() {
+      const colors = getColors();
+      let elements = '';
+      const pixelSize = Math.max(1, config.size / 10);
+      const opacity = config.opacity / 100;
+      const density = config.density / 100;
+
+      // Calculate how many pixels to fill based on density
+      const totalPixels = Math.floor(config.canvasSize / pixelSize) ** 2;
+      const pixelsToFill = Math.floor(totalPixels * density);
+
+      // Generate random positions
+      const positions = new Set();
+      while (positions.size < pixelsToFill) {
+        const x = Math.floor(Math.random() * (config.canvasSize / pixelSize)) * pixelSize;
+        const y = Math.floor(Math.random() * (config.canvasSize / pixelSize)) * pixelSize;
+        positions.add(`${x},${y}`);
+      }
+
+      positions.forEach((pos) => {
+        const [x, y] = pos.split(',').map(Number);
+        const color = getRandomColor(colors);
+
+        if (config.shape === 'circle') {
+          elements += `<circle cx="${x + pixelSize / 2}" cy="${y + pixelSize / 2}" r="${pixelSize / 2}" fill="${color}" opacity="${opacity}" mix-blend-mode="${config.blendMode}"/>`;
+        } else {
+          elements += `<rect x="${x}" y="${y}" width="${pixelSize}" height="${pixelSize}" fill="${color}" opacity="${opacity}" mix-blend-mode="${config.blendMode}"/>`;
+        }
+      });
+
+      return elements;
+    }
+
+    function generateTurbulence() {
+      const colors = getColors();
+      let elements = '';
+      const pixelSize = Math.max(1, config.size / 8);
+      const opacity = config.opacity / 100;
+      const fillThreshold = config.density / 100;
+
+      for (let x = 0; x < config.canvasSize; x += pixelSize) {
+        for (let y = 0; y < config.canvasSize; y += pixelSize) {
+          // Create turbulence by combining multiple frequencies
+          let turbulence = 0;
+          let amplitude = 1;
+          let frequency = 0.005;
+
+          for (let i = 0; i < 6; i++) {
+            turbulence += Math.abs(Math.sin(x * frequency) * Math.cos(y * frequency)) * amplitude;
+            frequency *= 2;
+            amplitude *= 0.5;
+          }
+
+          turbulence = Math.min(turbulence, 1);
+
+          if (turbulence > 1 - fillThreshold) {
+            const color = getRandomColor(colors);
+            const size = pixelSize * (0.5 + turbulence * 0.5);
+
+            if (config.shape === 'circle') {
+              elements += `<circle cx="${x + pixelSize / 2}" cy="${y + pixelSize / 2}" r="${size / 2}" fill="${color}" opacity="${opacity}" mix-blend-mode="${config.blendMode}"/>`;
+            } else {
+              elements += `<rect x="${x + (pixelSize - size) / 2}" y="${y + (pixelSize - size) / 2}" width="${size}" height="${size}" fill="${color}" opacity="${opacity}" mix-blend-mode="${config.blendMode}"/>`;
+            }
+          }
+        }
+      }
+
+      return elements;
+    }
+
+    function generateFractalNoise() {
+      const colors = getColors();
+      let elements = '';
+      const pixelSize = Math.max(1, config.size / 12);
+      const opacity = config.opacity / 100;
+      const fillThreshold = config.density / 100;
+
+      for (let x = 0; x < config.canvasSize; x += pixelSize) {
+        for (let y = 0; y < config.canvasSize; y += pixelSize) {
+          // Multi-octave fractal noise
+          let fractalValue = 0;
+          let amplitude = 1;
+          let frequency = 0.008;
+
+          for (let octave = 0; octave < 5; octave++) {
+            const nx = x * frequency;
+            const ny = y * frequency;
+
+            // Simple fractal calculation
+            const sample =
+              Math.sin(nx) * Math.cos(ny) +
+              Math.sin(nx * 2.1) * Math.cos(ny * 2.1) * 0.5 +
+              Math.sin(nx * 4.3) * Math.cos(ny * 4.3) * 0.25;
+
+            fractalValue += sample * amplitude;
+            amplitude *= 0.5;
+            frequency *= 2;
+          }
+
+          // Normalize and apply threshold
+          fractalValue = (fractalValue + 3) / 6; // Rough normalization
+
+          if (fractalValue > 1 - fillThreshold) {
+            const color = getRandomColor(colors);
+            const size = pixelSize * (0.3 + fractalValue * 0.7);
+
+            if (config.shape === 'circle') {
+              elements += `<circle cx="${x + pixelSize / 2}" cy="${y + pixelSize / 2}" r="${size / 2}" fill="${color}" opacity="${opacity}" mix-blend-mode="${config.blendMode}"/>`;
+            } else {
+              elements += `<rect x="${x + (pixelSize - size) / 2}" y="${y + (pixelSize - size) / 2}" width="${size}" height="${size}" fill="${color}" opacity="${opacity}" mix-blend-mode="${config.blendMode}"/>`;
+            }
+          }
+        }
+      }
+
+      return elements;
+    }
+
+    // Download the generated SVG
+    function downloadSVG() {
+      const svg = document.getElementById('texturePreview');
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+
+      const url = URL.createObjectURL(svgBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `texture-${Date.now()}.svg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    // Copy SVG to clipboard
+    async function copyToClipboard() {
+      const svg = document.getElementById('texturePreview');
+      const svgData = new XMLSerializer().serializeToString(svg);
+
+      try {
+        await navigator.clipboard.writeText(svgData);
+        // Visual feedback
+        const btn = document.getElementById('copyBtn');
+        const originalText = btn.textContent;
+        btn.textContent = '✅ Copied!';
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy: ', err);
+      }
+    }
+
+    // Initialize the application
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

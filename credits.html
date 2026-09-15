@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Credits | tools.eliana.lol</title>
+    <link rel="stylesheet" href="global.css" />
+    <link rel="icon" type="image/x-icon" href="favicon.svg" />
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .credit-section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: var(--hover);
+            border-left: 3px solid var(--accent);
+            border-radius: 4px;
+        }
+
+        .credit-title {
+            font-weight: bold;
+            font-size: 1.05rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .credit-desc {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--text);
+        }
+
+        .credit-link {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--accent);
+        }
+
+        .credit-link:hover {
+            background-color: var(--hover);
+        }
+
+        hr {
+            border: none;
+            border-top: 1px dashed var(--puny);
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <div class="left">
+            <a href="index.html">home</a> | <a href="extra.html">extra</a> | <a href="credits.html">credits</a> | <a href="changelog.html">logs</a>
+        </div>
+        <div class="right">
+            <button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <h1>Credits & Attribution</h1>
+            <p class="puny">Tools and technologies that made this possible.</p>
+
+            <div class="credit-section">
+                <div class="credit-title">🏗️ Built With</div>
+                <div class="credit-desc">
+                    These tools are built with vanilla HTML, CSS, and JavaScript. No heavy frameworks required.
+                    Everything runs in your browser—fast, private, and efficient.
+                </div>
+            </div>
+
+            <div class="credit-section">
+                <div class="credit-title">📚 External Libraries</div>
+                <div class="credit-desc">
+                    <strong>Turndown</strong> - HTML to Markdown converter
+                    <a href="https://unpkg.com/turndown" class="credit-link">unpkg.com</a><br />
+                    <strong>GFM Plugin</strong> - GitHub Flavored Markdown support
+                    <a href="https://unpkg.com/@joplin/turndown-plugin-gfm" class="credit-link">@joplin</a><br />
+                    <strong>AllOrigins CORS Proxy</strong> - For cross-domain RSS fetching
+                    <a href="https://allorigins.win" class="credit-link">allorigins.win</a>
+                    <a href="https://tools.simonwillison.net/hacker-news-thread-export.html">Hacker News thread export</a>
+                    <a href="https://github.com/atkinsio/bookmarks-html-generator">atkinsio/bookmarks-html-generator: A tool which allows you to convert a list of URLs into Bookmarks for use with all major browsers.</a>
+                </div>
+            </div>
+
+            <div class="credit-section">
+                <div class="credit-title">🎨 Design & Styling</div>
+                <div class="credit-desc">
+                    Inspired by the monospace/retro web aesthetic. Consistent design system with light/dark theme support.
+                    All colors use CSS variables for easy customization.
+                </div>
+            </div>
+
+            <div class="credit-section">
+                <div class="credit-title"> Libraries &amp; APIs</div>
+                <div class="credit-desc">
+                    <p>Libraries &amp; APIs</p>
+                    <ul>
+                        <li>
+                            <p><a href="https://github.com/vincerubinetti/rss-agent-discovery">rss-agent-discovery</a></p>
+                            <p>Core discovery engine for feed finding.</p>
+                        </li>
+                        <li>
+                            <p><a href="https://ace.c9.io/">Ace Editor</a></p>
+                            <p>Powering the code and HTML viewing tools.</p>
+                        </li>
+                        <li>
+                            <p><a href="https://github.com/domchristie/turndown">Turndown</a></p>
+                            <p>HTML to Markdown conversion logic.</p>
+                        </li>
+                        <li>
+                            <p><a href="https://allorigins.win/">AllOrigins</a></p>
+                            <p>CORS proxy for browser-based sniffing.</p>
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+
+            <div class="credit-section">
+                <div class="credit-title">Inspiration</div>
+                <div class="credit-desc">
+                    <p>Inspiration</p>
+                    <ul>
+                        <li>
+                            <p><a href="https://j3s.sh/">j3s.sh</a></p>
+                            <p>Original vore concept and small-web aesthetic.</p>
+                        </li>
+                        <li>
+                            <p><a href="https://vore.website/">vore.website</a></p>
+                            <p>The &quot;Finger&quot; feed discovery workflow.</p>
+                        </li>
+                        <li>
+                            <p><a href="https://github.com/luciopaiva/markdown-toc">markdown-toc</a></p>
+                            <p>Online markdown table of contents generator</p>
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+
+            <div class="credit-section">
+                <div class="credit-title">🔧 Features</div>
+                <div class="credit-desc">
+                    <strong>Theme Toggle:</strong> LocalStorage-based light/dark mode<br />
+                    <strong>Copy-to-Clipboard:</strong> Modern Clipboard API<br />
+                    <strong>Data Processing:</strong> Client-side only, no servers<br />
+                    <strong>Responsive Design:</strong> Works on desktop and mobile
+                </div>
+            </div>
+
+            <hr />
+
+            <div class="credit-section">
+                <div class="credit-title">👤 Creator</div>
+                <div class="credit-desc">
+                    Built by Eliana<br />
+                    <a href="https://eliana.lol" class="credit-link">eliana.lol</a> — Personal website and projects
+                </div>
+            </div>
+
+            <div class="credit-section">
+                <div class="credit-title">🤖 Development</div>
+                <div class="credit-desc">
+                    Tools rebuilt and refactored with AI assistance to ensure consistency, quality, and modern best practices.
+                </div>
+            </div>
+
+            <hr />
+
+            <div class="credit-section">
+                <div class="credit-title">📜 Open Source</div>
+                <div class="credit-desc">
+                    These tools use open-source libraries and technologies. We respect open-source communities
+                    and contribute back when possible.
+                </div>
+            </div>
+
+            <div class="credit-section">
+                <div class="credit-title">🔒 Privacy</div>
+                <div class="credit-desc">
+                    All tools process data entirely in your browser. No data is sent to external servers
+                    (except RSS feeds from your chosen sources). Your privacy is protected.
+                </div>
+            </div>
+
+            <hr />
+
+            <p class="puny" style="text-align: center; margin-top: 2rem;">
+                Made with ❤️ and monospace fonts.<br />
+                © 2026 eliana.lol • All rights reserved
+            </p>
+        </div>
+    </main>
+
+    <footer style="margin-top: 4rem; text-align: center" class="puny">
+        © 2026 eliana.lol • <a href="credits.html">credits</a>
+    </footer>
+
+    <script>
+        const html = document.documentElement;
+        const toggle = document.getElementById('theme-toggle');
+        const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        html.setAttribute('data-theme', saved);
+        if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+        if (toggle) {
+            toggle.onclick = () => {
+                const now = html.getAttribute('data-theme');
+                const next = now === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+                toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+            };
+        }
+    </script>
+</body>
+
+</html>

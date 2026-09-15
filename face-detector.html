@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Face Detector | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js"></script>
+  <style>
+    .container { display: flex; flex-direction: column; gap: 1.5rem; }
+
+    .drop-zone {
+      border: 2px dashed var(--puny);
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      color: var(--puny);
+      font-size: 0.9rem;
+      transition: border-color 150ms, background 150ms;
+    }
+    .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); background: var(--hover); color: var(--accent); }
+    .drop-zone input[type="file"] { display: none; }
+
+    .canvas-wrap {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+      border: 1px solid var(--puny);
+      background: #111;
+      display: none;
+    }
+
+    #source-img {
+      width: 100%;
+      display: block;
+    }
+
+    #overlay-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+    }
+
+    .options-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: flex-end;
+    }
+
+    .toggle-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .toggle-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+    }
+    input[type="checkbox"] { width: auto; padding: 0; cursor: pointer; }
+
+    .input-label { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: var(--puny); }
+    input[type="range"] { width: 150px; padding: 0; }
+
+    .results-box {
+      display: none;
+      padding: 1rem;
+      background: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.85rem;
+      line-height: 1.8;
+    }
+
+    .face-tag {
+      display: inline-block;
+      background: var(--accent);
+      color: white;
+      font-size: 0.7rem;
+      padding: 1px 6px;
+      margin: 2px;
+      font-family: monospace;
+    }
+
+    .progress-wrap { display: none; }
+    .progress-wrap.show { display: flex; flex-direction: column; gap: 0.4rem; }
+    .progress-bar-outer { width: 100%; height: 4px; background: var(--highlight); border: 1px solid var(--puny); }
+    .progress-bar-inner { height: 100%; background: var(--accent); width: 0%; transition: width 300ms ease; }
+    .progress-label { font-size: 0.8rem; color: var(--puny); }
+
+    button {
+      padding: 6px 12px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+    button:hover { background: var(--hover); border-color: var(--accent); }
+    button.primary { border-color: var(--accent); color: var(--accent); font-weight: bold; }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+    .status { padding: 0.75rem 1rem; margin: 0.5rem 0; display: none; font-size: 0.9rem; border-left: 3px solid var(--accent); background: rgba(255,102,0,0.08); color: var(--accent); }
+    .status.show { display: block; }
+
+    .info-box { padding: 0.75rem 1rem; background-color: var(--highlight); border-left: 3px solid var(--accent); font-size: 0.875rem; }
+
+    .webcam-wrap { display: flex; flex-direction: column; gap: 0.5rem; }
+    video { width: 100%; border: 1px solid var(--puny); background: #111; display: none; }
+    #webcam-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    .video-wrap { position: relative; display: none; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Face Detector</h1>
+    <p class="puny">detect faces, landmarks, and expressions from images or your webcam — all in-browser, nothing uploaded.</p>
+
+    <div class="container">
+      <div class="progress-wrap" id="model-progress">
+        <div class="progress-label" id="model-label">loading face detection models...</div>
+        <div class="progress-bar-outer"><div class="progress-bar-inner" id="model-bar"></div></div>
+      </div>
+
+      <div class="options-row">
+        <div class="toggle-group">
+          <div class="input-label">Detections</div>
+          <label class="toggle-item"><input type="checkbox" id="show-box" checked> bounding boxes</label>
+          <label class="toggle-item"><input type="checkbox" id="show-landmarks" checked> landmarks (68 pts)</label>
+          <label class="toggle-item"><input type="checkbox" id="show-expressions"> expressions</label>
+          <label class="toggle-item"><input type="checkbox" id="show-age"> age &amp; gender</label>
+        </div>
+        <div>
+          <div class="input-label" style="margin-bottom:4px;">Min Confidence <span id="conf-val">0.5</span></div>
+          <input type="range" id="conf-thresh" min="0.1" max="0.99" step="0.01" value="0.5" oninput="document.getElementById('conf-val').textContent=parseFloat(this.value).toFixed(2)">
+        </div>
+      </div>
+
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" accept="image/*" onchange="runOnImage(this.files[0])">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">🫥</div>
+        drop a photo here or click to upload
+      </div>
+
+      <div class="toolbar">
+        <button class="primary" onclick="startWebcam()" id="webcam-btn">use webcam (live)</button>
+        <button onclick="stopWebcam()" id="stop-btn" style="display:none;">stop webcam</button>
+      </div>
+
+      <!-- Image mode -->
+      <div class="canvas-wrap" id="canvas-wrap">
+        <img id="source-img" alt="uploaded photo">
+        <canvas id="overlay-canvas"></canvas>
+      </div>
+
+      <!-- Webcam mode -->
+      <div class="video-wrap" id="video-wrap">
+        <video id="webcam-video" autoplay muted playsinline></video>
+        <canvas id="webcam-canvas"></canvas>
+      </div>
+
+      <div class="results-box" id="results-box"></div>
+
+      <div class="info-box">
+        <strong>Privacy:</strong> models run locally via TensorFlow.js. No images, video, or biometric data leaves your browser.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => {
+      const next = htmlEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      htmlEl.setAttribute('data-theme', next); localStorage.setItem('theme', next);
+      toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+    };
+
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); runOnImage(e.dataTransfer.files[0]); });
+  </script>
+
+  <script>
+    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+    let modelsLoaded = false;
+    let webcamStream = null;
+    let webcamLoop = null;
+
+    async function loadModels() {
+      const bar = document.getElementById('model-bar');
+      const label = document.getElementById('model-label');
+      document.getElementById('model-progress').classList.add('show');
+
+      const tasks = [
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
+        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+        faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL),
+      ];
+
+      let done = 0;
+      await Promise.all(tasks.map(t => t.then(() => {
+        done++;
+        bar.style.width = (done / tasks.length * 100) + '%';
+        label.textContent = `loading models... (${done}/${tasks.length})`;
+      })));
+
+      modelsLoaded = true;
+      label.textContent = '✓ models loaded';
+      setTimeout(() => document.getElementById('model-progress').classList.remove('show'), 1500);
+    }
+
+    function getOptions() {
+      const conf = parseFloat(document.getElementById('conf-thresh').value);
+      return new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: conf });
+    }
+
+    async function detect(input) {
+      const showLandmarks = document.getElementById('show-landmarks').checked;
+      const showExpressions = document.getElementById('show-expressions').checked;
+      const showAge = document.getElementById('show-age').checked;
+
+      let task = faceapi.detectAllFaces(input, getOptions());
+      if (showLandmarks) task = task.withFaceLandmarks(true);
+      if (showExpressions) task = task.withFaceExpressions();
+      if (showAge) task = task.withAgeAndGender();
+      return await task;
+    }
+
+    async function runOnImage(file) {
+      if (!file) return;
+      if (!modelsLoaded) { showStatus('models still loading, please wait...'); return; }
+      stopWebcam();
+
+      const url = URL.createObjectURL(file);
+      const img = document.getElementById('source-img');
+      img.onload = async () => {
+        const wrap = document.getElementById('canvas-wrap');
+        wrap.style.display = 'block';
+        const canvas = document.getElementById('overlay-canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+
+        const detections = await detect(img);
+        const dims = { width: img.naturalWidth, height: img.naturalHeight };
+        const resized = faceapi.resizeResults(detections, dims);
+
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        drawResults(ctx, resized, dims);
+        showDetectionResults(resized);
+        showStatus(`${resized.length} face${resized.length !== 1 ? 's' : ''} detected`);
+      };
+      img.src = url;
+    }
+
+    function drawResults(ctx, detections, dims) {
+      const showBox = document.getElementById('show-box').checked;
+      const showLandmarks = document.getElementById('show-landmarks').checked;
+      const showExpressions = document.getElementById('show-expressions').checked;
+      const showAge = document.getElementById('show-age').checked;
+
+      detections.forEach((det, i) => {
+        const box = det.detection?.box || det.box;
+        if (!box) return;
+
+        if (showBox) {
+          ctx.strokeStyle = '#ff6600';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(box.x, box.y, box.width, box.height);
+          ctx.fillStyle = 'rgba(255,102,0,0.8)';
+          ctx.font = `${Math.max(12, box.width * 0.08)}px monospace`;
+          ctx.fillText(`face ${i + 1}`, box.x + 4, box.y - 6);
+        }
+
+        if (showLandmarks && det.landmarks) {
+          const pts = det.landmarks.positions;
+          ctx.fillStyle = '#ff6600';
+          pts.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2); ctx.fill(); });
+        }
+
+        if (showExpressions && det.expressions) {
+          const top = Object.entries(det.expressions).sort((a, b) => b[1] - a[1])[0];
+          ctx.fillStyle = 'rgba(0,0,0,0.6)';
+          ctx.fillRect(box.x, box.y + box.height, box.width, 20);
+          ctx.fillStyle = '#ffff99';
+          ctx.font = '11px monospace';
+          ctx.fillText(`${top[0]} ${(top[1] * 100).toFixed(0)}%`, box.x + 4, box.y + box.height + 14);
+        }
+
+        if (showAge && det.age !== undefined) {
+          ctx.fillStyle = 'rgba(0,0,0,0.6)';
+          const yOff = (showExpressions && det.expressions) ? 20 : 0;
+          ctx.fillRect(box.x, box.y + box.height + yOff, box.width, 20);
+          ctx.fillStyle = '#ffff99';
+          ctx.font = '11px monospace';
+          ctx.fillText(`~${Math.round(det.age)}y ${det.gender}`, box.x + 4, box.y + box.height + yOff + 14);
+        }
+      });
+    }
+
+    function showDetectionResults(detections) {
+      const box = document.getElementById('results-box');
+      if (!detections.length) { box.style.display = 'none'; return; }
+      box.style.display = 'block';
+      box.innerHTML = detections.map((d, i) => {
+        let line = `<strong>face ${i + 1}</strong>`;
+        if (d.detection) line += ` · confidence: <span class="face-tag">${(d.detection.score * 100).toFixed(1)}%</span>`;
+        if (d.expressions) {
+          const top = Object.entries(d.expressions).sort((a, b) => b[1] - a[1]).slice(0, 3);
+          line += ' · ' + top.map(([e, v]) => `<span class="face-tag">${e} ${(v * 100).toFixed(0)}%</span>`).join(' ');
+        }
+        if (d.age !== undefined) line += ` · <span class="face-tag">~${Math.round(d.age)}y ${d.gender}</span>`;
+        return `<div>${line}</div>`;
+      }).join('');
+    }
+
+    async function startWebcam() {
+      if (!modelsLoaded) { showStatus('models still loading...'); return; }
+      stopWebcam();
+      try {
+        webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const video = document.getElementById('webcam-video');
+        const vwrap = document.getElementById('video-wrap');
+        video.srcObject = webcamStream;
+        video.style.display = 'block';
+        vwrap.style.display = 'block';
+        document.getElementById('canvas-wrap').style.display = 'none';
+        document.getElementById('webcam-btn').style.display = 'none';
+        document.getElementById('stop-btn').style.display = '';
+
+        video.addEventListener('loadedmetadata', () => {
+          const canvas = document.getElementById('webcam-canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          loopWebcam();
+        }, { once: true });
+      } catch (e) {
+        showStatus('webcam access denied: ' + e.message);
+      }
+    }
+
+    async function loopWebcam() {
+      const video = document.getElementById('webcam-video');
+      const canvas = document.getElementById('webcam-canvas');
+      const ctx = canvas.getContext('2d');
+      const dims = { width: video.videoWidth, height: video.videoHeight };
+
+      const run = async () => {
+        if (!webcamStream) return;
+        const detections = await detect(video);
+        const resized = faceapi.resizeResults(detections, dims);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawResults(ctx, resized, dims);
+        webcamLoop = requestAnimationFrame(run);
+      };
+      run();
+    }
+
+    function stopWebcam() {
+      if (webcamLoop) cancelAnimationFrame(webcamLoop);
+      if (webcamStream) { webcamStream.getTracks().forEach(t => t.stop()); webcamStream = null; }
+      document.getElementById('webcam-video').style.display = 'none';
+      document.getElementById('video-wrap').style.display = 'none';
+      document.getElementById('webcam-btn').style.display = '';
+      document.getElementById('stop-btn').style.display = 'none';
+    }
+
+    function showStatus(msg) {
+      const s = document.getElementById('status');
+      s.textContent = msg; s.classList.add('show');
+      setTimeout(() => s.classList.remove('show'), 3000);
+    }
+
+    loadModels();
+  </script>
+</body>
+</html>

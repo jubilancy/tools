@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JSON5 Validator | tools.eliana.lol</title>
+  <link rel="stylesheet" href="../global.css" />
+  <link rel="icon" type="image/x-icon" href="../favicon.svg" />
+  <style>
+    .tool-layout { display: flex; flex-direction: column; gap: 20px; }
+    .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    label { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 5px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+    #status { font-size: 0.9rem; font-weight: bold; padding: 8px 12px; border: 1px solid var(--puny); min-height: 2.5rem; display: flex; align-items: center; }
+    #status.ok { border-color: green; color: green; }
+    #status.err { border-color: var(--accent); color: var(--accent); }
+    .tab-bar { display: flex; gap: 0; margin-bottom: 16px; }
+    .tab { border: 1px solid var(--puny); padding: 5px 14px; cursor: pointer; font-size: 0.85rem; }
+    .tab.active { background: var(--highlight); border-color: var(--text); }
+    .tree-node { margin-left: 16px; font-size: 0.85rem; font-family: monospace; }
+    .tree-key { color: var(--accent); }
+    .tree-val { color: var(--text); }
+    .tree-type { color: var(--puny); font-size: 0.7rem; }
+    details > summary { cursor: pointer; }
+    details > summary:hover { background: var(--hover); }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left"><a href="../index.html">home</a> | <a href="../extra.html">extra</a> | <a href="../credits.html">credits</a> | <a href="../changelog.html">logs</a></div>
+    <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+  </nav>
+  <main>
+    <h1>JSON5 Validator & Viewer</h1>
+    <p class="puny">Validate, format, and explore JSON or JSON5 (comments, trailing commas, unquoted keys). View as an interactive tree.</p>
+    <div class="tool-layout">
+      <div class="tab-bar">
+        <div class="tab active" onclick="switchTab('json')">JSON</div>
+        <div class="tab" onclick="switchTab('json5')">JSON5</div>
+      </div>
+      <div id="status">Paste JSON to validate…</div>
+      <div class="two-col">
+        <div>
+          <label>Input</label>
+          <textarea id="json-input" rows="18" oninput="validate()" placeholder='{"key": "value"}'></textarea>
+        </div>
+        <div>
+          <label>Formatted output</label>
+          <textarea id="json-output" rows="18" readonly></textarea>
+        </div>
+      </div>
+      <div class="action-bar">
+        <button onclick="loadSample()">Sample</button>
+        <button onclick="minify()">Minify</button>
+        <button onclick="copyOutput()">Copy</button>
+        <button onclick="clearAll()">Clear</button>
+        <button onclick="sortKeys()">Sort keys</button>
+      </div>
+      <div>
+        <label>Interactive tree</label>
+        <div id="json-tree" style="border:1px solid var(--puny);padding:12px;min-height:40px;font-family:monospace"></div>
+      </div>
+    </div>
+  </main>
+  <footer style="margin-top:4rem;text-align:center" class="puny">© 2026 eliana.lol • <a href="../credits.html">credits</a></footer>
+  <script src="https://cdn.jsdelivr.net/npm/json5@2.2.3/dist/index.min.js"></script>
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => { const now = htmlEl.getAttribute('data-theme'); const next = now==='dark'?'light':'dark'; htmlEl.setAttribute('data-theme',next); localStorage.setItem('theme',next); toggle.innerText=next==='dark'?'[light]':'[dark]'; };
+
+    let mode = 'json';
+    let parsed = null;
+
+    function switchTab(m) { mode=m; document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['json','json5'][i]===m)); validate(); }
+
+    function validate() {
+      const src = document.getElementById('json-input').value.trim();
+      const status = document.getElementById('status');
+      const out = document.getElementById('json-output');
+      if (!src) { status.textContent='Paste JSON to validate…'; status.className=''; out.value=''; document.getElementById('json-tree').innerHTML=''; parsed=null; return; }
+      try {
+        parsed = mode==='json5' ? JSON5.parse(src) : JSON.parse(src);
+        out.value = JSON.stringify(parsed, null, 2);
+        status.textContent = '✓ Valid '+mode.toUpperCase();
+        status.className = 'ok';
+        renderTree(parsed, document.getElementById('json-tree'));
+      } catch(e) {
+        status.textContent = '✗ '+e.message;
+        status.className = 'err';
+        out.value = '';
+        document.getElementById('json-tree').innerHTML = '';
+        parsed = null;
+      }
+    }
+
+    function renderTree(obj, container) {
+      container.innerHTML = buildTree(obj);
+    }
+
+    function buildTree(val, key) {
+      const type = Array.isArray(val)?'array':typeof val;
+      if (val===null) return `<div class="tree-node"><span class="tree-key">${key!=null?key+': ':''}</span><span class="tree-val">null</span> <span class="tree-type">null</span></div>`;
+      if (type==='object'||type==='array') {
+        const entries = type==='array' ? val.map((v,i)=>[i,v]) : Object.entries(val);
+        const label = key!=null ? `<span class="tree-key">${key}</span>: ` : '';
+        const count = `<span class="tree-type">${type==='array'?`[${val.length}]`:`{${entries.length}}`}</span>`;
+        if (!entries.length) return `<div class="tree-node">${label}${count}</div>`;
+        return `<details open><summary class="tree-node">${label}${count}</summary>${entries.map(([k,v])=>buildTree(v,k)).join('')}</details>`;
+      }
+      const display = type==='string' ? `"${String(val).slice(0,80)}${val.length>80?'…':''}"` : String(val);
+      return `<div class="tree-node">${key!=null?`<span class="tree-key">${key}</span>: `:''}<span class="tree-val">${display}</span> <span class="tree-type">${type}</span></div>`;
+    }
+
+    function minify() { if (parsed) document.getElementById('json-output').value = JSON.stringify(parsed); }
+    function copyOutput() { navigator.clipboard.writeText(document.getElementById('json-output').value); }
+    function clearAll() { document.getElementById('json-input').value=''; validate(); }
+    function sortKeys() {
+      if (!parsed||Array.isArray(parsed)) return;
+      const sorted = Object.fromEntries(Object.entries(parsed).sort(([a],[b])=>a.localeCompare(b)));
+      document.getElementById('json-input').value = JSON.stringify(sorted, null, 2);
+      validate();
+    }
+
+    function loadSample() {
+      document.getElementById('json-input').value = mode==='json5' ?
+        `// JSON5 allows comments and trailing commas\n{\n  name: "eliana",\n  site: "tools.eliana.lol",\n  tools: [\n    "csv-parser",\n    "diff-viewer",  // trailing comma ok\n  ],\n  active: true,\n}` :
+        `{\n  "name": "eliana",\n  "site": "tools.eliana.lol",\n  "tools": ["csv-parser", "diff-viewer", "qr-generator"],\n  "meta": {\n    "version": 2,\n    "active": true,\n    "tags": null\n  }\n}`;
+      validate();
+    }
+
+    loadSample();
+  </script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ASCII Art Generator | tools.eliana.lol</title>
+  <link rel="stylesheet" href="../global.css" />
+  <link rel="icon" type="image/x-icon" href="../favicon.svg" />
+  <style>
+    .tool-layout { display: flex; flex-direction: column; gap: 20px; }
+    .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    label { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 5px; }
+    #ascii-out { font-family: monospace; font-size: 0.7rem; line-height: 1.2; white-space: pre; overflow-x: auto; border: 1px solid var(--puny); padding: 14px; background: var(--bg); min-height: 80px; }
+    select { background: var(--bg); color: var(--text); border: 1px solid var(--puny); font-family: monospace; padding: 4px 8px; }
+    .font-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 6px; }
+    .font-btn { font-size: 0.75rem; padding: 4px 8px; text-align: left; }
+    .font-btn.active { background: var(--highlight); border-color: var(--text); }
+    input[type=range] { accent-color: var(--accent); width: 120px; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left"><a href="../index.html">home</a> | <a href="../extra.html">extra</a> | <a href="../credits.html">credits</a> | <a href="../changelog.html">logs</a></div>
+    <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+  </nav>
+  <main>
+    <h1>ASCII Art Generator</h1>
+    <p class="puny">Turn text into ASCII art using Figlet fonts.</p>
+    <div class="tool-layout">
+      <div>
+        <label>Text</label>
+        <input type="text" id="text-in" value="hello" oninput="debounce()" maxlength="40" />
+      </div>
+      <div>
+        <label>Font — <span class="puny" id="font-name">Standard</span></label>
+        <div class="font-grid" id="font-grid"></div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap">
+        <div>
+          <label>Horizontal layout</label>
+          <select id="h-layout" onchange="generate()">
+            <option value="default">Default</option>
+            <option value="full">Full</option>
+            <option value="fitted">Fitted</option>
+            <option value="controlled smushing">Controlled</option>
+            <option value="universal smushing">Universal</option>
+          </select>
+        </div>
+      </div>
+      <div class="action-bar">
+        <button onclick="generate()">Generate</button>
+        <button onclick="copyArt()">Copy</button>
+        <button onclick="downloadTxt()">Download .txt</button>
+      </div>
+      <label>Output</label>
+      <div id="ascii-out"></div>
+    </div>
+  </main>
+  <footer style="margin-top:4rem;text-align:center" class="puny">© 2026 eliana.lol • <a href="../credits.html">credits</a></footer>
+  <script src="https://cdn.jsdelivr.net/npm/figlet@1.7.0/lib/figlet.js"></script>
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => { const now = htmlEl.getAttribute('data-theme'); const next = now==='dark'?'light':'dark'; htmlEl.setAttribute('data-theme',next); localStorage.setItem('theme',next); toggle.innerText=next==='dark'?'[light]':'[dark]'; };
+
+    const FONTS = ['Standard','Big','Block','Bulbhead','Digital','Doom','Epic','Gothic','Graffiti','Isometric1','Larry 3D','Letters','Mini','Ogre','Puffy','Shadow','Slant','Small','Speed','Star Wars','Stellar','Thin','Three Point','Whimsy'];
+    let currentFont = 'Standard';
+
+    figlet.defaults({ fontPath: 'https://cdn.jsdelivr.net/npm/figlet@1.7.0/fonts' });
+
+    function buildFontGrid() {
+      document.getElementById('font-grid').innerHTML = FONTS.map(f =>
+        `<button class="font-btn${f===currentFont?' active':''}" onclick="selectFont('${f}')">${f}</button>`
+      ).join('');
+    }
+
+    function selectFont(f) {
+      currentFont = f;
+      document.getElementById('font-name').textContent = f;
+      buildFontGrid();
+      generate();
+    }
+
+    function generate() {
+      const text = document.getElementById('text-in').value || 'hello';
+      const hLayout = document.getElementById('h-layout').value;
+      figlet.text(text, { font: currentFont, horizontalLayout: hLayout }, (err, result) => {
+        document.getElementById('ascii-out').textContent = err ? 'Error: '+err : result;
+      });
+    }
+
+    let timer;
+    function debounce() { clearTimeout(timer); timer = setTimeout(generate, 300); }
+    function copyArt() { navigator.clipboard.writeText(document.getElementById('ascii-out').textContent); }
+    function downloadTxt() {
+      const a = document.createElement('a');
+      a.href = 'data:text/plain;charset=utf-8,'+encodeURIComponent(document.getElementById('ascii-out').textContent);
+      a.download = 'ascii-art.txt'; a.click();
+    }
+
+    buildFontGrid();
+    generate();
+  </script>
+</body>
+</html>

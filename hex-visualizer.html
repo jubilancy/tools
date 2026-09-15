@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hex Visualizer | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+      display: block;
+      margin-bottom: 0.35rem;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    button.danger {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+
+    textarea,
+    input[type="text"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show { display: block; }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    /* --- Section divider --- */
+    .section-sep {
+      border: none;
+      border-top: 1px dashed var(--puny);
+      margin: 0.5rem 0;
+    }
+
+    /* --- Multi-hex grid --- */
+    .tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .tile {
+      height: 140px;
+      border-radius: 4px;
+      border: 1px solid var(--puny);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      position: relative;
+      overflow: hidden;
+      cursor: default;
+      transition: transform 0.15s;
+    }
+
+    .tile:hover {
+      transform: scale(1.03);
+      z-index: 10;
+    }
+
+    .tile-details {
+      background: rgba(0, 0, 0, 0.72);
+      color: #fff;
+      padding: 6px 8px;
+      font-size: 0.7rem;
+      font-family: monospace;
+      position: absolute;
+      bottom: -100%;
+      left: 0;
+      width: 100%;
+      box-sizing: border-box;
+      transition: bottom 0.15s;
+      line-height: 1.5;
+    }
+
+    .tile:hover .tile-details,
+    .tiles.show-details .tile-details {
+      bottom: 0;
+    }
+
+    .tile-details code {
+      background: rgba(255,255,255,0.15);
+      padding: 1px 3px;
+      border-radius: 2px;
+      color: #fff;
+    }
+
+    /* --- Single hex inspector --- */
+    .inspector-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    @media (max-width: 600px) {
+      .inspector-grid { grid-template-columns: 1fr; }
+      .button-group { flex-direction: column; }
+      button { width: 100%; min-width: unset; }
+    }
+
+    #swatch {
+      height: 100px;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      background: #ff6600;
+      transition: background 200ms;
+    }
+
+    .kv-table {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 0;
+      font-size: 0.85rem;
+      font-family: monospace;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .kv-table div {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--puny);
+    }
+
+    .kv-table div:nth-last-child(-n+2) {
+      border-bottom: none;
+    }
+
+    .kv-key {
+      color: var(--puny);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .lum-note {
+      font-size: 0.8rem;
+      color: var(--puny);
+      margin-top: 0.5rem;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Hex Color Visualizer</h1>
+    <p class="puny">Inspect a single hex color or paste a list to generate a sorted color grid.</p>
+
+    <div class="container">
+
+      <!-- Single hex inspector -->
+      <div>
+        <label class="input-label" for="single-hex">Single color inspector</label>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+          <input type="text" id="single-hex" value="#ff6600" placeholder="#ff6600" style="max-width:180px;" />
+          <span class="puny" id="lum-note" style="font-size:0.8rem;"></span>
+        </div>
+        <div class="inspector-grid" style="margin-top:0.75rem;">
+          <div id="swatch"></div>
+          <div class="kv-table" id="kv-table"></div>
+        </div>
+      </div>
+
+      <hr class="section-sep" />
+
+      <!-- Multi-hex grid -->
+      <div>
+        <label class="input-label" for="hex-list">Palette grid — paste hex codes (one per line)</label>
+        <textarea id="hex-list" rows="6" placeholder="#C8F564&#10;#0E0E0E&#10;#FF6600">#FFFF00
+#000000
+#C0C0C0
+#F5F5F5
+#039DFF
+#FFFFFF
+#909495
+#A11360
+#EEEEEE
+#D9EDF7
+#BCE8F1
+#2A627D</textarea>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" id="render-btn">Visualise palette</button>
+        <button id="toggle-details-btn" style="display:none;">Toggle details</button>
+        <button class="danger" id="clear-btn">Clear</button>
+      </div>
+
+      <ul class="tiles" id="tiles"></ul>
+
+      <div class="status" id="status"></div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> hover over a tile to see hex, RGB, and other values. Use "Toggle details" to pin them open.
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    // Theme toggle
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+
+    // ---- Shared helpers ----
+    function normalizeHex(h) {
+      h = h.trim();
+      if (!h.startsWith('#')) h = '#' + h;
+      if (/^#([a-f\d]{3})$/i.test(h))
+        h = '#' + h.slice(1).split('').map(c => c + c).join('');
+      return /^#([a-f\d]{6})$/i.test(h) ? h.toLowerCase() : null;
+    }
+
+    function hexToRgb(hex) {
+      const c = hex.replace('#', '');
+      return {
+        r: parseInt(c.slice(0, 2), 16),
+        g: parseInt(c.slice(2, 4), 16),
+        b: parseInt(c.slice(4, 6), 16)
+      };
+    }
+
+    function rgbToHsl(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+      let h = 0, s = 0, l = (max + min) / 2;
+      if (d) {
+        s = d / (1 - Math.abs(2 * l - 1));
+        switch (max) {
+          case r: h = 60 * (((g - b) / d) % 6); break;
+          case g: h = 60 * (((b - r) / d) + 2); break;
+          default: h = 60 * (((r - g) / d) + 4);
+        }
+      }
+      if (h < 0) h += 360;
+      return { h: Math.round(h), s: Math.round(s * 100), l: Math.round(l * 100) };
+    }
+
+    function getHue(hex) {
+      const { r, g, b } = hexToRgb(hex);
+      return rgbToHsl(r, g, b).h;
+    }
+
+    // ---- Single hex inspector ----
+    const singleInput = document.getElementById('single-hex');
+    const swatchEl = document.getElementById('swatch');
+    const kvEl = document.getElementById('kv-table');
+    const lumNote = document.getElementById('lum-note');
+
+    function updateInspector() {
+      const hex = normalizeHex(singleInput.value);
+      if (!hex) {
+        kvEl.innerHTML = '<div class="kv-key">—</div><div>invalid hex</div>';
+        swatchEl.style.background = 'var(--puny)';
+        lumNote.textContent = '';
+        return;
+      }
+      const { r, g, b } = hexToRgb(hex);
+      const { h, s, l } = rgbToHsl(r, g, b);
+      const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+      const tone = luminance > 0.6 ? 'light' : 'dark';
+      swatchEl.style.background = hex;
+      lumNote.textContent = tone === 'light'
+        ? 'light — dark text reads better on top'
+        : 'dark — light text reads better on top';
+      kvEl.innerHTML = [
+        ['hex', hex.toUpperCase()],
+        ['rgb', `rgb(${r}, ${g}, ${b})`],
+        ['hsl', `hsl(${h}, ${s}%, ${l}%)`],
+        ['decimal', String(parseInt(hex.slice(1), 16))],
+        ['tone', tone],
+      ].map(([k, v]) =>
+        `<div class="kv-key">${k}</div><div>${v}</div>`
+      ).join('');
+    }
+
+    singleInput.addEventListener('input', updateInspector);
+    updateInspector();
+
+    // ---- Palette grid ----
+    const renderBtn = document.getElementById('render-btn');
+    const toggleBtn = document.getElementById('toggle-details-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const tilesEl = document.getElementById('tiles');
+
+    renderBtn.onclick = () => {
+      const lines = document.getElementById('hex-list').value.split(/\n/);
+      const colors = [];
+      for (const line of lines) {
+        const hex = normalizeHex(line);
+        if (hex) colors.push(hex);
+      }
+      if (!colors.length) {
+        showStatus('No valid hex codes found.');
+        return;
+      }
+
+      colors.sort((a, b) => getHue(a) - getHue(b));
+      tilesEl.innerHTML = '';
+
+      for (const hex of colors) {
+        const { r, g, b } = hexToRgb(hex);
+        const { h, s, l } = rgbToHsl(r, g, b);
+        const li = document.createElement('li');
+        li.className = 'tile';
+        li.style.backgroundColor = hex;
+        li.innerHTML = `<div class="tile-details">
+          <div>Hex: <code>${hex.toUpperCase()}</code></div>
+          <div>RGB: <code>${r} ${g} ${b}</code></div>
+          <div>HSL: <code>${h}° ${s}% ${l}%</code></div>
+        </div>`;
+        tilesEl.appendChild(li);
+      }
+
+      toggleBtn.style.display = '';
+      showStatus(`${colors.length} color${colors.length !== 1 ? 's' : ''} rendered.`);
+    };
+
+    toggleBtn.onclick = () => {
+      tilesEl.classList.toggle('show-details');
+    };
+
+    clearBtn.onclick = () => {
+      document.getElementById('hex-list').value = '';
+      tilesEl.innerHTML = '';
+      toggleBtn.style.display = 'none';
+      tilesEl.classList.remove('show-details');
+    };
+
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    }
+  </script>
+</body>
+</html>

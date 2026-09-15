@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Markdown Shuttle | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.min.js"></script>
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    select,
+    textarea,
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    select:focus,
+    textarea:focus,
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .mode-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--puny);
+      padding-bottom: 1rem;
+    }
+
+    .mode-tabs button {
+      min-width: auto;
+      border-style: dashed;
+    }
+
+    .mode-tabs button.active {
+      border-style: solid;
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .mode-panel {
+      display: none;
+    }
+
+    .mode-panel.active {
+      display: flex;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    .upload-hint {
+      font-size: 0.85rem;
+      color: var(--puny);
+      margin-top: 0.5rem;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Markdown Shuttle</h1>
+    <p class="puny">Convert CSV, JSON, HTML, Excel, Google Sheets, or Word docs to Markdown &mdash; one tool instead of six.</p>
+
+    <div class="container">
+
+      <!-- MODE SELECT -->
+      <div class="input-group">
+        <span class="input-label">Source Format</span>
+        <div class="mode-tabs" id="modeTabs">
+          <button data-mode="csv" class="active">CSV</button>
+          <button data-mode="tsv">TSV / Sheets</button>
+          <button data-mode="json">JSON</button>
+          <button data-mode="html">HTML</button>
+          <button data-mode="excel">Excel</button>
+          <button data-mode="word">Word</button>
+        </div>
+      </div>
+
+      <!-- CSV MODE -->
+      <div class="input-group mode-panel active" id="panel-csv">
+        <span class="input-label">CSV Input</span>
+        <textarea id="csvInput" placeholder="name,age,city
+John,25,NYC
+Jane,30,LA
+Bob,28,Chicago"></textarea>
+      </div>
+
+      <!-- TSV MODE (Google Sheets paste) -->
+      <div class="input-group mode-panel hidden" id="panel-tsv">
+        <span class="input-label">Tab-Separated Data (from Google Sheets or Excel copy/paste)</span>
+        <p class="puny">Copy from Google Sheets → Ctrl+V → Convert</p>
+        <textarea id="tsvInput" placeholder="Name	Age	City
+John	25	NYC
+Jane	30	LA"></textarea>
+      </div>
+
+      <!-- JSON MODE -->
+      <div class="input-group mode-panel hidden" id="panel-json">
+        <span class="input-label">JSON Array of Objects</span>
+        <textarea id="jsonInput" placeholder='[{"name":"John","age":25,"city":"NYC"},{"name":"Jane","age":30,"city":"LA"}]'></textarea>
+      </div>
+
+      <!-- HTML MODE -->
+      <div class="input-group mode-panel hidden" id="panel-html">
+        <span class="input-label">HTML Input</span>
+        <textarea id="htmlInput" placeholder="<h1>Title</h1>
+<p>This is a <strong>paragraph</strong></p>
+<ul>
+<li>Item 1</li>
+<li>Item 2</li>
+</ul>"></textarea>
+      </div>
+
+      <!-- EXCEL MODE -->
+      <div class="input-group mode-panel hidden" id="panel-excel">
+        <span class="input-label">Upload Excel File (.xlsx, .xls)</span>
+        <div class="button-group">
+          <button id="excelUploadBtn">Choose File</button>
+        </div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" />
+        <div class="upload-hint">Preview will appear below after upload</div>
+      </div>
+
+      <!-- WORD MODE -->
+      <div class="input-group mode-panel hidden" id="panel-word">
+        <span class="input-label">Upload Word Document (.docx)</span>
+        <div class="button-group">
+          <button id="wordUploadBtn">Choose File</button>
+        </div>
+        <input type="file" id="wordFile" accept=".docx" />
+        <div class="upload-hint">Converts document structure to Markdown</div>
+      </div>
+
+      <!-- OUTPUT & BUTTONS -->
+      <div class="two-col">
+        <div class="input-group">
+          <span class="input-label">Markdown Output</span>
+          <textarea id="markdownOutput" readonly></textarea>
+        </div>
+        <div class="input-group hidden" id="previewGroup">
+          <span class="input-label">Preview (Excel/Word)</span>
+          <textarea id="preview" readonly></textarea>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" id="convertBtn">Convert</button>
+        <button id="copyBtn">Copy</button>
+        <button id="downloadBtn">Download .md</button>
+      </div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> CSV and TSV modes auto-detect headers. JSON expects an array of objects. HTML converts common tags (h1–h6, p, strong, em, lists, links, etc.). Excel/Word files show a preview before conversion.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    &copy; 2026 eliana.lol &bull; <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Markdown Shuttle logic -->
+  <script>
+    (function () {
+      let currentMode = 'csv';
+      const modeTabs = document.getElementById('modeTabs');
+      const panels = {
+        csv: document.getElementById('panel-csv'),
+        tsv: document.getElementById('panel-tsv'),
+        json: document.getElementById('panel-json'),
+        html: document.getElementById('panel-html'),
+        excel: document.getElementById('panel-excel'),
+        word: document.getElementById('panel-word')
+      };
+
+      function showStatus(message, type) {
+        const status = document.getElementById('status');
+        status.textContent = message;
+        status.className = 'status show ' + (type || 'success');
+        setTimeout(() => status.classList.remove('show'), 3000);
+      }
+
+      function setMode(mode) {
+        currentMode = mode;
+        Object.keys(panels).forEach((key) => {
+          panels[key].classList.toggle('hidden', key !== mode);
+        });
+        Array.from(modeTabs.querySelectorAll('button')).forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+
+        const showPreview = mode === 'excel' || mode === 'word';
+        document.getElementById('previewGroup').classList.toggle('hidden', !showPreview);
+      }
+
+      modeTabs.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-mode]');
+        if (btn) setMode(btn.dataset.mode);
+      });
+
+      /* ---------- Pure conversion functions ---------- */
+
+      function csvToMarkdown(csvText) {
+        const lines = csvText.trim().split('\n').map((line) => line.split(',').map((cell) => cell.trim()));
+        if (!lines.length || !lines[0].length) throw new Error('Empty CSV data');
+
+        const header = lines[0];
+        const separators = header.map(() => '---');
+        let markdown = '| ' + header.join(' | ') + ' |\n';
+        markdown += '| ' + separators.join(' | ') + ' |\n';
+
+        for (let i = 1; i < lines.length; i++) {
+          if (!lines[i].length) continue;
+          markdown += '| ' + lines[i].join(' | ') + ' |\n';
+        }
+
+        return markdown.trim();
+      }
+
+      function tsvToMarkdown(tsvText) {
+        const lines = tsvText
+          .trim()
+          .split('\n')
+          .map((line) => line.split(/\t+/).map((cell) => cell.trim()).filter((c) => c.length > 0));
+        if (!lines.length || !lines[0].length) throw new Error('Empty TSV data');
+
+        const header = lines[0];
+        const separators = header.map(() => '---');
+        let markdown = '| ' + header.join(' | ') + ' |\n';
+        markdown += '| ' + separators.join(' | ') + ' |\n';
+
+        for (let i = 1; i < lines.length; i++) {
+          if (!lines[i].length) continue;
+          while (lines[i].length < header.length) lines[i].push('');
+          markdown += '| ' + lines[i].slice(0, header.length).join(' | ') + ' |\n';
+        }
+
+        return markdown.trim();
+      }
+
+      function jsonToMarkdown(jsonText) {
+        const data = JSON.parse(jsonText);
+        if (!Array.isArray(data) || !data.length) throw new Error('JSON must be a non-empty array');
+
+        const keys = Object.keys(data[0]);
+        const separators = keys.map(() => '---');
+        let markdown = '| ' + keys.join(' | ') + ' |\n';
+        markdown += '| ' + separators.join(' | ') + ' |\n';
+
+        for (let obj of data) {
+          const values = keys.map((key) => String(obj[key] || ''));
+          markdown += '| ' + values.join(' | ') + ' |\n';
+        }
+
+        return markdown.trim();
+      }
+
+      function htmlToMarkdown(html) {
+        const div = document.createElement('div');
+        div.innerHTML = html;
+
+        function nodeToMarkdown(node) {
+          if (node.nodeType === 3) return node.textContent;
+
+          const tag = node.tagName?.toLowerCase();
+          let content = '';
+
+          for (let child of node.childNodes) {
+            content += nodeToMarkdown(child);
+          }
+
+          switch (tag) {
+            case 'h1':
+              return '# ' + content + '\n\n';
+            case 'h2':
+              return '## ' + content + '\n\n';
+            case 'h3':
+              return '### ' + content + '\n\n';
+            case 'h4':
+              return '#### ' + content + '\n\n';
+            case 'h5':
+              return '##### ' + content + '\n\n';
+            case 'h6':
+              return '###### ' + content + '\n\n';
+            case 'p':
+              return content + '\n\n';
+            case 'strong':
+            case 'b':
+              return '**' + content + '**';
+            case 'em':
+            case 'i':
+              return '*' + content + '*';
+            case 'code':
+              return '`' + content + '`';
+            case 'a':
+              return '[' + content + '](' + (node.href || '') + ')';
+            case 'ul':
+              return listToMarkdown(node, false) + '\n';
+            case 'ol':
+              return listToMarkdown(node, true) + '\n';
+            case 'li':
+              return content;
+            case 'br':
+              return '\n';
+            case 'hr':
+              return '---\n\n';
+            case 'blockquote':
+              return '> ' + content.replace(/\n/g, '\n> ') + '\n\n';
+            default:
+              return content;
+          }
+        }
+
+        function listToMarkdown(node, ordered) {
+          let result = '';
+          let index = 1;
+          for (let li of node.querySelectorAll(':scope > li')) {
+            const prefix = ordered ? index + '. ' : '- ';
+            result += prefix + li.textContent + '\n';
+            index++;
+          }
+          return result;
+        }
+
+        let markdown = '';
+        for (let node of div.childNodes) {
+          markdown += nodeToMarkdown(node);
+        }
+        return markdown.trim();
+      }
+
+      function excelToMarkdown(jsonData) {
+        if (!jsonData || !jsonData.length) throw new Error('Empty Excel sheet');
+
+        const header = jsonData[0];
+        const separators = header.map(() => '---');
+        let markdown = '| ' + header.join(' | ') + ' |\n';
+        markdown += '| ' + separators.join(' | ') + ' |\n';
+
+        for (let i = 1; i < jsonData.length; i++) {
+          markdown += '| ' + jsonData[i].join(' | ') + ' |\n';
+        }
+
+        return markdown.trim();
+      }
+
+      async function wordToMarkdown(file) {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.convertToHtml({ arrayBuffer });
+        return htmlToMarkdown(result.value);
+      }
+
+      /* ---------- Main convert handler ---------- */
+
+      async function convert() {
+        try {
+          let markdown = '';
+
+          if (currentMode === 'csv') {
+            const csvText = document.getElementById('csvInput').value;
+            markdown = csvToMarkdown(csvText);
+          } else if (currentMode === 'tsv') {
+            const tsvText = document.getElementById('tsvInput').value;
+            markdown = tsvToMarkdown(tsvText);
+          } else if (currentMode === 'json') {
+            const jsonText = document.getElementById('jsonInput').value;
+            markdown = jsonToMarkdown(jsonText);
+          } else if (currentMode === 'html') {
+            const htmlText = document.getElementById('htmlInput').value;
+            markdown = htmlToMarkdown(htmlText);
+          } else if (currentMode === 'excel') {
+            const preview = document.getElementById('preview').value;
+            if (!preview) throw new Error('No Excel file loaded');
+            const jsonData = JSON.parse(preview);
+            markdown = excelToMarkdown(jsonData);
+          } else if (currentMode === 'word') {
+            const wordFile = document.getElementById('wordFile').files[0];
+            if (!wordFile) throw new Error('No Word file selected');
+            markdown = await wordToMarkdown(wordFile);
+          }
+
+          document.getElementById('markdownOutput').value = markdown;
+          showStatus('Conversion complete.', 'success');
+        } catch (err) {
+          showStatus('Error: ' + err.message, 'error');
+        }
+      }
+
+      document.getElementById('convertBtn').addEventListener('click', convert);
+
+      /* ---------- File handlers ---------- */
+
+      document.getElementById('excelUploadBtn').addEventListener('click', () => {
+        document.getElementById('fileInput').click();
+      });
+
+      document.getElementById('fileInput').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          try {
+            const data = new Uint8Array(evt.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+            document.getElementById('preview').value = JSON.stringify(jsonData, null, 2);
+            showStatus('Excel file loaded. Click Convert to proceed.', 'success');
+          } catch (err) {
+            showStatus('Error reading Excel: ' + err.message, 'error');
+          }
+        };
+        reader.onerror = () => showStatus('Error reading file', 'error');
+        reader.readAsArrayBuffer(file);
+      });
+
+      document.getElementById('wordUploadBtn').addEventListener('click', () => {
+        document.getElementById('wordFile').click();
+      });
+
+      document.getElementById('wordFile').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) {
+          showStatus('No Word file selected', 'error');
+          return;
+        }
+        showStatus('Word file selected. Click Convert to proceed.', 'success');
+      });
+
+      /* ---------- Utility buttons ---------- */
+
+      document.getElementById('copyBtn').addEventListener('click', () => {
+        const output = document.getElementById('markdownOutput');
+        if (!output.value) {
+          showStatus('Nothing to copy', 'error');
+          return;
+        }
+        output.select();
+        document.execCommand('copy');
+        showStatus('Copied to clipboard', 'success');
+      });
+
+      document.getElementById('downloadBtn').addEventListener('click', () => {
+        const content = document.getElementById('markdownOutput').value;
+        if (!content) {
+          showStatus('Nothing to download', 'error');
+          return;
+        }
+        const blob = new Blob([content], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'converted.md';
+        a.click();
+        URL.revokeObjectURL(url);
+        showStatus('Downloaded as converted.md', 'success');
+      });
+
+      // Initial state
+      setMode('csv');
+    })();
+  </script>
+</body>
+</html>

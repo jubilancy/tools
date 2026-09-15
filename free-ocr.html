@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Free OCR | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script async src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--accent);
+      border-radius: 4px;
+      padding: 3rem 1rem;
+      text-align: center;
+      background: var(--highlight);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .drop-zone:hover {
+      border-color: var(--text);
+      background-color: var(--hover);
+    }
+
+    .drop-zone.active {
+      border-color: var(--text);
+      background-color: var(--hover);
+    }
+
+    .drop-zone-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .drop-zone-text {
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+    }
+
+    .preview-img {
+      max-width: 100%;
+      border-radius: 4px;
+      border: 1px solid var(--puny);
+      margin: 1rem 0;
+    }
+
+    textarea {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      min-height: 250px;
+      resize: vertical;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    select {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .status.info {
+      background-color: rgba(59, 130, 246, 0.1);
+      border-left: 3px solid #3b82f6;
+      color: #3b82f6;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .progress-bar {
+      display: none;
+      width: 100%;
+      height: 20px;
+      background-color: var(--hover);
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 0.5rem 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background-color: var(--accent);
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .progress-text {
+      font-size: 0.8rem;
+      color: var(--puny);
+      margin-top: 0.25rem;
+      text-align: center;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat {
+      text-align: center;
+      padding: 0.75rem;
+      border: 1px solid var(--puny);
+      background-color: var(--highlight);
+      border-radius: 4px;
+    }
+
+    .stat-value {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--puny);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Free OCR</h1>
+    <p class="puny">Extract text from images using Tesseract.js — runs entirely in your browser</p>
+
+    <div class="container">
+      <div class="info-box">
+        <strong>How it works:</strong> Upload an image (PNG, JPG, GIF, WebP, TIFF) and select the language. The OCR engine runs in your browser — your images are never sent to any server.
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="language">Language:</label>
+        <select id="language">
+          <option value="eng">English</option>
+          <option value="fra">French</option>
+          <option value="deu">German</option>
+          <option value="spa">Spanish</option>
+          <option value="ita">Italian</option>
+          <option value="rus">Russian</option>
+          <option value="jpn">Japanese</option>
+          <option value="cmn">Simplified Chinese</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Upload Image:</label>
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-zone-icon">🖼️</div>
+          <div class="drop-zone-text">Drop image here or click to upload</div>
+          <div class="puny">PNG, JPG, GIF, WebP, TIFF (max 50MB)</div>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" />
+      </div>
+
+      <div id="previewContainer" style="display: none;">
+        <img class="preview-img" id="previewImg" alt="Preview" />
+      </div>
+
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-text" id="progressText"></div>
+
+      <div class="button-group">
+        <button id="processBtn" class="primary" onclick="processImage()" disabled>Process Image</button>
+        <button onclick="resetForm()">Clear</button>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <div id="resultContainer" style="display: none;">
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value" id="charCount">0</div>
+            <div class="stat-label">Characters</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="wordCount">0</div>
+            <div class="stat-label">Words</div>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label" for="resultText">Extracted Text:</label>
+          <textarea id="resultText" readonly placeholder="OCR results will appear here..."></textarea>
+        </div>
+
+        <div class="button-group">
+          <button onclick="copyToClipboard()">Copy Text</button>
+          <button onclick="downloadResult()">Download</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool-specific script -->
+  <script>
+    Tesseract.setLogging(false);
+
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const status = document.getElementById('status');
+    const processBtn = document.getElementById('processBtn');
+    const resultContainer = document.getElementById('resultContainer');
+    const previewContainer = document.getElementById('previewContainer');
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+
+    let currentImageFile = null;
+
+    // Drag and drop
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('active');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('active');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) loadImage(files[0]);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) loadImage(e.target.files[0]);
+    });
+
+    function loadImage(file) {
+      if (!file.type.startsWith('image/')) {
+        showStatus('❌ Please select an image file', 'error');
+        return;
+      }
+
+      if (file.size > 50 * 1024 * 1024) {
+        showStatus('❌ File is too large (max 50MB)', 'error');
+        return;
+      }
+
+      currentImageFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('previewImg').src = e.target.result;
+        previewContainer.style.display = 'block';
+        processBtn.disabled = false;
+        resultContainer.style.display = 'none';
+        showStatus('✅ Image loaded', 'success');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function processImage() {
+      if (!currentImageFile) {
+        showStatus('❌ Please select an image first', 'error');
+        return;
+      }
+
+      const language = document.getElementById('language').value;
+      processBtn.disabled = true;
+      progressBar.style.display = 'block';
+      showStatus('⏳ Processing image...', 'info');
+
+      try {
+        const result = await Tesseract.recognize(
+          currentImageFile,
+          language,
+          {
+            logger: (m) => {
+              if (m.status === 'recognizing') {
+                const percent = Math.round(m.progress * 100);
+                progressFill.style.width = percent + '%';
+                progressText.textContent = percent + '%';
+              }
+            }
+          }
+        );
+
+        const text = result.data.text;
+        document.getElementById('resultText').value = text;
+
+        // Update stats
+        const charCount = text.length;
+        const wordCount = text.trim().split(/\s+/).filter(w => w).length;
+        document.getElementById('charCount').textContent = charCount.toLocaleString();
+        document.getElementById('wordCount').textContent = wordCount.toLocaleString();
+
+        resultContainer.style.display = 'block';
+        showStatus('✅ Text extracted successfully!', 'success');
+      } catch (error) {
+        console.error('OCR error:', error);
+        showStatus('❌ Error: ' + error.message, 'error');
+      } finally {
+        processBtn.disabled = false;
+        progressBar.style.display = 'none';
+        progressFill.style.width = '0%';
+        progressText.textContent = '';
+      }
+    }
+
+    function copyToClipboard() {
+      const text = document.getElementById('resultText').value;
+      if (!text.trim()) {
+        showStatus('❌ Nothing to copy', 'error');
+        return;
+      }
+      navigator.clipboard.writeText(text);
+      showStatus('✅ Copied to clipboard', 'success');
+    }
+
+    function downloadResult() {
+      const text = document.getElementById('resultText').value;
+      if (!text.trim()) {
+        showStatus('❌ Nothing to download', 'error');
+        return;
+      }
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ocr-result-' + Date.now() + '.txt';
+      a.click();
+      showStatus('✅ Downloaded', 'success');
+    }
+
+    function resetForm() {
+      currentImageFile = null;
+      fileInput.value = '';
+      previewContainer.style.display = 'none';
+      resultContainer.style.display = 'none';
+      progressBar.style.display = 'none';
+      processBtn.disabled = true;
+      showStatus('', '');
+    }
+
+    function showStatus(message, type = 'success') {
+      if (!message) {
+        status.style.display = 'none';
+        return;
+      }
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 3000);
+    }
+  </script>
+</body>
+</html>

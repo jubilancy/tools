@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>gifski | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    /* ── tabs ── */
+    .tabs {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--puny);
+      width: fit-content;
+      margin-bottom: 1.5rem;
+    }
+
+    .tab {
+      padding: 6px 16px;
+      background: transparent;
+      border: none;
+      border-right: 1px solid var(--puny);
+      color: var(--puny);
+      font-family: monospace;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab:last-child { border-right: none; }
+    .tab:hover { color: var(--text); background: var(--hover); }
+    .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: bold; }
+
+    /* ── panels ── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── status bar ── */
+    .ff-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--puny);
+      margin-bottom: 1rem;
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--puny);
+      flex-shrink: 0;
+    }
+    .status-dot.loading { background: var(--accent); }
+    .status-dot.ready   { background: #52c97a; box-shadow: 0 0 5px #52c97a; }
+    .status-dot.error   { background: #e05252; }
+
+    /* ── drop area ── */
+    .drop-area {
+      border: 1px dashed var(--puny);
+      padding: 36px 24px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s;
+      margin-bottom: 1rem;
+    }
+    .drop-area:hover, .drop-area.drag-over {
+      border-color: var(--accent);
+      background: var(--hover);
+    }
+    .drop-area input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-title { font-size: 0.95rem; margin-bottom: 4px; }
+    .drop-sub { font-size: 0.75rem; color: var(--puny); }
+
+    /* ── queue ── */
+    .queue {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 1rem;
+    }
+    .queue-item {
+      border: 1px solid var(--puny);
+      padding: 8px 12px;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+    }
+    .queue-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .queue-size { color: var(--puny); white-space: nowrap; }
+    .queue-status { font-size: 0.75rem; white-space: nowrap; }
+    .queue-status.waiting { color: var(--puny); }
+    .queue-status.working { color: var(--accent); }
+    .queue-status.done    { color: #52c97a; }
+    .queue-status.error   { color: #e05252; }
+    .queue-bar {
+      grid-column: 1 / -1;
+      height: 2px;
+      background: var(--puny);
+      display: none;
+    }
+    .queue-bar.visible { display: block; }
+    .queue-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.2s;
+    }
+
+    /* ── frame strip ── */
+    .strip-wrap {
+      border: 1px solid var(--puny);
+      padding: 10px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    .strip-wrap.visible { display: block; }
+    .strip-label { font-size: 0.75rem; color: var(--puny); margin-bottom: 8px; }
+    .strip {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .strip::-webkit-scrollbar { height: 4px; }
+    .strip::-webkit-scrollbar-thumb { background: var(--puny); }
+    .strip canvas {
+      flex-shrink: 0;
+      border: 1px solid var(--puny);
+      image-rendering: pixelated;
+    }
+
+    /* ── options grid ── */
+    .opts {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 1rem;
+    }
+    .opt-group label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--puny);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .opt-value { color: var(--accent); float: right; }
+    .opt-group input[type=range] {
+      width: 100%;
+      accent-color: var(--accent);
+      padding: 0;
+      border: none;
+      background: transparent;
+    }
+    .opt-group input[type=number],
+    .opt-group select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--puny);
+      color: var(--text);
+      font-family: monospace;
+      font-size: 0.85rem;
+      padding: 5px 7px;
+    }
+    .opt-group select option { background: var(--bg); }
+
+    /* ── btn-row ── */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .btn-row .eta {
+      font-size: 0.75rem;
+      color: var(--puny);
+      margin-left: 4px;
+    }
+
+    /* ── log ── */
+    .log {
+      background: var(--bg);
+      border: 1px solid var(--puny);
+      padding: 10px 12px;
+      font-size: 0.75rem;
+      color: var(--puny);
+      max-height: 120px;
+      overflow-y: auto;
+      display: none;
+      margin-bottom: 1rem;
+    }
+    .log.visible { display: block; }
+    .log p { line-height: 1.8; }
+    .log p.info { color: var(--puny); }
+    .log p.ok   { color: #52c97a; }
+    .log p.err  { color: #e05252; }
+
+    /* ── output grid ── */
+    .output-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 2rem;
+    }
+    .output-card {
+      border: 1px solid var(--puny);
+    }
+    .output-card img, .output-card video {
+      width: 100%;
+      display: block;
+      max-height: 150px;
+      object-fit: contain;
+      background: #000;
+    }
+    .output-card-meta { padding: 8px 10px; border-top: 1px solid var(--puny); }
+    .output-card-name {
+      font-size: 0.75rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 6px;
+    }
+    .output-card-dl {
+      font-size: 0.75rem;
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .output-card-dl:hover { text-decoration: underline; }
+
+    /* ── notice ── */
+    .notice {
+      font-size: 0.8rem;
+      color: var(--puny);
+      border: 1px dashed var(--puny);
+      padding: 8px 12px;
+      margin-bottom: 1rem;
+      line-height: 1.8;
+    }
+    .notice strong { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>gifski</h1>
+    <p class="puny">video → gif · gif → video · bulk processing · 100% local via ffmpeg.wasm</p>
+
+    <div class="ff-status">
+      <div class="status-dot loading" id="dot"></div>
+      <span id="status-label">loading ffmpeg…</span>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-panel="v2g">▶ video → gif</button>
+      <button class="tab" data-panel="g2v">◉ gif → video</button>
+    </div>
+
+    <!-- VIDEO → GIF -->
+    <div class="panel active" id="panel-v2g">
+      <div class="notice">
+        <strong>Note:</strong> All processing runs locally in your browser — no files are uploaded anywhere.
+        First run downloads ~30 MB of WASM. Supported: MP4, WebM, MOV, AVI, MKV.
+      </div>
+
+      <div class="drop-area" id="drop-v2g">
+        <input type="file" id="input-v2g" multiple accept="video/*">
+        <div class="drop-title">drop videos here or click to browse</div>
+        <div class="drop-sub">mp4 · webm · mov · avi · mkv — multiple files OK</div>
+      </div>
+
+      <div class="strip-wrap" id="strip-wrap-v2g">
+        <div class="strip-label">frame preview (first file)</div>
+        <div class="strip" id="strip-v2g"></div>
+      </div>
+
+      <div class="queue" id="queue-v2g"></div>
+
+      <div class="opts">
+        <div class="opt-group">
+          <label>FPS <span class="opt-value" id="fps-val">15</span></label>
+          <input type="range" id="opt-fps" min="5" max="30" value="15"
+                 oninput="document.getElementById('fps-val').textContent=this.value">
+        </div>
+        <div class="opt-group">
+          <label>Width px (0=auto)</label>
+          <input type="number" id="opt-width" value="480" min="0" max="1920" step="8">
+        </div>
+        <div class="opt-group">
+          <label>Quality <span class="opt-value" id="q-val">90</span></label>
+          <input type="range" id="opt-quality" min="10" max="100" value="90"
+                 oninput="document.getElementById('q-val').textContent=this.value">
+        </div>
+        <div class="opt-group">
+          <label>Dither</label>
+          <select id="opt-dither">
+            <option value="floyd_steinberg">floyd-steinberg</option>
+            <option value="bayer">bayer</option>
+            <option value="none">none</option>
+          </select>
+        </div>
+        <div class="opt-group">
+          <label>Start (s)</label>
+          <input type="number" id="opt-start" value="0" min="0" step="0.5">
+        </div>
+        <div class="opt-group">
+          <label>Duration (s, 0=full)</label>
+          <input type="number" id="opt-dur" value="0" min="0" step="0.5">
+        </div>
+        <div class="opt-group">
+          <label>Colours</label>
+          <select id="opt-colors">
+            <option value="256" selected>256</option>
+            <option value="128">128</option>
+            <option value="64">64</option>
+            <option value="32">32</option>
+          </select>
+        </div>
+        <div class="opt-group">
+          <label>Loop</label>
+          <select id="opt-loop">
+            <option value="0">infinite</option>
+            <option value="-1">no loop</option>
+            <option value="1">once</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button id="btn-convert-v2g" class="primary" disabled>▶ convert all</button>
+        <button id="btn-clear-v2g" class="danger">✕ clear</button>
+        <span class="eta" id="v2g-eta"></span>
+      </div>
+
+      <div class="log" id="log-v2g"></div>
+      <div class="output-grid" id="out-v2g"></div>
+    </div>
+
+    <!-- GIF → VIDEO -->
+    <div class="panel" id="panel-g2v">
+      <div class="notice">
+        <strong>Note:</strong> Converts GIF files to MP4 (H.264) or WebM (VP9) using ffmpeg.wasm.
+        Bulk processing — drop as many GIFs as you like.
+      </div>
+
+      <div class="drop-area" id="drop-g2v">
+        <input type="file" id="input-g2v" multiple accept="image/gif">
+        <div class="drop-title">drop GIF files here or click to browse</div>
+        <div class="drop-sub">gif — multiple files OK</div>
+      </div>
+
+      <div class="queue" id="queue-g2v"></div>
+
+      <div class="opts">
+        <div class="opt-group">
+          <label>Output format</label>
+          <select id="opt-g2v-fmt">
+            <option value="mp4">MP4 (H.264)</option>
+            <option value="webm">WebM (VP9)</option>
+          </select>
+        </div>
+        <div class="opt-group">
+          <label>CRF (quality) <span class="opt-value" id="crf-val">23</span></label>
+          <input type="range" id="opt-crf" min="0" max="51" value="23"
+                 oninput="document.getElementById('crf-val').textContent=this.value">
+        </div>
+        <div class="opt-group">
+          <label>Scale width (0=auto)</label>
+          <input type="number" id="opt-g2v-width" value="0" min="0" step="8">
+        </div>
+        <div class="opt-group">
+          <label>Speed preset</label>
+          <select id="opt-preset">
+            <option value="fast">fast</option>
+            <option value="medium" selected>medium</option>
+            <option value="slow">slow (smaller)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button id="btn-convert-g2v" class="primary" disabled>▶ convert all</button>
+        <button id="btn-clear-g2v" class="danger">✕ clear</button>
+        <span class="eta" id="g2v-eta"></span>
+      </div>
+
+      <div class="log" id="log-g2v"></div>
+      <div class="output-grid" id="out-g2v"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • powered by <a href="https://github.com/ffmpegwasm/ffmpeg.wasm" target="_blank" style="color:var(--puny)">ffmpeg.wasm</a> — runs 100% locally
+  </footer>
+
+  <!-- Theme Toggle -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- ffmpeg.wasm -->
+  <script type="module">
+    // Use the older 0.11.x API which is more stable in-browser without SharedArrayBuffer
+    import { createFFmpeg, fetchFile } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js';
+
+    /* ── state ── */
+    const ffmpeg = createFFmpeg({
+      log: false,
+      corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
+    });
+    let ffReady = false;
+    let v2gFiles = [];
+    let g2vFiles = [];
+
+    /* ── init ── */
+    const dot = document.getElementById('dot');
+    const statusLabel = document.getElementById('status-label');
+
+    async function loadFFmpeg() {
+      try {
+        await ffmpeg.load();
+        ffReady = true;
+        dot.className = 'status-dot ready';
+        statusLabel.textContent = 'ready — ffmpeg loaded';
+        document.getElementById('btn-convert-v2g').disabled = v2gFiles.length === 0;
+        document.getElementById('btn-convert-g2v').disabled = g2vFiles.length === 0;
+      } catch (e) {
+        dot.className = 'status-dot error';
+        statusLabel.textContent = 'ffmpeg failed to load: ' + e.message;
+        addLog('log-v2g', 'err', 'FFmpeg failed: ' + e.message);
+        addLog('log-g2v', 'err', 'FFmpeg failed: ' + e.message);
+      }
+    }
+    loadFFmpeg();
+
+    /* ── tabs ── */
+    document.querySelectorAll('.tab').forEach(t => {
+      t.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        document.getElementById('panel-' + t.dataset.panel).classList.add('active');
+      });
+    });
+
+    /* ── helpers ── */
+    function fmtSize(b) {
+      if (b < 1024) return b + ' B';
+      if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+      return (b / 1048576).toFixed(1) + ' MB';
+    }
+
+    function addLog(id, cls, msg) {
+      const log = document.getElementById(id);
+      log.classList.add('visible');
+      const p = document.createElement('p');
+      p.className = cls;
+      const now = new Date().toLocaleTimeString('en-US', { hour12: false });
+      p.textContent = `[${now}] ${msg}`;
+      log.appendChild(p);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function makeQueueItem(file, queueId) {
+      const el = document.createElement('div');
+      el.className = 'queue-item';
+      el.id = `qi-${queueId}-${file.name.replace(/\W/g, '_')}`;
+      el.innerHTML = `
+        <div class="queue-name">${file.name}</div>
+        <div class="queue-size">${fmtSize(file.size)}</div>
+        <div class="queue-status waiting" id="qs-${queueId}-${file.name.replace(/\W/g, '_')}">waiting</div>
+        <div class="queue-bar" id="qb-${queueId}-${file.name.replace(/\W/g, '_')}">
+          <div class="queue-bar-fill"></div>
+        </div>`;
+      return el;
+    }
+
+    function setItemStatus(queueId, name, status, pct) {
+      const key = `${queueId}-${name.replace(/\W/g, '_')}`;
+      const qs = document.getElementById(`qs-${key}`);
+      const qb = document.getElementById(`qb-${key}`);
+      if (qs) { qs.className = `queue-status ${status}`; qs.textContent = status; }
+      if (qb && pct !== undefined) {
+        qb.classList.add('visible');
+        qb.querySelector('.queue-bar-fill').style.width = pct + '%';
+      }
+    }
+
+    function addOutputCard(container, name, url, isVideo) {
+      const card = document.createElement('div');
+      card.className = 'output-card';
+      const media = document.createElement(isVideo ? 'video' : 'img');
+      media.src = url;
+      if (isVideo) { media.controls = true; media.loop = true; media.muted = true; }
+      const meta = document.createElement('div');
+      meta.className = 'output-card-meta';
+      meta.innerHTML = `<div class="output-card-name">${name}</div>
+        <a class="output-card-dl" href="${url}" download="${name}">↓ download</a>`;
+      card.appendChild(media);
+      card.appendChild(meta);
+      document.getElementById(container).appendChild(card);
+    }
+
+    /* ── frame strip preview ── */
+    async function drawStrip(file) {
+      const strip = document.getElementById('strip-v2g');
+      const wrap  = document.getElementById('strip-wrap-v2g');
+      strip.innerHTML = '';
+      wrap.classList.add('visible');
+
+      const url = URL.createObjectURL(file);
+      const vid = document.createElement('video');
+      vid.src = url;
+      vid.muted = true;
+      vid.preload = 'metadata';
+
+      await new Promise(r => vid.addEventListener('loadedmetadata', r, { once: true }));
+      const dur = vid.duration || 5;
+      const count = Math.min(12, Math.max(4, Math.floor(dur * 2)));
+      const interval = dur / count;
+
+      for (let i = 0; i < count; i++) {
+        const t = i * interval;
+        vid.currentTime = t;
+        await new Promise(r => vid.addEventListener('seeked', r, { once: true }));
+        const c = document.createElement('canvas');
+        const scale = 80 / vid.videoWidth;
+        c.width  = Math.round(vid.videoWidth  * scale);
+        c.height = Math.round(vid.videoHeight * scale);
+        c.getContext('2d').drawImage(vid, 0, 0, c.width, c.height);
+        strip.appendChild(c);
+      }
+      URL.revokeObjectURL(url);
+    }
+
+    /* ══════════════════════════════════
+       VIDEO → GIF
+    ══════════════════════════════════ */
+    const dropV2G     = document.getElementById('drop-v2g');
+    const inputV2G    = document.getElementById('input-v2g');
+    const queueV2G    = document.getElementById('queue-v2g');
+    const btnV2G      = document.getElementById('btn-convert-v2g');
+    const btnClearV2G = document.getElementById('btn-clear-v2g');
+
+    function addV2GFiles(files) {
+      for (const f of files) {
+        if (!f.type.startsWith('video/') && !f.name.match(/\.(mp4|webm|mov|avi|mkv|flv)$/i)) continue;
+        if (v2gFiles.find(x => x.name === f.name)) continue;
+        v2gFiles.push(f);
+        queueV2G.appendChild(makeQueueItem(f, 'v2g'));
+      }
+      if (v2gFiles.length > 0) {
+        if (ffReady) btnV2G.disabled = false;
+        drawStrip(v2gFiles[0]);
+      }
+    }
+
+    inputV2G.addEventListener('change', e => addV2GFiles(e.target.files));
+    dropV2G.addEventListener('dragover', e => { e.preventDefault(); dropV2G.classList.add('drag-over'); });
+    dropV2G.addEventListener('dragleave', () => dropV2G.classList.remove('drag-over'));
+    dropV2G.addEventListener('drop', e => {
+      e.preventDefault();
+      dropV2G.classList.remove('drag-over');
+      addV2GFiles(e.dataTransfer.files);
+    });
+
+    btnClearV2G.addEventListener('click', () => {
+      v2gFiles = [];
+      queueV2G.innerHTML = '';
+      document.getElementById('strip-v2g').innerHTML = '';
+      document.getElementById('strip-wrap-v2g').classList.remove('visible');
+      document.getElementById('log-v2g').innerHTML = '';
+      document.getElementById('log-v2g').classList.remove('visible');
+      document.getElementById('out-v2g').innerHTML = '';
+      btnV2G.disabled = true;
+    });
+
+    btnV2G.addEventListener('click', async () => {
+      if (!ffReady) return;
+      btnV2G.disabled = true;
+
+      const fps     = document.getElementById('opt-fps').value;
+      const width   = parseInt(document.getElementById('opt-width').value) || 0;
+      const dither  = document.getElementById('opt-dither').value;
+      const start   = parseFloat(document.getElementById('opt-start').value) || 0;
+      const dur     = parseFloat(document.getElementById('opt-dur').value) || 0;
+      const colors  = document.getElementById('opt-colors').value;
+      const loop    = document.getElementById('opt-loop').value;
+
+      const scaleFilter = width > 0
+        ? `scale=${width}:-1:flags=lanczos`
+        : 'scale=iw:-1:flags=lanczos';
+
+      const ditherMap = { floyd_steinberg: 'floyd_steinberg', bayer: 'bayer:bayer_scale=3', none: 'none' };
+      const ditherStr = ditherMap[dither] || 'floyd_steinberg';
+
+      const eta = document.getElementById('v2g-eta');
+
+      for (let i = 0; i < v2gFiles.length; i++) {
+        const file    = v2gFiles[i];
+        const inName  = 'in_' + i + '_' + file.name.replace(/\s/g, '_');
+        const palName = 'pal_' + i + '.png';
+        const outName = file.name.replace(/\.[^.]+$/, '') + '.gif';
+
+        setItemStatus('v2g', file.name, 'working', 10);
+        eta.textContent = `processing ${i + 1}/${v2gFiles.length}…`;
+        addLog('log-v2g', 'info', `→ ${file.name}`);
+
+        try {
+          ffmpeg.FS('writeFile', inName, await fetchFile(file));
+
+          const timeArgs = [];
+          if (start > 0) timeArgs.push('-ss', start.toString());
+          if (dur   > 0) timeArgs.push('-t',  dur.toString());
+
+          // pass 1: palette
+          setItemStatus('v2g', file.name, 'working', 30);
+          await ffmpeg.run(
+            ...timeArgs,
+            '-i', inName,
+            '-vf', `fps=${fps},${scaleFilter},palettegen=max_colors=${colors}:stats_mode=diff`,
+            '-y', palName
+          );
+
+          setItemStatus('v2g', file.name, 'working', 60);
+
+          // pass 2: GIF
+          await ffmpeg.run(
+            ...timeArgs,
+            '-i', inName,
+            '-i', palName,
+            '-lavfi', `fps=${fps},${scaleFilter} [x]; [x][1:v] paletteuse=dither=${ditherStr}`,
+            '-loop', loop,
+            '-y', outName
+          );
+
+          setItemStatus('v2g', file.name, 'working', 90);
+
+          const data = ffmpeg.FS('readFile', outName);
+          const blob = new Blob([data.buffer], { type: 'image/gif' });
+          const url  = URL.createObjectURL(blob);
+          addOutputCard('out-v2g', outName, url, false);
+          addLog('log-v2g', 'ok', `✓ ${outName} (${fmtSize(blob.size)})`);
+          setItemStatus('v2g', file.name, 'done', 100);
+
+          ffmpeg.FS('unlink', inName);
+          ffmpeg.FS('unlink', palName);
+          ffmpeg.FS('unlink', outName);
+
+        } catch (e) {
+          addLog('log-v2g', 'err', `✗ ${file.name}: ${e.message}`);
+          setItemStatus('v2g', file.name, 'error');
+        }
+      }
+
+      eta.textContent = 'all done';
+      setTimeout(() => eta.textContent = '', 3000);
+      btnV2G.disabled = false;
+    });
+
+    /* ══════════════════════════════════
+       GIF → VIDEO
+    ══════════════════════════════════ */
+    const dropG2V     = document.getElementById('drop-g2v');
+    const inputG2V    = document.getElementById('input-g2v');
+    const queueG2V    = document.getElementById('queue-g2v');
+    const btnG2V      = document.getElementById('btn-convert-g2v');
+    const btnClearG2V = document.getElementById('btn-clear-g2v');
+
+    function addG2VFiles(files) {
+      for (const f of files) {
+        if (f.type !== 'image/gif' && !f.name.toLowerCase().endsWith('.gif')) continue;
+        if (g2vFiles.find(x => x.name === f.name)) continue;
+        g2vFiles.push(f);
+        queueG2V.appendChild(makeQueueItem(f, 'g2v'));
+      }
+      if (g2vFiles.length > 0 && ffReady) btnG2V.disabled = false;
+    }
+
+    inputG2V.addEventListener('change', e => addG2VFiles(e.target.files));
+    dropG2V.addEventListener('dragover', e => { e.preventDefault(); dropG2V.classList.add('drag-over'); });
+    dropG2V.addEventListener('dragleave', () => dropG2V.classList.remove('drag-over'));
+    dropG2V.addEventListener('drop', e => {
+      e.preventDefault();
+      dropG2V.classList.remove('drag-over');
+      addG2VFiles(e.dataTransfer.files);
+    });
+
+    btnClearG2V.addEventListener('click', () => {
+      g2vFiles = [];
+      queueG2V.innerHTML = '';
+      document.getElementById('log-g2v').innerHTML = '';
+      document.getElementById('log-g2v').classList.remove('visible');
+      document.getElementById('out-g2v').innerHTML = '';
+      btnG2V.disabled = true;
+    });
+
+    btnG2V.addEventListener('click', async () => {
+      if (!ffReady) return;
+      btnG2V.disabled = true;
+
+      const fmt    = document.getElementById('opt-g2v-fmt').value;
+      const crf    = document.getElementById('opt-crf').value;
+      const scaleW = parseInt(document.getElementById('opt-g2v-width').value) || 0;
+      const preset = document.getElementById('opt-preset').value;
+      const eta    = document.getElementById('g2v-eta');
+
+      for (let i = 0; i < g2vFiles.length; i++) {
+        const file    = g2vFiles[i];
+        const inName  = 'gin_' + i + '_' + file.name.replace(/\s/g, '_');
+        const outName = file.name.replace(/\.gif$/i, '') + '.' + fmt;
+
+        setItemStatus('g2v', file.name, 'working', 10);
+        eta.textContent = `processing ${i + 1}/${g2vFiles.length}…`;
+        addLog('log-g2v', 'info', `→ ${file.name}`);
+
+        try {
+          ffmpeg.FS('writeFile', inName, await fetchFile(file));
+
+          const scaleFilter = scaleW > 0 ? `scale=${scaleW}:-2` : 'scale=iw:-2';
+          const evenScale   = `${scaleFilter},pad=iw+mod(iw\\,2):ih+mod(ih\\,2)`;
+
+          setItemStatus('g2v', file.name, 'working', 40);
+
+          if (fmt === 'mp4') {
+            await ffmpeg.run(
+              '-i', inName,
+              '-vf', evenScale,
+              '-c:v', 'libx264',
+              '-crf', crf,
+              '-preset', preset,
+              '-pix_fmt', 'yuv420p',
+              '-movflags', '+faststart',
+              '-an',
+              '-y', outName
+            );
+          } else {
+            await ffmpeg.run(
+              '-i', inName,
+              '-vf', scaleFilter,
+              '-c:v', 'libvpx-vp9',
+              '-crf', crf,
+              '-b:v', '0',
+              '-an',
+              '-y', outName
+            );
+          }
+
+          setItemStatus('g2v', file.name, 'working', 90);
+
+          const data = ffmpeg.FS('readFile', outName);
+          const mime = fmt === 'mp4' ? 'video/mp4' : 'video/webm';
+          const blob = new Blob([data.buffer], { type: mime });
+          const url  = URL.createObjectURL(blob);
+          addOutputCard('out-g2v', outName, url, true);
+          addLog('log-g2v', 'ok', `✓ ${outName} (${fmtSize(blob.size)})`);
+          setItemStatus('g2v', file.name, 'done', 100);
+
+          ffmpeg.FS('unlink', inName);
+          ffmpeg.FS('unlink', outName);
+
+        } catch (e) {
+          addLog('log-g2v', 'err', `✗ ${file.name}: ${e.message}`);
+          setItemStatus('g2v', file.name, 'error');
+        }
+      }
+
+      eta.textContent = 'all done';
+      setTimeout(() => eta.textContent = '', 3000);
+      btnG2V.disabled = false;
+    });
+
+  </script>
+</body>
+</html>

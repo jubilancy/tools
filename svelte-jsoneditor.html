@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JSON Editor | tools.eliana.lol</title>
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/svelte-jsoneditor/themes/jse-theme-dark.css" />
+  <style>
+    /* ── reset & base ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --toolbar-bg:   #3d3d3d;
+      --toolbar-h:    40px;
+      --sidebar-bg:   #2a2a2a;
+      --panel-bg:     #1e1e1e;
+      --border:       #4a4a4a;
+      --text:         #d4d4d4;
+      --text-dim:     #888;
+      --accent:       #f0a500;
+      --accent2:      #4caf8a;
+      --btn-bg:       #4a4a4a;
+      --btn-hover:    #5a5a5a;
+      --btn-active:   #6a6a6a;
+      --divider:      #555;
+      --handle:       #555;
+      --handle-hover: #888;
+      --status-bg:    #2d2d2d;
+      --err:          #e06c6c;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      background: var(--panel-bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* ── top toolbar ──────────────────────────────────────── */
+    #toolbar {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0 8px;
+      height: var(--toolbar-h);
+      background: var(--toolbar-bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      user-select: none;
+      position: relative;
+      z-index: 10;
+    }
+
+    #toolbar .logo {
+      font-weight: 700;
+      font-size: 14px;
+      color: #fff;
+      margin-right: 8px;
+      white-space: nowrap;
+      letter-spacing: -0.3px;
+    }
+    #toolbar .logo span { color: var(--accent); }
+
+    .tb-sep {
+      width: 1px;
+      height: 20px;
+      background: var(--divider);
+      margin: 0 4px;
+    }
+
+    /* toolbar buttons */
+    .tb-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 9px;
+      border-radius: 3px;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+      transition: background 100ms;
+    }
+    .tb-btn:hover  { background: var(--btn-hover); }
+    .tb-btn:active { background: var(--btn-active); }
+    .tb-btn.active { background: var(--btn-active); color: #fff; }
+    .tb-btn svg    { flex-shrink: 0; }
+
+    .tb-btn.accent { color: var(--accent); }
+    .tb-btn.green  { color: var(--accent2); }
+
+    #toolbar .right { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+
+    /* ── layout ───────────────────────────────────────────── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    #panels {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── individual panel ─────────────────────────────────── */
+    .panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 120px;
+    }
+    #panel-left  { flex: 1; }
+    #panel-right { flex: 1; }
+
+    .panel-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      padding: 0 6px;
+      height: 34px;
+      background: var(--sidebar-bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .panel-toolbar .mode-btn {
+      padding: 3px 8px;
+      border-radius: 3px;
+      border: none;
+      background: transparent;
+      color: var(--text-dim);
+      font-size: 11px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 100ms, color 100ms;
+    }
+    .panel-toolbar .mode-btn:hover  { background: var(--btn-hover); color: var(--text); }
+    .panel-toolbar .mode-btn.active { background: var(--btn-active); color: #fff; }
+
+    .panel-toolbar .panel-actions { margin-left: auto; display: flex; gap: 3px; }
+    .panel-toolbar .icon-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px;
+      border-radius: 3px; border: none;
+      background: transparent; color: var(--text-dim);
+      cursor: pointer; transition: background 100ms, color 100ms;
+      font-size: 14px; font-family: inherit;
+    }
+    .panel-toolbar .icon-btn:hover { background: var(--btn-hover); color: var(--text); }
+    .panel-toolbar .panel-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-left: 4px;
+    }
+
+    .panel-body { flex: 1; overflow: hidden; position: relative; }
+
+    /* ── resize handle ────────────────────────────────────── */
+    #handle {
+      width: 5px;
+      background: var(--handle);
+      cursor: col-resize;
+      flex-shrink: 0;
+      transition: background 150ms;
+      position: relative;
+      z-index: 5;
+    }
+    #handle:hover, #handle.dragging { background: var(--accent); }
+
+    /* ── textarea / code panel ────────────────────────────── */
+    .code-area {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: var(--panel-bg);
+      color: var(--text);
+      font-family: "Fira Code", "Cascadia Code", "Consolas", monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      padding: 12px;
+      resize: none;
+      outline: none;
+      tab-size: 2;
+    }
+    .code-area::selection { background: #264f78; }
+
+    /* ── tree panel (svelte-jsoneditor) ───────────────────── */
+    #tree-mount {
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+    }
+    /* override jse internals */
+    #tree-mount .jse-main      { height: 100%; }
+    #tree-mount .jse-menu      { display: none; } /* we have our own toolbar */
+    #tree-mount .jse-status-bar { display: none; }
+
+    /* ── status bar ───────────────────────────────────────── */
+    #statusbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 10px;
+      height: 24px;
+      background: var(--status-bg);
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text-dim);
+      flex-shrink: 0;
+    }
+    #statusbar .err-msg { color: var(--err); }
+    #statusbar .ok-msg  { color: var(--accent2); }
+    #statusbar .right   { margin-left: auto; }
+
+    /* ── toaster ──────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: #333;
+      color: #fff;
+      padding: 7px 16px;
+      border-radius: 4px;
+      font-size: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms, transform 200ms;
+      white-space: nowrap;
+      z-index: 100;
+      border: 1px solid var(--border);
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── file drop overlay ────────────────────────────────── */
+    #drop-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 50;
+      align-items: center; justify-content: center;
+      font-size: 18px; color: #fff;
+      border: 3px dashed var(--accent);
+      pointer-events: none;
+    }
+    body.dragging #drop-overlay { display: flex; }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- TOP TOOLBAR -->
+  <div id="toolbar">
+    <span class="logo">JSON<span>editor</span> online</span>
+    <div class="tb-sep"></div>
+
+    <!-- File -->
+    <button class="tb-btn" id="btn-open" title="Open file">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M1 3.5A1.5 1.5 0 012.5 2h3.586a1 1 0 01.707.293l1.414 1.414A1 1 0 009.914 4H13.5A1.5 1.5 0 0115 5.5v7A1.5 1.5 0 0113.5 14h-11A1.5 1.5 0 011 12.5v-9z"/></svg>
+      Open
+    </button>
+    <button class="tb-btn" id="btn-save" title="Save file">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M2 1a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4.5L11.5 1H2zm5 11a2 2 0 110-4 2 2 0 010 4zm3-8H4V2h6v2z"/></svg>
+      Save
+    </button>
+    <input type="file" id="file-input" accept=".json,application/json" style="display:none" />
+
+    <div class="tb-sep"></div>
+
+    <!-- Edit -->
+    <button class="tb-btn" id="btn-format" title="Format JSON (Ctrl+Shift+F)">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M2 4h12v1H2zm0 3h8v1H2zm0 3h10v1H2z"/></svg>
+      Format
+    </button>
+    <button class="tb-btn" id="btn-compact" title="Compact JSON">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M2 4h12v1H2zm2 3h8v1H4zm2 3h4v1H6z"/></svg>
+      Compact
+    </button>
+
+    <div class="tb-sep"></div>
+
+    <!-- Transfer -->
+    <button class="tb-btn accent" id="btn-left-to-right" title="Copy left → right">
+      ▶ Copy →
+    </button>
+    <button class="tb-btn green" id="btn-right-to-left" title="Copy right → left">
+      ◀ ← Copy
+    </button>
+
+    <div class="right">
+      <button class="tb-btn" id="btn-clear-left"  title="Clear left panel">Clear ✕</button>
+    </div>
+  </div>
+
+  <!-- PANELS -->
+  <div id="panels">
+
+    <!-- LEFT PANEL (text / code) -->
+    <div class="panel" id="panel-left">
+      <div class="panel-toolbar">
+        <span class="panel-label">text</span>
+        <div class="panel-actions">
+          <button class="icon-btn" id="btn-copy-left"  title="Copy to clipboard">⎘</button>
+          <button class="icon-btn" id="btn-paste-left" title="Paste from clipboard">⌅</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <textarea class="code-area" id="left-editor" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+      </div>
+    </div>
+
+    <!-- RESIZE HANDLE -->
+    <div id="handle"></div>
+
+    <!-- RIGHT PANEL (tree / table / text) -->
+    <div class="panel" id="panel-right">
+      <div class="panel-toolbar">
+        <button class="mode-btn active" data-mode="tree">tree</button>
+        <button class="mode-btn" data-mode="table">table</button>
+        <button class="mode-btn" data-mode="text">text</button>
+        <div class="panel-actions">
+          <button class="icon-btn" id="btn-copy-right" title="Copy to clipboard">⎘</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="tree-mount" class="jse-theme-dark"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- STATUS BAR -->
+  <div id="statusbar">
+    <span id="status-msg">Ready</span>
+    <span class="right" id="status-pos"></span>
+  </div>
+
+</div>
+
+<!-- DROP OVERLAY -->
+<div id="drop-overlay">Drop JSON file here</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- svelte-jsoneditor standalone -->
+<script src="https://cdn.jsdelivr.net/npm/svelte-jsoneditor/standalone.js"></script>
+
+<script>
+/* ── state ─────────────────────────────────────────────────── */
+const DEFAULT_JSON = {
+  "welcome": "JSON Editor Online",
+  "tip": "Edit on the left, view the tree on the right",
+  "features": ["format", "compact", "tree view", "table view", "drag & drop"],
+  "nested": {
+    "works": true,
+    "count": 42
+  }
+};
+
+let treeEditor = null;
+let currentMode = 'tree';
+
+/* ── helpers ────────────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const leftEl = $('left-editor');
+
+function toast(msg, duration = 1800) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function setStatus(msg, type = '') {
+  const el = $('status-msg');
+  el.textContent = msg;
+  el.className = type ? type + '-msg' : '';
+}
+
+function getLeftText() { return leftEl.value; }
+
+function setLeftText(text) {
+  leftEl.value = text;
+  syncRight();
+}
+
+function parseLeft() {
+  try { return JSON.parse(getLeftText()); }
+  catch(e) { return null; }
+}
+
+/* ── tree editor (right panel) ──────────────────────────────── */
+function initTreeEditor() {
+  if (typeof (window.svelte_jsoneditor ?? window).JSONEditor === 'undefined') {
+    setTimeout(initTreeEditor, 150);
+    return;
+  }
+  const { JSONEditor } = window.svelte_jsoneditor ?? window;
+  treeEditor = new JSONEditor({
+    target: $('tree-mount'),
+    props: {
+      content: { json: DEFAULT_JSON },
+      mode: currentMode,
+      navigationBar: false,
+      statusBar: false,
+      readOnly: false,
+      onChange(content, prev, { contentErrors }) {
+        if (contentErrors) {
+          setStatus('Tree has errors', 'err');
+        } else {
+          setStatus('OK', 'ok');
+        }
+      }
+    }
+  });
+  // set default left text
+  leftEl.value = JSON.stringify(DEFAULT_JSON, null, 2);
+  setStatus('Ready');
+}
+
+function syncRight() {
+  if (!treeEditor) return;
+  const json = parseLeft();
+  if (json !== null) {
+    treeEditor.set({ json });
+    setStatus('OK', 'ok');
+  } else if (getLeftText().trim() === '') {
+    treeEditor.set({ json: null });
+    setStatus('Empty');
+  } else {
+    setStatus('Invalid JSON', 'err');
+  }
+}
+
+function syncLeft() {
+  if (!treeEditor) return;
+  try {
+    const content = treeEditor.get();
+    const text = content.text ?? JSON.stringify(content.json, null, 2);
+    leftEl.value = text;
+    setStatus('OK', 'ok');
+  } catch(e) { setStatus('Error reading tree', 'err'); }
+}
+
+/* ── mode switching ─────────────────────────────────────────── */
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMode = btn.dataset.mode;
+    if (treeEditor) treeEditor.updateProps({ mode: currentMode });
+  });
+});
+
+/* ── format / compact ───────────────────────────────────────── */
+$('btn-format').addEventListener('click', () => {
+  try {
+    const json = JSON.parse(getLeftText());
+    setLeftText(JSON.stringify(json, null, 2));
+    toast('Formatted');
+  } catch { setStatus('Invalid JSON — cannot format', 'err'); toast('Invalid JSON', 1500); }
+});
+
+$('btn-compact').addEventListener('click', () => {
+  try {
+    const json = JSON.parse(getLeftText());
+    setLeftText(JSON.stringify(json));
+    toast('Compacted');
+  } catch { setStatus('Invalid JSON — cannot compact', 'err'); toast('Invalid JSON', 1500); }
+});
+
+/* ── copy / paste ───────────────────────────────────────────── */
+$('btn-copy-left').addEventListener('click', async () => {
+  await navigator.clipboard.writeText(getLeftText()).catch(() => {});
+  toast('Copied!');
+});
+
+$('btn-paste-left').addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    setLeftText(text);
+    toast('Pasted');
+  } catch { toast('Clipboard access denied', 1500); }
+});
+
+$('btn-copy-right').addEventListener('click', async () => {
+  if (!treeEditor) return;
+  try {
+    const content = treeEditor.get();
+    const text = content.text ?? JSON.stringify(content.json, null, 2);
+    await navigator.clipboard.writeText(text);
+    toast('Copied!');
+  } catch { toast('Nothing to copy', 1500); }
+});
+
+/* ── transfer ────────────────────────────────────────────────── */
+$('btn-left-to-right').addEventListener('click', () => { syncRight(); toast('Copied →'); });
+$('btn-right-to-left').addEventListener('click', () => { syncLeft(); toast('← Copied'); });
+
+/* ── clear ───────────────────────────────────────────────────── */
+$('btn-clear-left').addEventListener('click', () => {
+  leftEl.value = '';
+  if (treeEditor) treeEditor.set({ json: null });
+  setStatus('Empty');
+  toast('Cleared');
+});
+
+/* ── file open / save ────────────────────────────────────────── */
+const fileInput = $('file-input');
+$('btn-open').addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    setLeftText(ev.target.result);
+    try {
+      const json = JSON.parse(ev.target.result);
+      if (treeEditor) treeEditor.set({ json });
+      setStatus('Loaded: ' + file.name, 'ok');
+    } catch { setStatus('Loaded (invalid JSON): ' + file.name, 'err'); }
+    toast('Opened ' + file.name);
+  };
+  reader.readAsText(file);
+  fileInput.value = '';
+});
+
+$('btn-save').addEventListener('click', () => {
+  const text = getLeftText();
+  const blob = new Blob([text], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), { href: url, download: 'data.json' });
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Saved!');
+});
+
+/* ── drag and drop ───────────────────────────────────────────── */
+document.addEventListener('dragenter', e => {
+  if (e.dataTransfer.types.includes('Files')) document.body.classList.add('dragging');
+});
+document.addEventListener('dragleave', e => {
+  if (!e.relatedTarget) document.body.classList.remove('dragging');
+});
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  document.body.classList.remove('dragging');
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    setLeftText(ev.target.result);
+    toast('Opened ' + file.name);
+  };
+  reader.readAsText(file);
+});
+
+/* ── live sync while typing ──────────────────────────────────── */
+let syncTimer;
+leftEl.addEventListener('input', () => {
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncRight, 400);
+});
+
+/* ── cursor position in status bar ──────────────────────────── */
+leftEl.addEventListener('keyup', updatePos);
+leftEl.addEventListener('click', updatePos);
+function updatePos() {
+  const txt = leftEl.value.substring(0, leftEl.selectionStart);
+  const line = txt.split('\n').length;
+  const col  = txt.split('\n').pop().length + 1;
+  $('status-pos').textContent = `Ln ${line}, Col ${col}`;
+}
+
+/* ── keyboard shortcuts ──────────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+    e.preventDefault();
+    $('btn-format').click();
+  }
+});
+
+/* ── resize handle ───────────────────────────────────────────── */
+const handle   = $('handle');
+const panelL   = $('panel-left');
+const panels   = $('panels');
+let dragging   = false;
+let startX, startW;
+
+handle.addEventListener('mousedown', e => {
+  dragging = true;
+  startX   = e.clientX;
+  startW   = panelL.getBoundingClientRect().width;
+  handle.classList.add('dragging');
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const totalW = panels.getBoundingClientRect().width - handle.offsetWidth;
+  const newW   = Math.min(Math.max(startW + (e.clientX - startX), 120), totalW - 120);
+  panelL.style.flex = 'none';
+  panelL.style.width = newW + 'px';
+});
+
+document.addEventListener('mouseup', () => {
+  if (!dragging) return;
+  dragging = false;
+  handle.classList.remove('dragging');
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+});
+
+/* ── boot ────────────────────────────────────────────────────── */
+initTreeEditor();
+</script>
+</body>
+</html>

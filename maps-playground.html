@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Maps Playground | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+
+  <!-- Leaflet CSS (needed before script) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+  <!-- OpenLayers CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/openlayers/10.5.0/ol.css" />
+  <!-- Mapbox GL CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mapbox-gl/dist/mapbox-gl.css" />
+
+  <style>
+    .lib-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin: 1.5rem 0 0;
+      border-bottom: 1px solid var(--puny);
+      padding-bottom: 0.75rem;
+    }
+
+    .lib-tab {
+      font-family: monospace;
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--puny);
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 120ms;
+      min-width: auto;
+    }
+
+    .lib-tab:hover { border-color: var(--accent); color: var(--text); background: var(--hover); }
+    .lib-tab.active { border-color: var(--accent); color: var(--accent); }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .panel-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin: 1.25rem 0 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .panel-name { font-weight: bold; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .panel-desc { color: var(--puny); font-size: 0.8rem; }
+
+    /* Map containers need a fixed height or they collapse */
+    .map-wrap {
+      width: 100%;
+      height: 360px;
+      border: 1px solid var(--puny);
+      position: relative;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    .map-wrap > div,
+    .map-wrap > canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* Override leaflet/OL/Mapbox font to keep monospace vibe on controls */
+    .leaflet-container { font-family: monospace !important; }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin: 0.75rem 0 0.25rem;
+    }
+
+    .controls button {
+      min-width: auto;
+      padding: 5px 12px;
+      font-size: 0.8rem;
+      border-radius: 2px;
+    }
+
+    .controls button.primary { border-color: var(--accent); color: var(--accent); }
+
+    .ctrl-group {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--puny);
+    }
+
+    .ctrl-group select {
+      font-family: monospace;
+      font-size: 0.8rem;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--puny);
+      padding: 2px 4px;
+    }
+
+    .ctrl-group input[type="text"],
+    .ctrl-group input[type="number"] {
+      font-family: monospace;
+      font-size: 0.8rem;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--puny);
+      padding: 3px 6px;
+      width: 180px;
+      box-sizing: border-box;
+    }
+
+    .ctrl-group input[type="range"] {
+      width: 80px;
+      accent-color: var(--accent);
+      padding: 0;
+      border: none;
+      background: transparent;
+    }
+
+    .ctrl-val { min-width: 28px; text-align: right; font-size: 0.78rem; }
+
+    .info-strip {
+      font-size: 0.75rem;
+      color: var(--puny);
+      border-top: 1px dashed var(--puny);
+      padding-top: 0.5rem;
+      margin-top: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+    }
+
+    .info-strip a { color: var(--puny); font-size: 0.75rem; border-bottom: 1px dotted var(--puny); }
+    .info-strip a:hover { color: var(--accent); }
+
+    .coord-display {
+      font-size: 0.75rem;
+      color: var(--puny);
+      margin-top: 0.3rem;
+      font-family: monospace;
+      height: 1.2em;
+    }
+
+    .marker-list {
+      font-size: 0.75rem;
+      color: var(--puny);
+      margin-top: 0.4rem;
+      max-height: 60px;
+      overflow-y: auto;
+      border: 1px dashed var(--puny);
+      padding: 0.3rem 0.5rem;
+      display: none;
+    }
+
+    .marker-list.has-items { display: block; }
+
+    .mapbox-note {
+      padding: 0.75rem 1rem;
+      background: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.8rem;
+      line-height: 1.6;
+      margin-bottom: 0.5rem;
+    }
+
+    .stage-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: var(--puny);
+      background: #0a0a0a;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Maps Playground</h1>
+    <p class="puny">Three mapping libraries. All live, no API key required (except Mapbox).</p>
+
+    <div class="lib-tabs">
+      <button class="lib-tab active" data-tab="leaflet">Leaflet</button>
+      <button class="lib-tab" data-tab="ol">OpenLayers</button>
+      <button class="lib-tab" data-tab="mapbox">Mapbox GL JS</button>
+    </div>
+
+    <!-- ══ LEAFLET ══ -->
+    <div class="panel active" id="panel-leaflet">
+      <div class="panel-meta">
+        <span class="panel-name">Leaflet</span>
+        <span class="panel-desc">Mobile-friendly interactive maps — the open-source Google Maps alternative.</span>
+      </div>
+
+      <div class="map-wrap" id="leaflet-map">
+        <div class="stage-loading" id="leaflet-loading">loading leaflet…</div>
+      </div>
+      <div class="coord-display" id="leaflet-coords">click map to drop a marker · move to see coordinates</div>
+
+      <div class="controls">
+        <div class="ctrl-group">
+          <label>tile layer</label>
+          <select id="leaflet-tiles">
+            <option value="osm">OpenStreetMap</option>
+            <option value="topo">OpenTopo</option>
+            <option value="carto-dark">CartoDB Dark</option>
+            <option value="carto-light">CartoDB Light</option>
+            <option value="esri">ESRI Satellite</option>
+          </select>
+        </div>
+        <div class="ctrl-group">
+          <label>go to</label>
+          <input type="text" id="leaflet-search" placeholder="lat, lng  (e.g. 48.8566, 2.3522)" />
+        </div>
+        <button id="leaflet-go" class="primary">go</button>
+        <button id="leaflet-clear-markers">clear markers</button>
+        <button id="leaflet-my-location">my location</button>
+      </div>
+
+      <div class="marker-list" id="leaflet-marker-list"></div>
+
+      <div class="info-strip">
+        <span>Click the map to drop a marker. Markers show lat/lng popups.</span>
+        <a href="https://leafletjs.com/reference.html" target="_blank">docs ↗</a>
+      </div>
+    </div>
+
+    <!-- ══ OPENLAYERS ══ -->
+    <div class="panel" id="panel-ol">
+      <div class="panel-meta">
+        <span class="panel-name">OpenLayers</span>
+        <span class="panel-desc">Feature-packed mapping framework for geospatial applications.</span>
+      </div>
+
+      <div class="map-wrap" id="ol-map">
+        <div class="stage-loading" id="ol-loading">loading openlayers…</div>
+      </div>
+      <div class="coord-display" id="ol-coords">move mouse over map to see coordinates</div>
+
+      <div class="controls">
+        <div class="ctrl-group">
+          <label>source</label>
+          <select id="ol-source">
+            <option value="osm">OpenStreetMap</option>
+            <option value="stamen-toner">Stamen Toner</option>
+            <option value="esri-world">ESRI World Imagery</option>
+            <option value="esri-topo">ESRI World Topo</option>
+          </select>
+        </div>
+        <div class="ctrl-group">
+          <label>draw</label>
+          <select id="ol-draw-type">
+            <option value="none">none</option>
+            <option value="Point">point</option>
+            <option value="LineString">line</option>
+            <option value="Polygon">polygon</option>
+            <option value="Circle">circle</option>
+          </select>
+        </div>
+        <button id="ol-clear" style="border-style:dashed;opacity:0.7;">clear drawings</button>
+        <button id="ol-zoom-world" class="primary">zoom to world</button>
+      </div>
+
+      <div class="info-strip">
+        <span>Select a draw type to sketch on the map. Change sources to switch tile layers.</span>
+        <a href="https://openlayers.org/doc/tutorials/" target="_blank">docs ↗</a>
+      </div>
+    </div>
+
+    <!-- ══ MAPBOX GL JS ══ -->
+    <div class="panel" id="panel-mapbox">
+      <div class="panel-meta">
+        <span class="panel-name">Mapbox GL JS</span>
+        <span class="panel-desc">Vector tile maps with WebGL rendering — gorgeous and fast.</span>
+      </div>
+
+      <div class="mapbox-note">
+        <strong>Note:</strong> Mapbox GL JS requires a free API key.
+        Get one at <a href="https://account.mapbox.com/access-tokens/" target="_blank">mapbox.com ↗</a> then paste it below.
+        Your key is only used in this browser tab and never stored.
+      </div>
+
+      <div class="controls" style="margin-bottom: 0.5rem;">
+        <div class="ctrl-group" style="flex:1;">
+          <label>api key</label>
+          <input type="text" id="mapbox-token" placeholder="pk.eyJ1…" style="width:100%;flex:1;" />
+        </div>
+        <button class="primary" id="mapbox-init-btn">load map</button>
+      </div>
+
+      <div class="map-wrap" id="mapbox-map" style="display:none;">
+        <div class="stage-loading" id="mapbox-loading">loading mapbox gl…</div>
+      </div>
+
+      <div class="controls" id="mapbox-controls" style="display:none;">
+        <div class="ctrl-group">
+          <label>style</label>
+          <select id="mapbox-style">
+            <option value="mapbox://styles/mapbox/streets-v12">streets</option>
+            <option value="mapbox://styles/mapbox/satellite-streets-v12">satellite</option>
+            <option value="mapbox://styles/mapbox/dark-v11">dark</option>
+            <option value="mapbox://styles/mapbox/light-v11">light</option>
+            <option value="mapbox://styles/mapbox/outdoors-v12">outdoors</option>
+          </select>
+        </div>
+        <div class="ctrl-group">
+          <label>3D buildings</label>
+          <input type="checkbox" id="mapbox-3d" />
+        </div>
+        <div class="ctrl-group">
+          <label>pitch</label>
+          <input type="range" id="mapbox-pitch" min="0" max="85" step="5" value="0" />
+          <span class="ctrl-val" id="mapbox-pitch-val">0°</span>
+        </div>
+        <button id="mapbox-fly" class="primary">fly to random city</button>
+      </div>
+
+      <div class="info-strip">
+        <span>Click to drop markers. Pitch for 3D perspective. Rotate map with right-click drag.</span>
+        <a href="https://docs.mapbox.com/mapbox-gl-js/api/" target="_blank">docs ↗</a>
+      </div>
+    </div>
+
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Script loader -->
+  <script>
+    const loadedScripts = {};
+    function loadScript(src) {
+      return new Promise((res, rej) => {
+        if (loadedScripts[src]) return res();
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = () => { loadedScripts[src] = true; res(); };
+        s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+
+    const tabInits = {};
+    document.querySelectorAll('.lib-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.lib-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        const key = tab.dataset.tab;
+        document.getElementById('panel-' + key).classList.add('active');
+        if (tabInits[key]) tabInits[key]();
+      });
+    });
+  </script>
+
+  <!-- ══ LEAFLET ══ -->
+  <script>
+    let leafletMap = null, leafletTileLayer = null, leafletMarkers = [];
+    let leafletReady = false;
+
+    const TILE_URLS = {
+      'osm': ['https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', '© OpenStreetMap contributors'],
+      'topo': ['https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', '© OpenTopoMap contributors'],
+      'carto-dark': ['https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', '© CartoDB'],
+      'carto-light': ['https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', '© CartoDB'],
+      'esri': ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', '© ESRI'],
+    };
+
+    function initLeaflet() {
+      if (leafletReady) return;
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js').then(() => {
+        document.getElementById('leaflet-loading').remove();
+        leafletMap = L.map('leaflet-map').setView([20, 0], 2);
+
+        const [url, attr] = TILE_URLS['osm'];
+        leafletTileLayer = L.tileLayer(url, { attribution: attr, maxZoom: 19 });
+        leafletTileLayer.addTo(leafletMap);
+
+        leafletMap.on('mousemove', e => {
+          document.getElementById('leaflet-coords').textContent =
+            `lat: ${e.latlng.lat.toFixed(5)}  lng: ${e.latlng.lng.toFixed(5)}`;
+        });
+
+        leafletMap.on('click', e => {
+          const lat = e.latlng.lat.toFixed(5), lng = e.latlng.lng.toFixed(5);
+          const marker = L.marker([e.latlng.lat, e.latlng.lng])
+            .addTo(leafletMap)
+            .bindPopup(`${lat}, ${lng}`)
+            .openPopup();
+          leafletMarkers.push(marker);
+          updateLeafletMarkerList();
+        });
+
+        leafletReady = true;
+        setupLeafletControls();
+      });
+    }
+
+    function updateLeafletMarkerList() {
+      const list = document.getElementById('leaflet-marker-list');
+      if (leafletMarkers.length === 0) { list.classList.remove('has-items'); return; }
+      list.classList.add('has-items');
+      list.innerHTML = leafletMarkers.map((m, i) => {
+        const ll = m.getLatLng();
+        return `<span style="margin-right:1rem;">#${i+1}: ${ll.lat.toFixed(4)}, ${ll.lng.toFixed(4)}</span>`;
+      }).join('');
+    }
+
+    function setupLeafletControls() {
+      document.getElementById('leaflet-tiles').addEventListener('change', function() {
+        const [url, attr] = TILE_URLS[this.value];
+        if (leafletTileLayer) leafletMap.removeLayer(leafletTileLayer);
+        leafletTileLayer = L.tileLayer(url, { attribution: attr, maxZoom: 19 });
+        leafletTileLayer.addTo(leafletMap);
+      });
+
+      document.getElementById('leaflet-go').addEventListener('click', () => {
+        const val = document.getElementById('leaflet-search').value.trim();
+        const parts = val.split(',').map(s => parseFloat(s.trim()));
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          leafletMap.setView(parts, 12);
+        }
+      });
+
+      document.getElementById('leaflet-search').addEventListener('keydown', e => {
+        if (e.key === 'Enter') document.getElementById('leaflet-go').click();
+      });
+
+      document.getElementById('leaflet-clear-markers').addEventListener('click', () => {
+        leafletMarkers.forEach(m => leafletMap.removeLayer(m));
+        leafletMarkers = [];
+        updateLeafletMarkerList();
+      });
+
+      document.getElementById('leaflet-my-location').addEventListener('click', () => {
+        navigator.geolocation.getCurrentPosition(pos => {
+          const { latitude: lat, longitude: lng } = pos.coords;
+          leafletMap.setView([lat, lng], 13);
+          L.marker([lat, lng]).addTo(leafletMap).bindPopup('you are here').openPopup();
+          leafletMarkers.push(L.marker([lat, lng]));
+          updateLeafletMarkerList();
+        }, () => alert('Location access denied.'));
+      });
+    }
+
+    tabInits['leaflet'] = initLeaflet;
+    window.addEventListener('load', () => setTimeout(initLeaflet, 50));
+  </script>
+
+  <!-- ══ OPENLAYERS ══ -->
+  <script>
+    let olMap = null, olVectorLayer = null, olDrawInteraction = null;
+    let olReady = false;
+
+    const OL_SOURCES = {
+      'osm': () => new ol.source.OSM(),
+      'stamen-toner': () => new ol.source.XYZ({ url: 'https://stamen-tiles.a.ssl.fastly.net/toner/{z}/{x}/{y}.png', attributions: '© Stamen Design' }),
+      'esri-world': () => new ol.source.XYZ({ url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attributions: '© ESRI' }),
+      'esri-topo': () => new ol.source.XYZ({ url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', attributions: '© ESRI' }),
+    };
+
+    function initOL() {
+      if (olReady) return;
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/openlayers/10.5.0/ol.js').then(() => {
+        document.getElementById('ol-loading').remove();
+
+        const baseLayer = new ol.layer.Tile({ source: new ol.source.OSM() });
+
+        const vectorSource = new ol.source.Vector();
+        olVectorLayer = new ol.layer.Vector({
+          source: vectorSource,
+          style: new ol.style.Style({
+            fill: new ol.style.Fill({ color: 'rgba(255,102,0,0.2)' }),
+            stroke: new ol.style.Stroke({ color: '#ff6600', width: 2 }),
+            image: new ol.style.Circle({ radius: 6, fill: new ol.style.Fill({ color: '#ff6600' }) })
+          })
+        });
+
+        olMap = new ol.Map({
+          target: 'ol-map',
+          layers: [baseLayer, olVectorLayer],
+          view: new ol.View({ center: ol.proj.fromLonLat([0, 20]), zoom: 2 }),
+        });
+
+        // Coordinate readout
+        olMap.on('pointermove', e => {
+          const coords = ol.proj.toLonLat(e.coordinate);
+          document.getElementById('ol-coords').textContent =
+            `lng: ${coords[0].toFixed(5)}  lat: ${coords[1].toFixed(5)}`;
+        });
+
+        olReady = true;
+        setupOLControls(baseLayer, vectorSource);
+      });
+    }
+
+    function setupOLControls(baseLayer, vectorSource) {
+      document.getElementById('ol-source').addEventListener('change', function() {
+        baseLayer.setSource(OL_SOURCES[this.value]());
+      });
+
+      document.getElementById('ol-draw-type').addEventListener('change', function() {
+        if (olDrawInteraction) olMap.removeInteraction(olDrawInteraction);
+        if (this.value === 'none') return;
+        olDrawInteraction = new ol.interaction.Draw({ source: vectorSource, type: this.value });
+        olMap.addInteraction(olDrawInteraction);
+      });
+
+      document.getElementById('ol-clear').addEventListener('click', () => vectorSource.clear());
+
+      document.getElementById('ol-zoom-world').addEventListener('click', () => {
+        olMap.getView().animate({ center: ol.proj.fromLonLat([0, 20]), zoom: 2, duration: 800 });
+      });
+    }
+
+    tabInits['ol'] = initOL;
+  </script>
+
+  <!-- ══ MAPBOX GL JS ══ -->
+  <script>
+    let mapboxMap = null, mapboxReady = false, mapboxMarkers = [];
+
+    const CITIES = [
+      { name: 'Tokyo', lng: 139.6917, lat: 35.6895 },
+      { name: 'New York', lng: -74.006, lat: 40.7128 },
+      { name: 'Paris', lng: 2.3522, lat: 48.8566 },
+      { name: 'São Paulo', lng: -46.6333, lat: -23.5505 },
+      { name: 'Lagos', lng: 3.3792, lat: 6.5244 },
+      { name: 'Sydney', lng: 151.2093, lat: -33.8688 },
+      { name: 'Mumbai', lng: 72.8777, lat: 19.076 },
+      { name: 'Cairo', lng: 31.2357, lat: 30.0444 },
+    ];
+
+    function initMapbox() {
+      // Don't auto-init — needs token
+    }
+
+    document.getElementById('mapbox-init-btn').addEventListener('click', () => {
+      const token = document.getElementById('mapbox-token').value.trim();
+      if (!token.startsWith('pk.')) {
+        alert('Please enter a valid Mapbox public token (starts with pk.)');
+        return;
+      }
+
+      document.getElementById('mapbox-map').style.display = 'block';
+
+      loadScript('https://cdn.jsdelivr.net/npm/mapbox-gl/dist/mapbox-gl.js').then(() => {
+        document.getElementById('mapbox-loading').remove();
+        mapboxgl.accessToken = token;
+
+        mapboxMap = new mapboxgl.Map({
+          container: 'mapbox-map',
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: [0, 20],
+          zoom: 1.5,
+        });
+
+        mapboxMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+        mapboxMap.on('click', e => {
+          const { lng, lat } = e.lngLat;
+          const el = document.createElement('div');
+          el.style.cssText = 'width:12px;height:12px;background:#ff6600;border-radius:50%;border:2px solid #fff;';
+          const marker = new mapboxgl.Marker(el)
+            .setLngLat([lng, lat])
+            .setPopup(new mapboxgl.Popup({ offset: 10 }).setText(`${lat.toFixed(4)}, ${lng.toFixed(4)}`))
+            .addTo(mapboxMap);
+          mapboxMarkers.push(marker);
+        });
+
+        document.getElementById('mapbox-controls').style.display = 'flex';
+        setupMapboxControls();
+        mapboxReady = true;
+      });
+    });
+
+    function setupMapboxControls() {
+      document.getElementById('mapbox-style').addEventListener('change', function() {
+        mapboxMap.setStyle(this.value);
+        mapboxMap.once('style.load', () => {
+          if (document.getElementById('mapbox-3d').checked) add3DBuildings();
+        });
+      });
+
+      document.getElementById('mapbox-pitch').addEventListener('input', function() {
+        document.getElementById('mapbox-pitch-val').textContent = this.value + '°';
+        mapboxMap.setPitch(parseInt(this.value));
+      });
+
+      document.getElementById('mapbox-3d').addEventListener('change', function() {
+        if (this.checked) add3DBuildings();
+        else {
+          if (mapboxMap.getLayer('3d-buildings')) mapboxMap.removeLayer('3d-buildings');
+        }
+      });
+
+      document.getElementById('mapbox-fly').addEventListener('click', () => {
+        const city = CITIES[Math.floor(Math.random() * CITIES.length)];
+        mapboxMap.flyTo({ center: [city.lng, city.lat], zoom: 11, pitch: 45, duration: 2500, essential: true });
+      });
+    }
+
+    function add3DBuildings() {
+      if (mapboxMap.getLayer('3d-buildings')) return;
+      mapboxMap.addLayer({
+        id: '3d-buildings',
+        source: 'composite',
+        'source-layer': 'building',
+        filter: ['==', 'extrude', 'true'],
+        type: 'fill-extrusion',
+        minzoom: 14,
+        paint: {
+          'fill-extrusion-color': '#aaa',
+          'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 14.05, ['get', 'height']],
+          'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 14, 0, 14.05, ['get', 'min_height']],
+          'fill-extrusion-opacity': 0.6
+        }
+      });
+    }
+
+    tabInits['mapbox'] = initMapbox;
+  </script>
+
+</body>
+</html>

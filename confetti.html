@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Confetti | tools.eliana.lol</title>
+  <link rel="stylesheet" href="../global.css" />
+  <link rel="icon" type="image/x-icon" href="../favicon.svg" />
+  <style>
+    .tool-layout { display: flex; flex-direction: column; gap: 20px; }
+    .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    label { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; color: var(--puny); margin-bottom: 5px; }
+    .presets { display: flex; flex-wrap: wrap; gap: 8px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; }
+    input[type=range] { accent-color: var(--accent); width: 120px; }
+    input[type=color] { width: 40px; height: 28px; padding: 2px; border: 1px solid var(--puny); background: var(--bg); cursor: pointer; }
+    #message { font-size: 2rem; text-align: center; padding: 20px; font-weight: bold; border: 1px solid var(--puny); min-height: 80px; display: flex; align-items: center; justify-content: center; }
+    #custom-msg { text-align: center; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left"><a href="../index.html">home</a> | <a href="../extra.html">extra</a> | <a href="../credits.html">credits</a> | <a href="../changelog.html">logs</a></div>
+    <div class="right"><button id="theme-toggle">[theme]</button> | <a href="https://eliana.lol">site</a></div>
+  </nav>
+  <main>
+    <h1>Confetti</h1>
+    <p class="puny">Celebrate! Trigger confetti effects for any milestone.</p>
+    <div class="tool-layout">
+      <div id="message">🎉 Congratulations! 🎉</div>
+      <div>
+        <label>Message</label>
+        <input type="text" id="custom-msg" value="🎉 Congratulations! 🎉" oninput="document.getElementById('message').textContent=this.value" />
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <label>Particle count <span id="count-val">200</span></label>
+          <input type="range" id="count" min="10" max="500" value="200" oninput="document.getElementById('count-val').textContent=this.value" />
+        </div>
+        <div class="control-group">
+          <label>Spread <span id="spread-val">70</span></label>
+          <input type="range" id="spread" min="10" max="180" value="70" oninput="document.getElementById('spread-val').textContent=this.value" />
+        </div>
+        <div class="control-group">
+          <label>Origin Y</label>
+          <input type="range" id="origin-y" min="0" max="100" value="50" />
+        </div>
+      </div>
+      <div>
+        <label>Presets</label>
+        <div class="presets">
+          <button onclick="firework()">🎆 Firework</button>
+          <button onclick="stars()">⭐ Stars</button>
+          <button onclick="cannon()">💥 Cannon</button>
+          <button onclick="snow()">❄️ Snow</button>
+          <button onclick="pride()">🏳️‍🌈 Pride</button>
+          <button onclick="fireBasic()">🎊 Basic</button>
+        </div>
+      </div>
+      <div class="action-bar">
+        <button onclick="fireBasic()" style="font-size:1rem;padding:8px 20px">🎉 Fire!</button>
+      </div>
+    </div>
+  </main>
+  <footer style="margin-top: 4rem; text-align: center" class="puny">© 2026 eliana.lol • <a href="../credits.html">credits</a></footer>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script>
+    const htmlEl = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    htmlEl.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => { const now = htmlEl.getAttribute('data-theme'); const next = now === 'dark' ? 'light' : 'dark'; htmlEl.setAttribute('data-theme', next); localStorage.setItem('theme', next); toggle.innerText = next === 'dark' ? '[light]' : '[dark]'; };
+
+    function fireBasic() {
+      confetti({ particleCount: parseInt(document.getElementById('count').value), spread: parseInt(document.getElementById('spread').value), origin: { y: document.getElementById('origin-y').value / 100 } });
+    }
+
+    function firework() {
+      const end = Date.now() + 2000;
+      const colors = ['#ff6600', '#ffff99', '#ffffff'];
+      (function frame() {
+        confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors });
+        confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      })();
+    }
+
+    function stars() {
+      confetti({ spread: 360, ticks: 100, gravity: 0, decay: 0.94, startVelocity: 30, particleCount: 80, shapes: ['star'], colors: ['#ffff99','#ff6600','#ffffff'] });
+    }
+
+    function cannon() {
+      confetti({ angle: 90, spread: 120, particleCount: 300, origin: { y: 1 } });
+    }
+
+    function snow() {
+      const end = Date.now() + 3000;
+      (function frame() {
+        confetti({ particleCount: 4, startVelocity: 0, ticks: 200, origin: { x: Math.random(), y: 0 }, colors: ['#ffffff','#aaddff','#ddeeff'], shapes: ['circle'], gravity: 0.5, scalar: 0.8 });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      })();
+    }
+
+    function pride() {
+      const colors = [['#ff0000','#ff7700'],['#ffff00','#00ff00'],['#0000ff','#8b00ff']];
+      colors.forEach((c, i) => setTimeout(() => confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 }, colors: c }), i * 300));
+    }
+  </script>
+</body>
+</html>

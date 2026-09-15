@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clean Text | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+      display: block;
+      margin-bottom: 0.35rem;
+    }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.35rem;
+    }
+
+    .label-row .input-label {
+      margin-bottom: 0;
+    }
+
+    .stats {
+      font-size: 0.75rem;
+      color: var(--puny);
+      font-family: monospace;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    button.danger {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+
+    textarea {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+      min-height: 160px;
+      resize: vertical;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    #output {
+      background: var(--hover);
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show { display: block; }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .button-group { flex-direction: column; }
+      button { width: 100%; min-width: unset; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Clean Text</h1>
+    <p class="puny">Strip empty lines, trim whitespace, and normalize spacing — all in the browser.</p>
+
+    <div class="container">
+
+      <div>
+        <div class="label-row">
+          <label class="input-label" for="input">Input text</label>
+          <span class="stats" id="input-stats">Lines: 0 · Words: 0 · Characters: 0</span>
+        </div>
+        <textarea id="input" placeholder="Paste your text here…"></textarea>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" id="btn-empty">Remove empty lines</button>
+        <button id="btn-trim">Trim line whitespace</button>
+        <button id="btn-spaces">Collapse extra spaces</button>
+        <button id="btn-copy">Copy result</button>
+        <button class="danger" id="btn-clear">Clear all</button>
+      </div>
+
+      <div>
+        <div class="label-row">
+          <label class="input-label" for="output">Result</label>
+          <span class="stats" id="output-stats">Lines: 0 · Words: 0 · Characters: 0</span>
+        </div>
+        <textarea id="output" readonly placeholder="Cleaned text will appear here…"></textarea>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> actions are applied to the <em>input</em> each time — run multiple in sequence to stack them, or clear and start over.
+      </div>
+
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <script>
+    // Theme toggle
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) {
+      toggle.onclick = () => {
+        const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <script>
+    const inputEl = document.getElementById('input');
+    const outputEl = document.getElementById('output');
+    const inputStats = document.getElementById('input-stats');
+    const outputStats = document.getElementById('output-stats');
+
+    function getStats(text) {
+      const lines = text ? text.split(/\r?\n/).length : 0;
+      const words = (text.trim().match(/\S+/g) || []).length;
+      return `Lines: ${lines} · Words: ${words} · Characters: ${text.length}`;
+    }
+
+    function setOutput(value) {
+      outputEl.value = value;
+      outputStats.textContent = getStats(value);
+    }
+
+    inputEl.addEventListener('input', () => {
+      inputStats.textContent = getStats(inputEl.value);
+    });
+
+    document.getElementById('btn-empty').onclick = () => {
+      const result = inputEl.value
+        .split(/\r?\n/)
+        .filter(line => line.trim() !== '')
+        .join('\n');
+      setOutput(result);
+      showStatus('Empty lines removed.');
+    };
+
+    document.getElementById('btn-trim').onclick = () => {
+      const result = inputEl.value
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .join('\n');
+      setOutput(result);
+      showStatus('Lines trimmed.');
+    };
+
+    document.getElementById('btn-spaces').onclick = () => {
+      const result = inputEl.value
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n{3,}/g, '\n\n');
+      setOutput(result);
+      showStatus('Extra spaces collapsed.');
+    };
+
+    document.getElementById('btn-copy').onclick = () => {
+      if (!outputEl.value) return;
+      navigator.clipboard.writeText(outputEl.value);
+      showStatus('Copied to clipboard.');
+    };
+
+    document.getElementById('btn-clear').onclick = () => {
+      inputEl.value = '';
+      outputEl.value = '';
+      inputStats.textContent = getStats('');
+      outputStats.textContent = getStats('');
+    };
+
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    }
+  </script>
+</body>
+</html>

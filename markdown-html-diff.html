@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Markdown to HTML Diff | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      min-height: 220px;
+      resize: vertical;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+      .panel-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+    /* Tool-specific styles */
+    .panel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .panel {
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 200px;
+      max-height: 400px;
+      overflow: auto;
+    }
+
+    .panel-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--hover);
+      padding-bottom: 6px;
+    }
+
+    .rendered-output {
+      font-size: 0.9rem;
+    }
+
+    .rendered-output h1, .rendered-output h2, .rendered-output h3 {
+      margin: 0.5em 0 0.3em;
+    }
+
+    .rendered-output p {
+      margin: 0.4em 0;
+    }
+
+    .rendered-output code {
+      background: var(--hover);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    .html-source {
+      font-family: monospace;
+      font-size: 0.75rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    #ast-svg {
+      width: 100%;
+      min-height: 400px;
+    }
+
+    .full-width-panel {
+      grid-column: 1 / -1;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Markdown to HTML Diff</h1>
+    <p class="puny">Show Markdown source and rendered HTML side by side, with the AST tree in a third panel.</p>
+
+    <div class="container">
+      <div class="input-group">
+        <span class="input-label">Markdown source</span>
+        <textarea id="md-input"># Heading one
+
+Some **bold** text and a [link](https://example.com).
+
+## Subheading
+
+- item one
+- item two
+  - nested item
+
+> A blockquote here.
+
+```js
+const x = 1;
+```
+</textarea>
+      </div>
+
+      <div class="panel-grid">
+        <div class="panel">
+          <span class="panel-title">Rendered HTML (preview)</span>
+          <div class="rendered-output" id="rendered-output"></div>
+        </div>
+        <div class="panel">
+          <span class="panel-title">Raw HTML source</span>
+          <div class="html-source" id="html-source"></div>
+        </div>
+      </div>
+
+      <div class="panel full-width-panel" style="max-height: none;">
+        <span class="panel-title">AST tree (token structure)</span>
+        <svg id="ast-svg"></svg>
+      </div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> The AST tree shows how marked.js tokenizes your markdown into a structured tree before turning it into HTML — useful for understanding why nested lists, code blocks, or inline formatting render the way they do.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool-specific script -->
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    }
+
+    function tokenToNode(token, idx) {
+      const node = {
+        name: token.type + (token.depth ? ` (h${token.depth})` : ''),
+        children: []
+      };
+
+      if (token.tokens && token.tokens.length) {
+        node.children = token.tokens.map((t, i) => tokenToNode(t, i));
+      }
+      if (token.items && token.items.length) {
+        node.children = token.items.map((item, i) => {
+          const itemNode = { name: 'list_item', children: [] };
+          if (item.tokens) itemNode.children = item.tokens.map((t, j) => tokenToNode(t, j));
+          return itemNode;
+        });
+      }
+
+      return node;
+    }
+
+    function buildTree(markdown) {
+      const tokens = marked.lexer(markdown);
+      const root = { name: 'document', children: tokens.map((t, i) => tokenToNode(t, i)) };
+      return root;
+    }
+
+    function renderAst(root) {
+      const svg = d3.select('#ast-svg');
+      svg.selectAll('*').remove();
+
+      const container = document.getElementById('ast-svg').parentElement;
+      const width = container.clientWidth - 40 || 700;
+
+      const hierarchy = d3.hierarchy(root, (d) => d.children);
+      const treeLayout = d3.tree().size([width - 60, 0]).nodeSize([90, 50]);
+      treeLayout(hierarchy);
+
+      let maxDepth = 0;
+      hierarchy.each((d) => { if (d.depth > maxDepth) maxDepth = d.depth; });
+      const height = (maxDepth + 1) * 60 + 40;
+
+      svg.attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
+
+      const g = svg.append('g').attr('transform', 'translate(30, 20)');
+
+      g.selectAll('path.link')
+        .data(hierarchy.links())
+        .join('path')
+        .attr('class', 'link')
+        .attr('fill', 'none')
+        .attr('stroke', 'currentColor')
+        .attr('stroke-opacity', 0.3)
+        .attr('d', d3.linkVertical().x((d) => d.x).y((d) => d.depth * 60));
+
+      const node = g.selectAll('g.node')
+        .data(hierarchy.descendants())
+        .join('g')
+        .attr('transform', (d) => `translate(${d.x}, ${d.depth * 60})`);
+
+      node.append('rect')
+        .attr('x', -45)
+        .attr('y', -14)
+        .attr('width', 90)
+        .attr('height', 28)
+        .attr('rx', 4)
+        .attr('fill', (d) => d.depth === 0 ? '#ff6600' : '#0ea5e9')
+        .attr('fill-opacity', 0.15)
+        .attr('stroke', (d) => d.depth === 0 ? '#ff6600' : '#0ea5e9');
+
+      node.append('text')
+        .attr('text-anchor', 'middle')
+        .attr('dy', 4)
+        .attr('font-size', '10px')
+        .attr('font-family', 'monospace')
+        .attr('fill', 'currentColor')
+        .text((d) => d.data.name.length > 14 ? d.data.name.slice(0, 13) + '…' : d.data.name);
+    }
+
+    function render() {
+      const markdown = document.getElementById('md-input').value;
+
+      let htmlOutput = '';
+      try {
+        htmlOutput = marked.parse(markdown);
+      } catch (err) {
+        document.getElementById('rendered-output').innerHTML = '<p class="puny">Could not parse markdown.</p>';
+        return;
+      }
+
+      document.getElementById('rendered-output').innerHTML = htmlOutput;
+      document.getElementById('html-source').textContent = formatHtml(htmlOutput);
+
+      try {
+        const tree = buildTree(markdown);
+        renderAst(tree);
+      } catch (err) {
+        // AST rendering is best-effort
+      }
+    }
+
+    function formatHtml(htmlStr) {
+      // simple pretty-print: add newlines after closing tags for readability
+      return htmlStr
+        .replace(/></g, '>\n<')
+        .trim();
+    }
+
+    document.getElementById('md-input').addEventListener('input', render);
+    window.addEventListener('resize', render);
+    render();
+  </script>
+</body>
+</html>

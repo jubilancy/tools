@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wiki Garden | tools.eliana.lol</title>
+<link href="https://unpkg.com/wikipedia-preview@1.4.4/dist/wikipedia-preview.css?module" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fafafa;
+    --fg:#1a1a1a;
+    --muted:#6b6b6b;
+    --border:#1a1a1a;
+    --accent:#7c5cff;
+    --panel:#ffffff;
+    --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  }
+  [data-theme="dark"]{
+    --bg:#111111;
+    --fg:#eaeaea;
+    --muted:#999999;
+    --border:#eaeaea;
+    --accent:#a996ff;
+    --panel:#181818;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--fg);
+    font-family:var(--mono);
+    font-size:14px;
+    line-height:1.55;
+    padding:24px 16px 60px;
+  }
+  a{color:var(--fg);}
+  a:hover{color:var(--accent);}
+  .nav{
+    max-width:760px;
+    margin:0 auto 8px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .nav a{text-decoration:none;}
+  .nav a:hover{text-decoration:underline;}
+  .nav .sep{color:var(--muted);}
+  .topline{
+    max-width:760px;
+    margin:0 auto 28px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:13px;
+    color:var(--muted);
+  }
+  #themeToggle, #modeToggle{
+    background:none;
+    border:1px solid var(--border);
+    color:var(--fg);
+    font-family:var(--mono);
+    font-size:12px;
+    padding:2px 8px;
+    cursor:pointer;
+    margin-left:6px;
+  }
+  #themeToggle:hover, #modeToggle:hover{border-color:var(--accent);color:var(--accent);}
+  main{max-width:760px;margin:0 auto;}
+  h1{font-size:20px;margin:0 0 4px;font-weight:600;}
+  .tagline{color:var(--muted);margin:0 0 24px;font-size:13px;}
+
+  /* ---- converter view ---- */
+  #converterView{display:none;}
+  #converterView.active{display:block;}
+  textarea{
+    width:100%;
+    min-height:220px;
+    background:var(--panel);
+    color:var(--fg);
+    border:1px solid var(--border);
+    font-family:var(--mono);
+    font-size:13px;
+    padding:12px;
+    resize:vertical;
+  }
+  .converter-controls{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin:14px 0;
+    align-items:center;
+  }
+  .help{
+    font-size:12px;
+    color:var(--muted);
+    margin:8px 0 18px;
+  }
+  #jsonOut{
+    width:100%;
+    min-height:160px;
+    background:var(--panel);
+    color:var(--fg);
+    border:1px solid var(--border);
+    font-family:var(--mono);
+    font-size:12px;
+    padding:12px;
+    margin-top:14px;
+    display:none;
+    white-space:pre;
+    overflow:auto;
+  }
+
+  /* ---- gallery view ---- */
+  #galleryView{display:block;}
+  #galleryView.hidden{display:none;}
+  .upload-row{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+  }
+  #searchBox{
+    font-family:var(--mono);
+    font-size:13px;
+    background:var(--panel);
+    color:var(--fg);
+    border:1px solid var(--border);
+    padding:8px 10px;
+    flex:1;
+    min-width:180px;
+  }
+  .count{color:var(--muted);font-size:12px;margin-bottom:16px;}
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+    gap:10px;
+    margin-bottom:24px;
+  }
+  .card{
+    border:1px solid var(--border);
+    background:var(--panel);
+    padding:12px 14px;
+  }
+  .card a{
+    font-size:13px;
+    text-decoration:none;
+    word-break:break-word;
+  }
+  .card a:hover{text-decoration:underline;}
+  .card .tag{
+    display:block;
+    font-size:11px;
+    color:var(--muted);
+    margin-top:4px;
+  }
+  .pager{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    justify-content:center;
+    margin-top:8px;
+  }
+  .pager button{
+    font-family:var(--mono);
+    font-size:12px;
+    background:var(--panel);
+    color:var(--fg);
+    border:1px solid var(--border);
+    padding:5px 10px;
+    cursor:pointer;
+    min-width:32px;
+  }
+  .pager button:hover{border-color:var(--accent);color:var(--accent);}
+  .pager button.current{
+    background:var(--fg);
+    color:var(--bg);
+    border-color:var(--fg);
+  }
+  .pager button:disabled{opacity:.35;cursor:default;}
+  .pager .gap{
+    color:var(--muted);
+    padding:5px 4px;
+    font-size:12px;
+  }
+  button.action{
+    font-family:var(--mono);
+    font-size:13px;
+    background:var(--fg);
+    color:var(--bg);
+    border:1px solid var(--fg);
+    padding:8px 16px;
+    cursor:pointer;
+  }
+  button.action:hover{background:var(--accent);border-color:var(--accent);color:#1a1a1a;}
+  button.ghost{
+    font-family:var(--mono);
+    font-size:13px;
+    background:none;
+    color:var(--fg);
+    border:1px solid var(--border);
+    padding:8px 16px;
+    cursor:pointer;
+  }
+  button.ghost:hover{border-color:var(--accent);color:var(--accent);}
+  .status{color:var(--muted);font-size:12px;margin-top:10px;min-height:16px;}
+  .status.err{color:#d9534f;}
+  .empty{
+    text-align:center;
+    color:var(--muted);
+    padding:60px 20px;
+    border:1px dashed var(--border);
+  }
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:48px;}
+  footer a{text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+  ::selection{background:var(--accent);color:#fff;}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <a href="https://jubilancy.github.io/tools/index.html">home</a>
+  <span class="sep">|</span>
+  <a href="https://jubilancy.github.io/tools/extra.html">extra</a>
+  <span class="sep">|</span>
+  <a href="https://jubilancy.github.io/tools/credits.html">credits</a>
+  <span class="sep">|</span>
+  <a href="https://jubilancy.github.io/tools/changelog.html">logs</a>
+</div>
+<div class="topline">
+  <span>
+    <button id="modeToggle">converter</button>
+    <button id="themeToggle">theme</button>
+  </span>
+  <span>| <a href="https://eliana.lol">site</a></span>
+</div>
+
+<main>
+  <h1>🌿 Wiki Garden</h1>
+  <p class="tagline">a hover-preview gallery of Wikipedia bookmarks, powered by the <a href="https://github.com/wikimedia/wikipedia-preview" target="_blank" rel="noopener">wikipedia-preview</a> library</p>
+
+  <!-- ===================== CONVERTER VIEW ===================== -->
+  <div id="converterView">
+    <p class="help">
+      Paste a list of Wikipedia URLs or titles below (one per line — plain URLs like
+      <code>https://en.wikipedia.org/wiki/Quartz</code> or bare titles like <code>Quartz</code> both work).
+      This generates the JSON file the gallery view reads. Save the output as <code>wiki-bookmarks.json</code>
+      next to this HTML file on GitHub Pages.
+    </p>
+    <textarea id="pasteInput" placeholder="https://en.wikipedia.org/wiki/Quartz
+https://en.wikipedia.org/wiki/Obsidian_(software)
+Hermeticism
+https://en.wikipedia.org/wiki/Are.na"></textarea>
+    <div class="converter-controls">
+      <button id="convertBtn" class="action">✨ convert to JSON</button>
+      <button id="copyJsonBtn" class="ghost">📋 copy JSON</button>
+      <button id="downloadJsonBtn" class="ghost">⬇ download wiki-bookmarks.json</button>
+      <button id="previewInGalleryBtn" class="ghost">👁 preview in gallery</button>
+    </div>
+    <div id="convertStatus" class="status"></div>
+    <pre id="jsonOut"></pre>
+  </div>
+
+  <!-- ===================== GALLERY VIEW ===================== -->
+  <div id="galleryView">
+    <div class="upload-row">
+      <input type="file" id="fileInput" accept="application/json" style="display:none;">
+      <button id="loadFileBtn" class="ghost">📂 load wiki-bookmarks.json</button>
+      <input id="searchBox" type="text" placeholder="filter by title…">
+    </div>
+    <div class="count" id="countLine"></div>
+
+    <div id="grid" class="grid"></div>
+    <div id="pager" class="pager"></div>
+    <div id="galleryStatus" class="status">no bookmarks loaded yet — use the converter or load a JSON file.</div>
+  </div>
+</main>
+
+<footer>© 2026 eliana.lol • built with intent</footer>
+
+<script src="https://unpkg.com/wikipedia-preview@1.4.4/dist/wikipedia-preview.umd.cjs?module"></script>
+<script>
+(function(){
+  const PAGE_SIZE = 48;
+  let allLinks = [];    // {title, url, lang}
+  let filtered = [];
+  let currentPage = 1;
+
+  // ---------- theme ----------
+  const themeToggle = document.getElementById('themeToggle');
+  let dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme();
+  themeToggle.addEventListener('click', () => { dark = !dark; applyTheme(); });
+  function applyTheme(){
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  }
+
+  // ---------- view toggle ----------
+  const converterView = document.getElementById('converterView');
+  const galleryView = document.getElementById('galleryView');
+  const modeToggle = document.getElementById('modeToggle');
+  let inConverter = false;
+  modeToggle.addEventListener('click', () => {
+    inConverter = !inConverter;
+    converterView.classList.toggle('active', inConverter);
+    galleryView.classList.toggle('hidden', inConverter);
+    modeToggle.textContent = inConverter ? 'gallery' : 'converter';
+  });
+
+  // ---------- converter logic ----------
+  const pasteInput = document.getElementById('pasteInput');
+  const convertBtn = document.getElementById('convertBtn');
+  const copyJsonBtn = document.getElementById('copyJsonBtn');
+  const downloadJsonBtn = document.getElementById('downloadJsonBtn');
+  const previewInGalleryBtn = document.getElementById('previewInGalleryBtn');
+  const convertStatus = document.getElementById('convertStatus');
+  const jsonOut = document.getElementById('jsonOut');
+  let lastConverted = null;
+
+  function titleFromUrl(line){
+    try{
+      const u = new URL(line);
+      if(!/wikipedia\.org$/.test(u.hostname.replace(/^[a-z]+\./, '').split('.').slice(-2).join('.'))
+         && !/wikipedia\.org$/.test(u.hostname)){
+        return null;
+      }
+      const langMatch = u.hostname.match(/^([a-z-]+)\.wikipedia\.org$/);
+      const lang = langMatch ? langMatch[1] : 'en';
+      let path = decodeURIComponent(u.pathname.replace(/^\/wiki\//, ''));
+      path = path.replace(/_/g, ' ');
+      return { title: path, lang: lang, url: line.trim() };
+    }catch(e){
+      return null;
+    }
+  }
+
+  function parsePaste(text){
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    const out = [];
+    const seen = new Set();
+    for(const line of lines){
+      let entry;
+      if(/^https?:\/\//i.test(line)){
+        entry = titleFromUrl(line);
+        if(!entry){
+          // not a wikipedia url — skip but don't crash
+          continue;
+        }
+      } else {
+        // bare title
+        const lang = 'en';
+        const url = 'https://en.wikipedia.org/wiki/' + encodeURIComponent(line.replace(/ /g, '_'));
+        entry = { title: line, lang: lang, url: url };
+      }
+      const key = entry.lang + ':' + entry.title.toLowerCase();
+      if(seen.has(key)) continue;
+      seen.add(key);
+      out.push(entry);
+    }
+    return out;
+  }
+
+  convertBtn.addEventListener('click', () => {
+    const parsed = parsePaste(pasteInput.value);
+    if(parsed.length === 0){
+      convertStatus.textContent = 'nothing parsed — check your input has URLs or titles, one per line.';
+      convertStatus.classList.add('err');
+      jsonOut.style.display = 'none';
+      lastConverted = null;
+      return;
+    }
+    lastConverted = parsed;
+    jsonOut.textContent = JSON.stringify(parsed, null, 2);
+    jsonOut.style.display = 'block';
+    convertStatus.classList.remove('err');
+    convertStatus.textContent = 'parsed ' + parsed.length + ' link' + (parsed.length === 1 ? '' : 's') + '.';
+  });
+
+  copyJsonBtn.addEventListener('click', () => {
+    if(!lastConverted){ convertStatus.textContent = 'convert something first!'; return; }
+    navigator.clipboard.writeText(JSON.stringify(lastConverted, null, 2))
+      .then(() => { convertStatus.textContent = 'copied to clipboard!'; convertStatus.classList.remove('err'); })
+      .catch(() => { convertStatus.textContent = 'copy failed — select the text manually.'; convertStatus.classList.add('err'); });
+  });
+
+  downloadJsonBtn.addEventListener('click', () => {
+    if(!lastConverted){ convertStatus.textContent = 'convert something first!'; return; }
+    const blob = new Blob([JSON.stringify(lastConverted, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'wiki-bookmarks.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  });
+
+  previewInGalleryBtn.addEventListener('click', () => {
+    if(!lastConverted){ convertStatus.textContent = 'convert something first!'; return; }
+    loadLinks(lastConverted);
+    inConverter = false;
+    converterView.classList.remove('active');
+    galleryView.classList.remove('hidden');
+    modeToggle.textContent = 'converter';
+  });
+
+  // ---------- gallery logic ----------
+  const fileInput = document.getElementById('fileInput');
+  const loadFileBtn = document.getElementById('loadFileBtn');
+  const searchBox = document.getElementById('searchBox');
+  const grid = document.getElementById('grid');
+  const pager = document.getElementById('pager');
+  const countLine = document.getElementById('countLine');
+  const galleryStatus = document.getElementById('galleryStatus');
+
+  loadFileBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const data = JSON.parse(reader.result);
+        if(!Array.isArray(data)) throw new Error('JSON must be an array');
+        loadLinks(data);
+      }catch(err){
+        galleryStatus.textContent = 'couldn\'t parse that file — ' + err.message;
+        galleryStatus.classList.add('err');
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  // try auto-loading wiki-bookmarks.json from the same directory (works once hosted on GH Pages)
+  fetch('wiki-bookmarks.json').then(r => {
+    if(r.ok) return r.json();
+    throw new Error('none found');
+  }).then(data => {
+    if(Array.isArray(data) && data.length) loadLinks(data);
+  }).catch(() => { /* silent — expected when running standalone */ });
+
+  function loadLinks(data){
+    allLinks = data.filter(d => d && d.title && d.url);
+    filtered = allLinks;
+    currentPage = 1;
+    galleryStatus.textContent = '';
+    galleryStatus.classList.remove('err');
+    renderPage();
+  }
+
+  searchBox.addEventListener('input', () => {
+    const q = searchBox.value.trim().toLowerCase();
+    filtered = q ? allLinks.filter(l => l.title.toLowerCase().includes(q)) : allLinks;
+    currentPage = 1;
+    renderPage();
+  });
+
+  function renderPage(){
+    grid.innerHTML = '';
+    countLine.textContent = allLinks.length
+      ? filtered.length + ' of ' + allLinks.length + ' bookmarks'
+      : '';
+
+    if(filtered.length === 0){
+      grid.innerHTML = '<div class="empty">no matches</div>';
+      pager.innerHTML = '';
+      return;
+    }
+
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+    currentPage = Math.min(currentPage, totalPages);
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
+    for(const item of pageItems){
+      const card = document.createElement('div');
+      card.className = 'card';
+      const a = document.createElement('a');
+      a.href = item.url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.setAttribute('data-wikipedia-preview', '');
+      a.setAttribute('data-wp-title', item.title);
+      if(item.lang && item.lang !== 'en'){
+        a.setAttribute('data-wp-lang', item.lang);
+      }
+      a.textContent = item.title;
+      card.appendChild(a);
+      if(item.lang && item.lang !== 'en'){
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = item.lang;
+        card.appendChild(tag);
+      }
+      grid.appendChild(card);
+    }
+
+    renderPager(totalPages);
+
+    // (re)initialize preview listeners scoped to the current grid only
+    if(window.wikipediaPreview){
+      window.wikipediaPreview.init({
+        root: grid,
+        selector: '[data-wikipedia-preview]',
+        prefersColorScheme: dark ? 'dark' : 'light'
+      });
+    }
+  }
+
+  function renderPager(totalPages){
+    pager.innerHTML = '';
+    if(totalPages <= 1) return;
+
+    const makeBtn = (label, page, opts={}) => {
+      const b = document.createElement('button');
+      b.textContent = label;
+      if(opts.current) b.classList.add('current');
+      if(opts.disabled) b.disabled = true;
+      b.addEventListener('click', () => { currentPage = page; renderPage(); window.scrollTo({top:0, behavior:'smooth'}); });
+      return b;
+    };
+    const makeGap = () => { const s = document.createElement('span'); s.className='gap'; s.textContent='…'; return s; };
+
+    pager.appendChild(makeBtn('‹', Math.max(1, currentPage-1), {disabled: currentPage===1}));
+
+    const windowSize = 2;
+    const pages = new Set([1, totalPages]);
+    for(let p = currentPage - windowSize; p <= currentPage + windowSize; p++){
+      if(p >= 1 && p <= totalPages) pages.add(p);
+    }
+    const sorted = Array.from(pages).sort((a,b)=>a-b);
+    let prev = 0;
+    for(const p of sorted){
+      if(p - prev > 1) pager.appendChild(makeGap());
+      pager.appendChild(makeBtn(String(p), p, {current: p===currentPage}));
+      prev = p;
+    }
+
+    pager.appendChild(makeBtn('›', Math.min(totalPages, currentPage+1), {disabled: currentPage===totalPages}));
+  }
+})();
+</script>
+
+</body>
+</html>

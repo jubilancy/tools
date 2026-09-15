@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Focus Writer | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+      min-height: 400px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+      background-color: var(--highlight);
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--puny);
+      font-weight: bold;
+    }
+
+    .suggestion-item {
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      background: var(--highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+
+    .suggestion-item-text {
+      margin-bottom: 0.5rem;
+    }
+
+    .suggestion-btn {
+      padding: 5px 10px;
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      border-radius: 3px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 150ms;
+    }
+
+    .suggestion-btn:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    .suggestions-container {
+      display: none;
+      margin-top: 1.5rem;
+      padding: 1rem;
+      border: 1px solid var(--puny);
+      background-color: var(--highlight);
+      border-radius: 4px;
+    }
+
+    .suggestions-title {
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .stats-row {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      textarea {
+        min-height: 300px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Focus Writer</h1>
+    <p class="puny">Distraction-free writing with real-time stats — all saved locally</p>
+
+    <div class="container">
+      <div class="info-box">
+        <strong>How it works:</strong> Write freely in the editor below. Your text is saved automatically to your browser's local storage. All data stays on your device.
+      </div>
+
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-number" id="wordCount">0</div>
+          <div class="stat-label">Words</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number" id="charCount">0</div>
+          <div class="stat-label">Characters</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number" id="readTime">0</div>
+          <div class="stat-label">Min Read</div>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Your Text:</label>
+        <textarea id="editor" placeholder="Start typing... Your text is saved automatically."></textarea>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" onclick="exportText()">Export TXT</button>
+        <button onclick="clearText()">Clear</button>
+      </div>
+
+      <div class="suggestions-container" id="suggestionsContainer">
+        <div class="suggestions-title">✨ Suggestions</div>
+        <div id="suggestionsList"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool-specific script -->
+  <script>
+    const editor = document.getElementById('editor');
+    const wordCountEl = document.getElementById('wordCount');
+    const charCountEl = document.getElementById('charCount');
+    const readTimeEl = document.getElementById('readTime');
+    const suggestionsContainer = document.getElementById('suggestionsContainer');
+    const suggestionsListEl = document.getElementById('suggestionsList');
+
+    // Load saved text
+    window.addEventListener('load', () => {
+      const saved = localStorage.getItem('focusWriterText');
+      if (saved) editor.value = saved;
+      updateStats();
+    });
+
+    // Save text automatically on input
+    editor.addEventListener('input', () => {
+      localStorage.setItem('focusWriterText', editor.value);
+      updateStats();
+    });
+
+    // Check for suggestions on blur
+    editor.addEventListener('blur', () => {
+      checkSuggestions();
+    });
+
+    function updateStats() {
+      const text = editor.value.trim();
+      const words = text.length ? text.split(/\s+/).length : 0;
+      const chars = editor.value.length;
+      const readTime = Math.ceil(words / 200);
+
+      wordCountEl.textContent = words;
+      charCountEl.textContent = chars;
+      readTimeEl.textContent = readTime;
+    }
+
+    function checkSuggestions() {
+      const text = editor.value;
+      const suggestions = [];
+
+      // Check for common misspellings
+      if (text.match(/\b(teh|hte|recieve|seperate|occured|dependant|their's|it's)\b/gi)) {
+        suggestions.push({
+          issue: 'Spelling: Common misspelling detected',
+          fix: 'Check spelling'
+        });
+      }
+
+      // Check for repeated words
+      if (text.match(/\b(very|really|really)\s+(very|really)\b/gi)) {
+        suggestions.push({
+          issue: 'Repetition: Word repeated',
+          fix: 'Vary language'
+        });
+      }
+
+      // Check for multiple spaces
+      if (text.match(/  {2,}/g)) {
+        suggestions.push({
+          issue: 'Spacing: Extra spaces detected',
+          fix: 'Remove spaces'
+        });
+      }
+
+      // Check for sentence case issues
+      if (text.match(/[.!?]\s[a-z]/g)) {
+        suggestions.push({
+          issue: 'Grammar: Lowercase after sentence end',
+          fix: 'Capitalize'
+        });
+      }
+
+      if (suggestions.length > 0) {
+        suggestionsListEl.innerHTML = suggestions.map((s, i) => `
+          <div class="suggestion-item">
+            <div class="suggestion-item-text">${s.issue}</div>
+            <button class="suggestion-btn">${s.fix}</button>
+          </div>
+        `).join('');
+        suggestionsContainer.style.display = 'block';
+      } else {
+        suggestionsContainer.style.display = 'none';
+      }
+    }
+
+    function exportText() {
+      const text = editor.value;
+      if (!text.trim()) {
+        alert('❌ Nothing to export');
+        return;
+      }
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `focus-${new Date().toISOString().split('T')[0]}.txt`;
+      a.click();
+    }
+
+    function clearText() {
+      if (confirm('Clear all text? This cannot be undone.')) {
+        editor.value = '';
+        localStorage.removeItem('focusWriterText');
+        updateStats();
+        suggestionsContainer.style.display = 'none';
+      }
+    }
+
+    // Keyboard shortcut (Ctrl+S / Cmd+S to export)
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        exportText();
+      }
+    });
+
+    // Update stats periodically
+    setInterval(updateStats, 1000);
+  </script>
+</body>
+</html>

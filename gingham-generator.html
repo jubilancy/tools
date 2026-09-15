@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gingham Generator | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    button.danger {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+
+    textarea,
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Tool-specific layout ---- */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .swatch-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      padding: 6px 8px;
+    }
+
+    .swatch-row input[type="color"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      padding: 0;
+      background: none;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .swatch-row input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+    .swatch-row input[type="color"]::-webkit-color-swatch {
+      border: none;
+      border-radius: 3px;
+    }
+
+    .swatch-row input[type="text"].hex-input {
+      border: none;
+      padding: 4px 2px;
+      font-size: 0.85rem;
+      width: 100%;
+    }
+
+    .swatch-label {
+      font-size: 0.7rem;
+      color: var(--puny);
+      white-space: nowrap;
+    }
+
+    .size-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .size-row input[type="number"] {
+      max-width: 110px;
+    }
+
+    .size-link-note {
+      font-size: 0.8rem;
+      color: var(--puny);
+    }
+
+    #preview-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 1px dashed var(--puny);
+      padding: 1rem;
+      overflow: auto;
+      background: repeating-conic-gradient(var(--hover) 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+    }
+
+    #preview {
+      max-width: 100%;
+      height: auto;
+      image-rendering: pixelated;
+      border: 1px solid var(--puny);
+    }
+
+    .export-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 700px) {
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+      .button-group {
+        flex-direction: column;
+      }
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Gingham Generator</h1>
+    <p class="puny">Build a multi-color gingham/plaid pattern, tweak hex values live, pick your size, export PNG or SVG.</p>
+
+    <div class="container">
+
+      <div class="controls-grid">
+        <!-- Color count -->
+        <div class="input-group">
+          <label class="input-label" for="color-count">Number of colors</label>
+          <select id="color-count">
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4" selected>4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+          </select>
+        </div>
+
+        <!-- Canvas size -->
+        <div class="input-group">
+          <label class="input-label" for="size-input">Size (px, square)</label>
+          <div class="size-row">
+            <input type="number" id="size-input" min="100" max="4000" step="10" value="800" />
+            <span class="size-link-note">width = height</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Colors (hex)</label>
+        <div class="swatch-grid" id="swatch-grid"><!-- populated by JS --></div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="stripe-width">Stripe width (px)</label>
+        <input type="number" id="stripe-width" min="4" max="200" step="1" value="32" />
+      </div>
+
+      <div class="button-group">
+        <button id="regenerate-btn" class="primary">regenerate</button>
+        <button id="randomize-btn">randomize colors</button>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Preview</label>
+        <div id="preview-wrap">
+          <canvas id="preview" width="800" height="800"></canvas>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="export-format">Export format</label>
+        <div class="export-row">
+          <select id="export-format" style="max-width: 160px;">
+            <option value="png">PNG</option>
+            <option value="svg">SVG</option>
+          </select>
+          <button id="export-btn" class="primary">download</button>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> each color gets its own horizontal + vertical stripe.
+        Same-color crossings get an automatic darker "self-overlap" shade; different-color
+        crossings blend the two. Edit any hex value directly or use the color swatch, then
+        hit <em>regenerate</em> to redraw the preview before exporting.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.addEventListener('click', () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      });
+    }
+  </script>
+
+  <!-- Gingham Generator Logic -->
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2500);
+    }
+
+    const DEFAULT_PALETTE = [
+      '#E85C5C', // red
+      '#5E8CA8', // blue
+      '#E8C55C', // gold
+      '#7AA874', // green
+      '#B07ABA', // purple
+      '#E8945C', // orange
+      '#5CBFB2', // teal
+      '#C97AAF'  // pink
+    ];
+    const BASE_COLOR = '#FDF6EC';
+
+    const colorCountEl = document.getElementById('color-count');
+    const swatchGrid = document.getElementById('swatch-grid');
+    const sizeInput = document.getElementById('size-input');
+    const stripeWidthInput = document.getElementById('stripe-width');
+    const canvas = document.getElementById('preview');
+    const ctx = canvas.getContext('2d');
+    const exportFormat = document.getElementById('export-format');
+
+    let currentColors = [];
+
+    function hexToRgb(hex) {
+      hex = hex.replace('#', '');
+      if (hex.length === 3) {
+        hex = hex.split('').map((c) => c + c).join('');
+      }
+      const num = parseInt(hex, 16);
+      return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+    }
+
+    function rgbToHex([r, g, b]) {
+      return (
+        '#' +
+        [r, g, b]
+          .map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0'))
+          .join('')
+      );
+    }
+
+    function isValidHex(hex) {
+      return /^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(hex);
+    }
+
+    function blend(bg, fg, alpha) {
+      return [0, 1, 2].map((i) => bg[i] * (1 - alpha) + fg[i] * alpha);
+    }
+
+    function darken(rgb, amount) {
+      return rgb.map((c) => c * (1 - amount));
+    }
+
+    function buildSwatches(count) {
+      swatchGrid.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const color = currentColors[i] || DEFAULT_PALETTE[i % DEFAULT_PALETTE.length];
+        currentColors[i] = color;
+
+        const row = document.createElement('div');
+        row.className = 'swatch-row';
+
+        const picker = document.createElement('input');
+        picker.type = 'color';
+        picker.value = color;
+        picker.dataset.index = i;
+
+        const hexField = document.createElement('input');
+        hexField.type = 'text';
+        hexField.className = 'hex-input';
+        hexField.value = color;
+        hexField.dataset.index = i;
+        hexField.maxLength = 7;
+        hexField.spellcheck = false;
+
+        const label = document.createElement('span');
+        label.className = 'swatch-label';
+        label.textContent = `#${i + 1}`;
+
+        picker.addEventListener('input', (e) => {
+          const idx = Number(e.target.dataset.index);
+          currentColors[idx] = e.target.value;
+          hexField.value = e.target.value;
+          draw();
+        });
+
+        hexField.addEventListener('change', (e) => {
+          const idx = Number(e.target.dataset.index);
+          let val = e.target.value.trim();
+          if (!val.startsWith('#')) val = '#' + val;
+          if (!isValidHex(val)) {
+            showStatus(`"${e.target.value}" isn't a valid hex color`, 'error');
+            e.target.value = currentColors[idx];
+            return;
+          }
+          currentColors[idx] = val;
+          picker.value = val;
+          draw();
+        });
+
+        row.appendChild(picker);
+        row.appendChild(hexField);
+        row.appendChild(label);
+        swatchGrid.appendChild(row);
+      }
+    }
+
+    function draw() {
+      const size = Math.max(10, Math.min(4000, parseInt(sizeInput.value, 10) || 800));
+      const check = Math.max(2, Math.min(400, parseInt(stripeWidthInput.value, 10) || 32));
+      const n = currentColors.length;
+
+      canvas.width = size;
+      canvas.height = size;
+
+      const base = hexToRgb(BASE_COLOR);
+      const stripeRgb = currentColors.map((c) => hexToRgb(c));
+      const alpha = 0.6;
+      const stripeBlended = stripeRgb.map((c) => blend(base, c, alpha));
+      const selfOverlap = stripeRgb.map((c) => rgbToHex(darken(blend(base, c, alpha), 0.35)));
+
+      const period = n * check;
+      const imgData = ctx.createImageData(size, size);
+      const data = imgData.data;
+
+      function bandIndex(pos) {
+        const p = ((pos % period) + period) % period;
+        return Math.floor(p / check);
+      }
+
+      // precompute row/col band index arrays for speed
+      const rowBand = new Array(size);
+      const colBand = new Array(size);
+      for (let i = 0; i < size; i++) {
+        rowBand[i] = bandIndex(i);
+        colBand[i] = bandIndex(i);
+      }
+
+      const selfOverlapRgb = selfOverlap.map((h) => hexToRgb(h));
+
+      for (let y = 0; y < size; y++) {
+        const hi = rowBand[y];
+        for (let x = 0; x < size; x++) {
+          const vi = colBand[x];
+          let r, g, b;
+          if (hi === vi) {
+            [r, g, b] = selfOverlapRgb[hi];
+          } else {
+            const c1 = stripeBlended[hi];
+            const c2 = stripeBlended[vi];
+            [r, g, b] = blend(c1, c2, 0.5);
+          }
+          const idx = (y * size + x) * 4;
+          data[idx] = r;
+          data[idx + 1] = g;
+          data[idx + 2] = b;
+          data[idx + 3] = 255;
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    function buildSvgString() {
+      const size = Math.max(10, Math.min(4000, parseInt(sizeInput.value, 10) || 800));
+      const check = Math.max(2, Math.min(400, parseInt(stripeWidthInput.value, 10) || 32));
+      const n = currentColors.length;
+      const period = n * check;
+
+      const base = hexToRgb(BASE_COLOR);
+      const stripeRgb = currentColors.map((c) => hexToRgb(c));
+      const alpha = 0.6;
+      const stripeBlended = stripeRgb.map((c) => blend(base, c, alpha));
+      const stripeHex = stripeBlended.map(rgbToHex);
+      const selfOverlapHex = stripeRgb.map((c) => rgbToHex(darken(blend(base, c, alpha), 0.35)));
+
+      let rects = `<rect x="0" y="0" width="${size}" height="${size}" fill="${BASE_COLOR}"/>`;
+
+      // horizontal-only and vertical-only bands (drawn under crossings)
+      for (let i = 0; i < n; i++) {
+        for (let start = i * check; start < size; start += period) {
+          rects += `<rect x="0" y="${start}" width="${size}" height="${check}" fill="${stripeHex[i]}"/>`;
+        }
+      }
+      for (let i = 0; i < n; i++) {
+        for (let start = i * check; start < size; start += period) {
+          rects += `<rect x="${start}" y="0" width="${check}" height="${size}" fill="${stripeHex[i]}" opacity="0.5"/>`;
+        }
+      }
+
+      // crossing squares on top: self-overlap or blended cross
+      for (let i = 0; i < n; i++) {
+        for (let yStart = i * check; yStart < size; yStart += period) {
+          for (let j = 0; j < n; j++) {
+            for (let xStart = j * check; xStart < size; xStart += period) {
+              const fill = i === j
+                ? selfOverlapHex[i]
+                : rgbToHex(blend(stripeBlended[i], stripeBlended[j], 0.5));
+              rects += `<rect x="${xStart}" y="${yStart}" width="${check}" height="${check}" fill="${fill}"/>`;
+            }
+          }
+        }
+      }
+
+      return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`;
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function exportPattern() {
+      if (!currentColors.length) {
+        showStatus('No colors to export — add at least one color first', 'error');
+        return;
+      }
+      const format = exportFormat.value;
+      draw();
+
+      if (format === 'png') {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            showStatus('PNG export failed — try again', 'error');
+            return;
+          }
+          downloadBlob(blob, 'gingham-pattern.png');
+          showStatus('PNG downloaded');
+        }, 'image/png');
+      } else {
+        try {
+          const svgStr = buildSvgString();
+          const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+          downloadBlob(blob, 'gingham-pattern.svg');
+          showStatus('SVG downloaded');
+        } catch (err) {
+          showStatus('SVG export failed — try again', 'error');
+        }
+      }
+    }
+
+    function randomizeColors() {
+      const n = currentColors.length;
+      for (let i = 0; i < n; i++) {
+        const rand = rgbToHex([
+          40 + Math.random() * 200,
+          40 + Math.random() * 200,
+          40 + Math.random() * 200
+        ]);
+        currentColors[i] = rand;
+      }
+      buildSwatches(n);
+      draw();
+      showStatus('Colors randomized');
+    }
+
+    colorCountEl.addEventListener('change', (e) => {
+      const n = parseInt(e.target.value, 10);
+      buildSwatches(n);
+      draw();
+    });
+
+    stripeWidthInput.addEventListener('change', () => {
+      const val = parseInt(stripeWidthInput.value, 10);
+      if (isNaN(val) || val < 4) {
+        showStatus('Stripe width must be at least 4px', 'error');
+        stripeWidthInput.value = 32;
+      }
+      draw();
+    });
+
+    sizeInput.addEventListener('change', () => {
+      const val = parseInt(sizeInput.value, 10);
+      if (isNaN(val) || val < 100) {
+        showStatus('Size must be at least 100px', 'error');
+        sizeInput.value = 800;
+      }
+      draw();
+    });
+
+    document.getElementById('regenerate-btn').addEventListener('click', () => {
+      draw();
+      showStatus('Preview regenerated');
+    });
+
+    document.getElementById('randomize-btn').addEventListener('click', randomizeColors);
+    document.getElementById('export-btn').addEventListener('click', exportPattern);
+
+    // init
+    buildSwatches(parseInt(colorCountEl.value, 10));
+    draw();
+  </script>
+</body>
+</html>

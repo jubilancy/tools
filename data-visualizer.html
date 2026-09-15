@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Data Visualizer | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    button.danger {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+
+    select,
+    textarea,
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    select:focus,
+    textarea:focus,
+    input[type="text"]:focus,
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+
+    /* --- Visualizer-specific --- */
+    .mode-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--puny);
+      padding-bottom: 1rem;
+    }
+
+    .mode-tabs button {
+      min-width: auto;
+      border-style: dashed;
+    }
+
+    .mode-tabs button.active {
+      border-style: solid;
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+
+    #chartContainer {
+      position: relative;
+      height: 420px;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+
+    #mapContainer {
+      position: relative;
+      width: 100%;
+      height: 500px;
+      background: var(--bg);
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    #mapContainer svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .bubble {
+      cursor: pointer;
+      transition: opacity 150ms;
+    }
+
+    .bubble:hover {
+      opacity: 0.75;
+    }
+
+    .bubble-info-box {
+      position: fixed;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--text);
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      display: none;
+      z-index: 10;
+      font-size: 0.8rem;
+      pointer-events: none;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Data Visualizer</h1>
+    <p class="puny">Turn CSV, JSON, or raw x/y data into charts, pivots, scatter plots, and bubble maps &mdash; one tool instead of nine.</p>
+
+    <div class="container">
+
+      <!-- MODE SELECT -->
+      <div class="input-group">
+        <span class="input-label">Input Format</span>
+        <div class="mode-tabs" id="modeTabs">
+          <button data-mode="csv" class="active">CSV</button>
+          <button data-mode="json">JSON</button>
+          <button data-mode="xy">X/Y Pairs</button>
+          <button data-mode="bubble">Bubble Map</button>
+        </div>
+      </div>
+
+      <!-- SHARED OPTIONS -->
+      <div class="field-row">
+        <div class="input-group">
+          <span class="input-label">Chart Type</span>
+          <select id="chartType">
+            <option value="bar">Bar</option>
+            <option value="line">Line</option>
+            <option value="pie">Pie</option>
+            <option value="doughnut">Doughnut</option>
+            <option value="radar">Radar</option>
+            <option value="scatter">Scatter</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">Title</span>
+          <input type="text" id="chartTitleInput" value="Data Visualization" />
+        </div>
+
+        <div class="input-group" id="aggregationGroup">
+          <span class="input-label">Aggregation (CSV pivot mode)</span>
+          <select id="aggregation">
+            <option value="none">None (plot as-is)</option>
+            <option value="sum">Sum</option>
+            <option value="avg">Average</option>
+            <option value="count">Count</option>
+            <option value="max">Maximum</option>
+            <option value="min">Minimum</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- CSV MODE -->
+      <div class="input-group mode-panel" id="panel-csv">
+        <span class="input-label">CSV Data</span>
+        <p class="puny">Two-column CSV (Category,Value) plots directly. Three-column CSV (Column,Category,Value) uses the aggregation above to pivot.</p>
+        <textarea id="csvInput" spellcheck="false">Category,Value
+A,100
+B,200
+C,150
+D,180</textarea>
+        <div class="button-group">
+          <button id="csvUploadBtn">Upload CSV / XLSX</button>
+          <input type="file" id="csvFile" accept=".csv,.xlsx" class="hidden" />
+        </div>
+      </div>
+
+      <!-- JSON MODE -->
+      <div class="input-group mode-panel hidden" id="panel-json">
+        <span class="input-label">JSON Data</span>
+        <p class="puny">Array of objects. Uses <code>label</code>/<code>name</code> and <code>value</code> keys if present, otherwise the first two keys of each object.</p>
+        <textarea id="jsonInput" spellcheck="false">[{"label":"Q1","value":100},{"label":"Q2","value":200},{"label":"Q3","value":150},{"label":"Q4","value":250}]</textarea>
+      </div>
+
+      <!-- XY MODE -->
+      <div class="input-group mode-panel hidden" id="panel-xy">
+        <span class="input-label">X,Y Pairs (one per line)</span>
+        <textarea id="xyInput" spellcheck="false">10,25
+20,30
+30,35
+40,40
+50,45</textarea>
+        <div class="field-row">
+          <div class="input-group">
+            <span class="input-label">X-Axis Label</span>
+            <input type="text" id="xLabel" value="X Value" />
+          </div>
+          <div class="input-group">
+            <span class="input-label">Y-Axis Label</span>
+            <input type="text" id="yLabel" value="Y Value" />
+          </div>
+          <div class="input-group">
+            <span class="input-label">Point Size</span>
+            <input type="number" id="pointSize" value="6" min="1" max="20" />
+          </div>
+        </div>
+      </div>
+
+      <!-- BUBBLE MODE -->
+      <div class="input-group mode-panel hidden" id="panel-bubble">
+        <span class="input-label">Bubble Data (Name, X, Y, Size, Color)</span>
+        <p class="puny">Color is optional hex, defaults to the accent color.</p>
+        <textarea id="bubbleInput" spellcheck="false">New York,100,150,50,#667eea
+Los Angeles,200,300,80,#764ba2
+Chicago,400,100,100,#f093fb
+Houston,150,400,60,#f5576c
+Phoenix,350,200,70,#fa709a</textarea>
+        <div class="field-row">
+          <div class="input-group">
+            <span class="input-label">Map Width</span>
+            <input type="number" id="mapWidth" value="800" />
+          </div>
+          <div class="input-group">
+            <span class="input-label">Map Height</span>
+            <input type="number" id="mapHeight" value="500" />
+          </div>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" id="generateBtn">Generate Visualization</button>
+      </div>
+
+      <!-- OUTPUTS -->
+      <div id="chartContainer">
+        <canvas id="chartCanvas"></canvas>
+      </div>
+
+      <div id="mapContainer" class="hidden">
+        <svg id="bubbleMapSvg"></svg>
+      </div>
+      <div class="bubble-info-box" id="bubbleInfoBox"></div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> CSV mode with a third column (Column,Category,Value) automatically pivots your data &mdash; pick Sum, Average, Count, Max, or Min above. Bubble Map mode ignores the Chart Type selector and always renders an SVG bubble layout.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    &copy; 2026 eliana.lol &bull; <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Data Visualizer logic -->
+  <script>
+    (function () {
+      let chart = null;
+      let currentMode = 'csv';
+
+      const PALETTE = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#fa709a', '#fee140', '#43e97b', '#38f9d7'];
+
+      const modeTabs = document.getElementById('modeTabs');
+      const panels = {
+        csv: document.getElementById('panel-csv'),
+        json: document.getElementById('panel-json'),
+        xy: document.getElementById('panel-xy'),
+        bubble: document.getElementById('panel-bubble')
+      };
+      const chartContainer = document.getElementById('chartContainer');
+      const mapContainer = document.getElementById('mapContainer');
+      const aggregationGroup = document.getElementById('aggregationGroup');
+      const chartTypeSelect = document.getElementById('chartType');
+
+      function showStatus(message, type) {
+        const status = document.getElementById('status');
+        status.textContent = message;
+        status.className = 'status show ' + (type || 'success');
+        setTimeout(() => status.classList.remove('show'), 3000);
+      }
+
+      function setMode(mode) {
+        currentMode = mode;
+        Object.keys(panels).forEach((key) => {
+          panels[key].classList.toggle('hidden', key !== mode);
+        });
+        Array.from(modeTabs.querySelectorAll('button')).forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+
+        const isBubble = mode === 'bubble';
+        chartContainer.classList.toggle('hidden', isBubble);
+        mapContainer.classList.toggle('hidden', !isBubble);
+        chartTypeSelect.disabled = isBubble;
+        aggregationGroup.classList.toggle('hidden', mode !== 'csv');
+      }
+
+      modeTabs.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-mode]');
+        if (!btn) return;
+        setMode(btn.dataset.mode);
+      });
+
+      /* ---------- Parsers (pure functions, unit-tested separately) ---------- */
+
+      function parseCsvRows(text) {
+        return text
+          .trim()
+          .split('\n')
+          .map((line) => line.split(',').map((v) => v.trim()))
+          .filter((row) => row.length && row[0] !== '');
+      }
+
+      // Two-column CSV: Category,Value -> {labels, values}
+      function parseCsvSimple(text) {
+        const rows = parseCsvRows(text);
+        const startIdx = isNaN(parseFloat(rows[0][1])) ? 1 : 0; // skip header row if present
+        const labels = [];
+        const values = [];
+        for (let i = startIdx; i < rows.length; i++) {
+          const [label, value] = rows[i];
+          if (label === undefined || value === undefined) continue;
+          labels.push(label);
+          values.push(parseFloat(value) || 0);
+        }
+        return { labels, values };
+      }
+
+      // Three-column CSV: Column,Category,Value -> pivoted datasets
+      function parseCsvPivot(text, aggregation) {
+        const rows = parseCsvRows(text);
+        const startIdx = isNaN(parseFloat(rows[0][2])) ? 1 : 0;
+        const data = {};
+        const categories = [];
+        const seenCat = new Set();
+
+        for (let i = startIdx; i < rows.length; i++) {
+          const [col, cat, valRaw] = rows[i];
+          if (col === undefined || cat === undefined || valRaw === undefined) continue;
+          const val = parseFloat(valRaw);
+          if (isNaN(val)) continue;
+
+          if (!seenCat.has(cat)) {
+            seenCat.add(cat);
+            categories.push(cat);
+          }
+          if (!data[col]) data[col] = {};
+          if (!data[col][cat]) data[col][cat] = [];
+          data[col][cat].push(val);
+        }
+
+        const aggregate = (values) => {
+          switch (aggregation) {
+            case 'avg':
+              return values.reduce((a, b) => a + b, 0) / values.length;
+            case 'count':
+              return values.length;
+            case 'max':
+              return Math.max(...values);
+            case 'min':
+              return Math.min(...values);
+            case 'sum':
+            default:
+              return values.reduce((a, b) => a + b, 0);
+          }
+        };
+
+        const datasets = [];
+        let colorIdx = 0;
+        for (const col in data) {
+          const seriesValues = categories.map((cat) => (data[col][cat] ? aggregate(data[col][cat]) : 0));
+          datasets.push({
+            label: col,
+            data: seriesValues,
+            backgroundColor: PALETTE[colorIdx % PALETTE.length],
+            borderColor: PALETTE[colorIdx % PALETTE.length],
+            borderWidth: 2
+          });
+          colorIdx++;
+        }
+
+        return { labels: categories, datasets };
+      }
+
+      function parseJsonData(text) {
+        const data = JSON.parse(text);
+        if (!Array.isArray(data)) throw new Error('JSON must be an array of objects');
+        const labels = data.map((item) => {
+          if (item.label !== undefined) return String(item.label);
+          if (item.name !== undefined) return String(item.name);
+          const keys = Object.keys(item);
+          return keys.length ? String(item[keys[0]]) : '';
+        });
+        const values = data.map((item) => {
+          if (item.value !== undefined) return parseFloat(item.value) || 0;
+          const keys = Object.keys(item);
+          if (keys.length > 1) return parseFloat(item[keys[1]]) || 0;
+          return 0;
+        });
+        return { labels, values };
+      }
+
+      function parseXyPairs(text) {
+        const points = [];
+        text
+          .trim()
+          .split('\n')
+          .forEach((line) => {
+            const parts = line.split(',').map((v) => parseFloat(v.trim()));
+            if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+              points.push({ x: parts[0], y: parts[1] });
+            }
+          });
+        return points;
+      }
+
+      function parseBubbleData(text) {
+        const bubbles = [];
+        text
+          .trim()
+          .split('\n')
+          .forEach((line) => {
+            const parts = line.split(',').map((v) => v.trim());
+            const [name, x, y, size, color] = parts;
+            const px = parseFloat(x);
+            const py = parseFloat(y);
+            const psize = parseFloat(size);
+            if (!name || isNaN(px) || isNaN(py) || isNaN(psize)) return;
+            bubbles.push({ name, x: px, y: py, size: psize, color: color || '#ff6600' });
+          });
+        return bubbles;
+      }
+
+      /* ---------- Renderers ---------- */
+
+      function destroyChart() {
+        if (chart) {
+          chart.destroy();
+          chart = null;
+        }
+      }
+
+      function renderStandardChart(type, title, labels, values, extraOptions) {
+        destroyChart();
+        const ctx = document.getElementById('chartCanvas').getContext('2d');
+        chart = new Chart(ctx, {
+          type: type,
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: title,
+                data: values,
+                backgroundColor: PALETTE,
+                borderColor: type === 'line' || type === 'radar' ? PALETTE[0] : '#fff',
+                borderWidth: 2
+              }
+            ]
+          },
+          options: Object.assign(
+            {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { title: { display: true, text: title } }
+            },
+            extraOptions || {}
+          )
+        });
+      }
+
+      function renderPivotChart(type, title, labels, datasets) {
+        destroyChart();
+        const ctx = document.getElementById('chartCanvas').getContext('2d');
+        chart = new Chart(ctx, {
+          type: type,
+          data: { labels: labels, datasets: datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { title: { display: true, text: title } }
+          }
+        });
+      }
+
+      function renderScatterChart(title, points, xLabel, yLabel, pointSize) {
+        destroyChart();
+        const ctx = document.getElementById('chartCanvas').getContext('2d');
+        chart = new Chart(ctx, {
+          type: 'scatter',
+          data: {
+            datasets: [
+              {
+                label: title,
+                data: points,
+                backgroundColor: PALETTE[0],
+                pointRadius: pointSize,
+                pointHoverRadius: pointSize + 2
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { title: { display: true, text: title } },
+            scales: {
+              x: { title: { display: true, text: xLabel } },
+              y: { title: { display: true, text: yLabel } }
+            }
+          }
+        });
+      }
+
+      function renderBubbleMap(bubbles, width, height) {
+        const svg = document.getElementById('bubbleMapSvg');
+        svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+        svg.innerHTML = '';
+        const infoBox = document.getElementById('bubbleInfoBox');
+
+        bubbles.forEach((bubble) => {
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          circle.setAttribute('cx', bubble.x);
+          circle.setAttribute('cy', bubble.y);
+          circle.setAttribute('r', bubble.size);
+          circle.setAttribute('fill', bubble.color);
+          circle.setAttribute('opacity', '0.75');
+          circle.setAttribute('class', 'bubble');
+
+          circle.addEventListener('mouseover', (e) => {
+            infoBox.innerHTML =
+              '<strong>' + bubble.name + '</strong><br>Position: (' +
+              bubble.x.toFixed(0) + ', ' + bubble.y.toFixed(0) + ')<br>Size: ' + bubble.size.toFixed(0);
+            infoBox.style.display = 'block';
+            infoBox.style.left = e.clientX + 12 + 'px';
+            infoBox.style.top = e.clientY + 12 + 'px';
+          });
+          circle.addEventListener('mousemove', (e) => {
+            infoBox.style.left = e.clientX + 12 + 'px';
+            infoBox.style.top = e.clientY + 12 + 'px';
+          });
+          circle.addEventListener('mouseout', () => {
+            infoBox.style.display = 'none';
+          });
+
+          svg.appendChild(circle);
+
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', bubble.x);
+          text.setAttribute('y', bubble.y);
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('dominant-baseline', 'middle');
+          text.setAttribute('fill', 'var(--bg)');
+          text.setAttribute('font-family', 'monospace');
+          text.setAttribute('font-weight', 'bold');
+          text.setAttribute('font-size', Math.max(10, bubble.size / 3));
+          text.textContent = bubble.name.substring(0, 3);
+          svg.appendChild(text);
+        });
+      }
+
+      /* ---------- Main generate handler ---------- */
+
+      function generate() {
+        const title = document.getElementById('chartTitleInput').value || 'Data Visualization';
+        const chartType = document.getElementById('chartType').value;
+
+        try {
+          if (currentMode === 'csv') {
+            const csvText = document.getElementById('csvInput').value;
+            const rows = parseCsvRows(csvText);
+            if (!rows.length) throw new Error('No CSV data found');
+
+            const colCount = rows[0].length;
+            const aggregation = document.getElementById('aggregation').value;
+
+            if (colCount >= 3 && aggregation !== 'none') {
+              const { labels, datasets } = parseCsvPivot(csvText, aggregation);
+              if (!labels.length) throw new Error('Could not parse pivot columns (need Column,Category,Value)');
+              renderPivotChart(chartType === 'scatter' ? 'bar' : chartType, title, labels, datasets);
+            } else {
+              const { labels, values } = parseCsvSimple(csvText);
+              if (!labels.length) throw new Error('Could not parse CSV rows (need Category,Value)');
+              if (chartType === 'scatter') {
+                const points = labels.map((l, i) => ({ x: i, y: values[i] }));
+                renderScatterChart(title, points, 'Index', 'Value', 6);
+              } else {
+                renderStandardChart(chartType, title, labels, values);
+              }
+            }
+          } else if (currentMode === 'json') {
+            const jsonText = document.getElementById('jsonInput').value;
+            const { labels, values } = parseJsonData(jsonText);
+            if (!labels.length) throw new Error('JSON array is empty');
+            if (chartType === 'scatter') {
+              const points = labels.map((l, i) => ({ x: i, y: values[i] }));
+              renderScatterChart(title, points, 'Index', 'Value', 6);
+            } else {
+              renderStandardChart(chartType, title, labels, values);
+            }
+          } else if (currentMode === 'xy') {
+            const xyText = document.getElementById('xyInput').value;
+            const points = parseXyPairs(xyText);
+            if (!points.length) throw new Error('No valid x,y pairs found');
+            const xLabel = document.getElementById('xLabel').value || 'X';
+            const yLabel = document.getElementById('yLabel').value || 'Y';
+            const pointSize = parseInt(document.getElementById('pointSize').value, 10) || 6;
+            renderScatterChart(title, points, xLabel, yLabel, pointSize);
+          } else if (currentMode === 'bubble') {
+            const bubbleText = document.getElementById('bubbleInput').value;
+            const bubbles = parseBubbleData(bubbleText);
+            if (!bubbles.length) throw new Error('No valid bubble rows found (need Name,X,Y,Size)');
+            const width = parseInt(document.getElementById('mapWidth').value, 10) || 800;
+            const height = parseInt(document.getElementById('mapHeight').value, 10) || 500;
+            renderBubbleMap(bubbles, width, height);
+          }
+
+          showStatus('Visualization generated.', 'success');
+        } catch (err) {
+          showStatus('Error: ' + err.message, 'error');
+        }
+      }
+
+      document.getElementById('generateBtn').addEventListener('click', generate);
+
+      /* ---------- File upload (CSV/XLSX) ---------- */
+
+      document.getElementById('csvUploadBtn').addEventListener('click', () => {
+        document.getElementById('csvFile').click();
+      });
+
+      document.getElementById('csvFile').addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+          if (file.name.toLowerCase().endsWith('.csv')) {
+            document.getElementById('csvInput').value = e.target.result;
+          } else {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            document.getElementById('csvInput').value = XLSX.utils.sheet_to_csv(sheet);
+          }
+          generate();
+        };
+        reader.onerror = () => showStatus('Error reading file', 'error');
+
+        if (file.name.toLowerCase().endsWith('.csv')) {
+          reader.readAsText(file);
+        } else {
+          reader.readAsArrayBuffer(file);
+        }
+      });
+
+      // Expose parsers for external test harness (no-op in production use)
+      window.__vizParsers = {
+        parseCsvRows,
+        parseCsvSimple,
+        parseCsvPivot,
+        parseJsonData,
+        parseXyPairs,
+        parseBubbleData
+      };
+
+      // Initial render
+      setMode('csv');
+      generate();
+    })();
+  </script>
+</body>
+</html>

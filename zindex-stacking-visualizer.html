@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Z-Index Stacking Context Visualizer | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      min-height: 220px;
+      resize: vertical;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+
+    /* Tool-specific styles */
+    .viz-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--puny);
+      border-radius: 4px;
+      background: var(--bg);
+    }
+
+    #viz-svg {
+      display: block;
+    }
+
+    .legend-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.85rem;
+    }
+
+    .legend-item {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--hover);
+    }
+
+    .legend-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      flex: none;
+    }
+
+    .legend-name {
+      font-family: monospace;
+      font-weight: bold;
+    }
+
+    .legend-detail {
+      color: var(--puny);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Z-Index Stacking Context Visualizer</h1>
+    <p class="puny">Paste HTML/CSS and render a 3D side-view of all stacking contexts — see why elements overlap incorrectly.</p>
+
+    <div class="container">
+      <div class="input-group">
+        <span class="input-label">Elements (one per line: name, position, z-index, parent)</span>
+        <textarea id="elements-input">header | position: sticky | z-index: 10 | parent: body
+modal-overlay | position: fixed | z-index: 1000 | parent: body
+modal-content | position: relative | z-index: 1 | parent: modal-overlay
+dropdown-menu | position: absolute | z-index: 50 | parent: header
+tooltip | position: absolute | z-index: 9999 | parent: body
+main-content | position: static | z-index: auto | parent: body
+sidebar | position: relative | z-index: 5 | parent: main-content</textarea>
+        <div class="button-group">
+          <button class="primary" id="render-btn">Render stacking order</button>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">3D side view (height = stack order, not z-index value)</span>
+        <div class="viz-wrap">
+          <svg id="viz-svg"></svg>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <span class="input-label">Computed paint order (back to front)</span>
+        <div class="legend-list" id="legend-list"></div>
+      </div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> An element with position: static (or no positioning) ignores z-index entirely and paints in document order within its stacking context. A child can never visually escape its parent's stacking context — that's why a dropdown with z-index: 9999 can still render behind a sibling, if that sibling's ancestor created a higher stacking context first.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool-specific script -->
+  <script>
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    }
+
+    const COLORS = ['#ff6600', '#0ea5e9', '#22c55e', '#a855f7', '#ec4899', '#f59e0b', '#14b8a6', '#ef4444', '#6366f1'];
+
+    function parseElements(text) {
+      const elements = [];
+      text.split('\n').forEach((line) => {
+        if (!line.trim()) return;
+        const parts = line.split('|').map((p) => p.trim());
+        if (parts.length < 1) return;
+        const name = parts[0];
+        let position = 'static', zIndex = 'auto', parent = 'body';
+
+        parts.slice(1).forEach((part) => {
+          const [key, val] = part.split(':').map((s) => s.trim());
+          if (key === 'position') position = val;
+          if (key === 'z-index') zIndex = val;
+          if (key === 'parent') parent = val;
+        });
+
+        const createsContext = position !== 'static' && zIndex !== 'auto';
+        elements.push({ name, position, zIndex, parent, createsContext });
+      });
+      return elements;
+    }
+
+    function computeStackOrder(elements) {
+      // build tree
+      const byName = {};
+      elements.forEach((el) => { byName[el.name] = el; });
+
+      // determine depth and stacking-context-adjusted sort key
+      function getAncestorChain(el) {
+        const chain = [el];
+        let current = el;
+        let guard = 0;
+        while (current.parent && byName[current.parent] && guard < 50) {
+          current = byName[current.parent];
+          chain.unshift(current);
+          guard++;
+        }
+        return chain;
+      }
+
+      const enriched = elements.map((el) => {
+        const chain = getAncestorChain(el);
+        // sort key: for each level in the chain, use its z-index (numeric or 0 for static/auto), forming a tuple comparison
+        const sortKey = chain.map((node) => {
+          const z = node.zIndex === 'auto' || node.position === 'static' ? 0 : parseInt(node.zIndex, 10) || 0;
+          return z;
+        });
+        return { ...el, sortKey, depth: chain.length };
+      });
+
+      enriched.sort((a, b) => {
+        const len = Math.max(a.sortKey.length, b.sortKey.length);
+        for (let i = 0; i < len; i++) {
+          const av = a.sortKey[i] !== undefined ? a.sortKey[i] : 0;
+          const bv = b.sortKey[i] !== undefined ? b.sortKey[i] : 0;
+          if (av !== bv) return av - bv;
+        }
+        return 0;
+      });
+
+      return enriched;
+    }
+
+    function render() {
+      const text = document.getElementById('elements-input').value;
+      const elements = parseElements(text);
+
+      if (elements.length === 0) {
+        showStatus('No elements found. Use the format: name | position: ... | z-index: ... | parent: ...', 'error');
+        return;
+      }
+
+      const ordered = computeStackOrder(elements);
+
+      const svg = d3.select('#viz-svg');
+      svg.selectAll('*').remove();
+
+      const width = Math.max(700, ordered.length * 140);
+      const height = 320;
+      svg.attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
+
+      const baseX = 80;
+      const baseY = height - 60;
+      const stepX = (width - 160) / Math.max(1, ordered.length - 1);
+      const isoOffsetX = 18;
+      const isoOffsetY = -10;
+
+      ordered.forEach((el, idx) => {
+        const x = baseX + idx * stepX;
+        const layerHeight = idx * 14;
+        const color = COLORS[idx % COLORS.length];
+
+        const g = svg.append('g');
+
+        // draw a stack of "floor" planes rising for visual height representing paint order
+        const planeW = 90;
+        const planeD = 40;
+        const y = baseY - layerHeight;
+
+        const points = [
+          [x, y],
+          [x + planeW, y],
+          [x + planeW + isoOffsetX, y + isoOffsetY],
+          [x + isoOffsetX, y + isoOffsetY]
+        ].map((p) => p.join(',')).join(' ');
+
+        g.append('polygon')
+          .attr('points', points)
+          .attr('fill', color)
+          .attr('fill-opacity', 0.85)
+          .attr('stroke', color)
+          .attr('stroke-width', 1);
+
+        // vertical support line connecting to baseline for height context
+        g.append('line')
+          .attr('x1', x + planeW / 2)
+          .attr('y1', y)
+          .attr('x2', x + planeW / 2)
+          .attr('y2', baseY + 10)
+          .attr('stroke', color)
+          .attr('stroke-width', 1)
+          .attr('stroke-dasharray', '2,2')
+          .attr('opacity', 0.4);
+
+        g.append('text')
+          .attr('x', x + planeW / 2 + isoOffsetX / 2)
+          .attr('y', y + isoOffsetY / 2 + 4)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '10px')
+          .attr('font-family', 'monospace')
+          .attr('fill', '#000')
+          .text(el.name.length > 12 ? el.name.slice(0, 11) + '…' : el.name);
+
+        g.append('text')
+          .attr('x', x + planeW / 2)
+          .attr('y', baseY + 26)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '9px')
+          .attr('font-family', 'monospace')
+          .attr('fill', 'currentColor')
+          .attr('opacity', 0.6)
+          .text(`#${idx + 1}`);
+      });
+
+      // baseline
+      svg.append('line')
+        .attr('x1', 20).attr('y1', baseY + 10)
+        .attr('x2', width - 20).attr('y2', baseY + 10)
+        .attr('stroke', 'currentColor')
+        .attr('stroke-opacity', 0.3);
+
+      renderLegend(ordered);
+    }
+
+    function renderLegend(ordered) {
+      const list = document.getElementById('legend-list');
+      list.innerHTML = ordered.map((el, idx) => {
+        const color = COLORS[idx % COLORS.length];
+        return `
+          <div class="legend-item">
+            <span class="legend-swatch" style="background:${color}"></span>
+            <span class="legend-name">${idx + 1}. ${escapeHtml(el.name)}</span>
+            <span class="legend-detail">position: ${el.position}, z-index: ${el.zIndex}, parent: ${el.parent}${el.createsContext ? ' — creates new stacking context' : ''}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    document.getElementById('render-btn').addEventListener('click', render);
+    render();
+  </script>
+</body>
+</html>
