@@ -34,6 +34,31 @@
         h1 {
             font-size: 1.5rem;
         }
+
+        .search-box {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin: 1.5rem 0 0;
+        }
+        .search-label {
+            font-size: 0.85rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: var(--puny);
+            letter-spacing: 0.05em;
+        }
+        #tool-search {
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+        #tool-search:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .search-hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -57,6 +82,13 @@
         <div class="changelog-marquee">
             <strong>DIRECTORY:</strong> Auto-generated on every push — categories are managed in <code>data/tools.json</code>.
         </div>
+
+        <div class="search-box">
+            <label class="search-label" for="tool-search">Search</label>
+            <input type="text" id="tool-search" placeholder="type to filter tools..." autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go">
+            <div class="puny" id="search-count" aria-live="polite"></div>
+        </div>
+        <p class="puny search-hidden" id="search-empty"></p>
 
         <span class="section-title">📊 Data &amp; Text</span>
         <div class="tool-grid">
@@ -289,6 +321,108 @@
                 toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
             };
         }
+    </script>
+
+    <script>
+        (function () {
+            const input = document.getElementById('tool-search');
+            const countEl = document.getElementById('search-count');
+            const emptyEl = document.getElementById('search-empty');
+            if (!input || !countEl || !emptyEl) return;
+
+            const HIDE = 'search-hidden';
+
+            const norm = (s) => s.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const safeDecode = (s) => { try { return decodeURIComponent(s); } catch (e) { return s; } };
+
+            // Build an index once: each category, and each tool link inside it.
+            const groups = Array.from(document.querySelectorAll('main .section-title'))
+                .map((title) => {
+                    const grid = title.nextElementSibling;
+                    if (!grid || !grid.classList.contains('tool-grid')) return null;
+                    const items = Array.from(grid.querySelectorAll('a')).map((a) => {
+                        const file = safeDecode(a.getAttribute('href') || '')
+                            .replace(/\.html$/i, '')
+                            .replace(/[-_]+/g, ' ');
+                        return { el: a, text: norm(a.textContent + ' ' + file) };
+                    });
+                    return { title, grid, items, label: norm(title.textContent) };
+                })
+                .filter(Boolean);
+
+            const total = groups.reduce((n, g) => n + g.items.length, 0);
+
+            function apply(raw) {
+                const terms = norm(raw).split(/\s+/).filter(Boolean);
+                let shown = 0;
+
+                groups.forEach((g) => {
+                    let groupShown = 0;
+                    g.items.forEach((item) => {
+                        // every term must hit the tool's title/filename OR its category name
+                        const ok = terms.every((t) => item.text.includes(t) || g.label.includes(t));
+                        item.el.classList.toggle(HIDE, !ok);
+                        if (ok) groupShown++;
+                    });
+                    g.title.classList.toggle(HIDE, groupShown === 0);
+                    g.grid.classList.toggle(HIDE, groupShown === 0);
+                    shown += groupShown;
+                });
+
+                if (!terms.length) {
+                    countEl.textContent = total + ' tools \u2022 press / to search, esc to clear';
+                    emptyEl.classList.add(HIDE);
+                } else {
+                    countEl.textContent = 'showing ' + shown + ' of ' + total;
+                    if (shown === 0) {
+                        emptyEl.textContent = 'no tools match \u201c' + raw.trim() + '\u201d. try fewer or shorter words.';
+                        emptyEl.classList.remove(HIDE);
+                    } else {
+                        emptyEl.classList.add(HIDE);
+                    }
+                }
+
+                // keep the query shareable / restorable via ?q=
+                try {
+                    const url = new URL(window.location.href);
+                    if (raw.trim()) url.searchParams.set('q', raw.trim());
+                    else url.searchParams.delete('q');
+                    history.replaceState(null, '', url);
+                } catch (e) { /* non-critical */ }
+            }
+
+            const firstVisible = () => document.querySelector('.tool-grid a:not(.' + HIDE + ')');
+
+            input.addEventListener('input', () => apply(input.value));
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (input.value) { input.value = ''; apply(''); }
+                    else input.blur();
+                } else if (e.key === 'Enter' && input.value.trim()) {
+                    const hit = firstVisible();
+                    if (hit) hit.click();
+                } else if (e.key === 'ArrowDown') {
+                    const hit = input.value.trim() && firstVisible();
+                    if (hit) { e.preventDefault(); hit.focus(); }
+                }
+            });
+
+            // "/" jumps to the search box from anywhere (unless already typing somewhere)
+            document.addEventListener('keydown', (e) => {
+                if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+                const t = e.target;
+                if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+                e.preventDefault();
+                input.focus();
+                input.select();
+            });
+
+            // restore ?q= on load
+            const initial = new URLSearchParams(window.location.search).get('q');
+            if (initial) input.value = initial;
+            apply(input.value);
+        })();
     </script>
 </body>
 </html>
