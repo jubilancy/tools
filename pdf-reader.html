@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PDF READER | tools.eliana.lol</title>
+  <title>PDF READER | tools.glosse.me</title>
   <link rel="stylesheet" href="global.css" />
   <link rel="icon" type="image/x-icon" href="favicon.svg" />
   <style>
@@ -370,7 +370,7 @@
     </div>
     <div class="right">
       <button id="theme-toggle">[theme]</button> |
-      <a href="https://eliana.lol">site</a>
+      <a href="https://glosse.me">site</a>
     </div>
   </nav>
 
@@ -406,7 +406,7 @@
           </div>
 
           <div class="info-box">
-            <strong>Tip:</strong> URLs only load if the host allows cross-origin requests (CORS). If one is blocked, download the file and upload it instead. Highlights and notes are stored in this browser's localStorage, keyed to the PDF itself, so re-opening the same file restores them. Use export to back them up.
+            <strong>Tip:</strong> if a url is blocked by CORS, it's retried automatically through a proxy. If the source itself blocks that too (some sites reject datacenter traffic), download the file and upload it instead. Highlights and notes are stored in this browser's localStorage, keyed to the PDF itself, so re-opening the same file restores them. Use export to back them up.
           </div>
         </div>
       </details>
@@ -466,7 +466,7 @@
   </div>
 
   <footer style="margin-top: 4rem; text-align: center" class="puny">
-    © 2026 eliana.lol • <a href="credits.html">credits</a>
+    © 2026 glosse.me • <a href="credits.html">credits</a>
   </footer>
 
   <!-- Theme Toggle Script (Required for all tools) -->
@@ -626,6 +626,7 @@
     const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
 
     /* ---------------- loading ---------------- */
+    const PROXY = 'https://proxy.glosse.me/?url=';
     function setInfo(t) { el.info.textContent = t || ''; }
 
     async function loadFromUrl(url) {
@@ -636,7 +637,14 @@
       el.url.value = url;
       try {
         setInfo('fetching...');
-        const res = await fetch(parsed.href);
+        let res;
+        try {
+          res = await fetch(parsed.href);
+        } catch (err) {
+          if (!(err instanceof TypeError)) throw err;
+          setInfo('blocked by CORS, retrying via proxy...');
+          res = await fetch(PROXY + encodeURIComponent(parsed.href));
+        }
         if (!res.ok) throw new Error(`server responded ${res.status}`);
         const total = Number(res.headers.get('content-length')) || 0;
         let buf;
@@ -664,7 +672,7 @@
         console.error(err);
         if (err instanceof TypeError) {
           setInfo('');
-          showStatus('blocked (likely CORS) or offline. download the file and upload it instead.', 'error');
+          showStatus('could not reach that url, even through the proxy. download the file and upload it instead.', 'error');
         } else {
           setInfo('');
           showStatus(err.message || 'failed to load pdf', 'error');
@@ -736,7 +744,7 @@
       if (meta.src) S.doc.src = meta.src;
       saveDoc();
 
-      document.title = `${S.doc.name} | PDF READER | tools.eliana.lol`;
+      document.title = `${S.doc.name} | PDF READER | tools.glosse.me`;
       await buildReader(gen);
       if (gen !== S.gen) return;
       setInfo(`${S.doc.name} - ${S.n} page${S.n === 1 ? '' : 's'}`);
