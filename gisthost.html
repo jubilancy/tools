@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gist Host | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: var(--puny);
+      letter-spacing: 0.05em;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      flex: 0 1 auto;
+      min-width: 120px;
+      padding: 10px;
+      cursor: pointer;
+      font-family: monospace;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      transition: all 150ms;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    textarea,
+    input[type="text"] {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border: 1px solid var(--puny);
+      background: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .status.error {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .info-box {
+      padding: 1rem;
+      background-color: var(--highlight);
+      border-left: 3px solid var(--accent);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .hide {
+      display: none;
+    }
+
+    .url-prefix {
+      font-size: 0.85rem;
+      color: var(--puny);
+      word-break: break-all;
+    }
+
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>Gist Host</h1>
+    <p class="puny">Render an HTML file from a GitHub Gist as a live page.</p>
+
+    <div id="loading" class="puny">Loading...</div>
+
+    <div id="main" class="container hide">
+      <div class="input-group">
+        <label class="input-label" for="gist_id">Gist ID</label>
+        <div class="url-prefix">https://gisthost.github.io/?</div>
+        <input type="text" id="gist_id" placeholder="Gist ID" autocomplete="off" />
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="file_name">File name (optional)</label>
+        <input type="text" id="file_name" placeholder="index.html" autocomplete="off" />
+      </div>
+
+      <div class="button-group">
+        <button id="submit" class="primary">Submit</button>
+      </div>
+
+      <div class="info-box">
+        <strong>Tip:</strong> If file name is empty, it previews <code>index.html</code> or the first file as default.
+        Unauthenticated GitHub API requests are limited to 60 per hour per IP.
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const now = html.getAttribute('data-theme');
+        const next = now === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+      };
+    }
+  </script>
+
+  <!-- Tool-specific script -->
+  <script>
+    let statusTimer = null;
+
+    function showStatus(message, type = 'success', duration = 2000) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      clearTimeout(statusTimer);
+      if (duration > 0) {
+        statusTimer = setTimeout(() => status.classList.remove('show'), duration);
+      }
+    }
+
+    function showMainPage() {
+      document.getElementById('main').classList.remove('hide');
+      document.getElementById('loading').classList.add('hide');
+    }
+
+    function submit() {
+      const gistInput = document.getElementById('gist_id').value.trim();
+      const fileInput = document.getElementById('file_name').value.trim();
+
+      if (!gistInput) {
+        showStatus('Enter a Gist ID first.', 'error');
+        return;
+      }
+
+      let query = gistInput;
+      if (fileInput) query += '/' + fileInput;
+      location.search = query;
+    }
+
+    document.getElementById('submit').addEventListener('click', submit);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && document.activeElement && document.activeElement.tagName === 'INPUT') {
+        submit();
+      }
+    });
+
+    (function init() {
+      // 1. check query string
+      let query = location.search.substring(1);
+      if (query.length === 0) {
+        showMainPage();
+        return;
+      }
+
+      // 2. get gist id and file name
+      query = query.split('/');
+      const gistId = query[0].split(/[=&]/)[0];
+      let fileName = decodeURIComponent(query[1] || '');
+
+      // 3. write data to inputs
+      document.getElementById('gist_id').value = gistId;
+      document.getElementById('file_name').value = fileName;
+
+      // 4. fetch data
+      fetch('https://api.github.com/gists/' + gistId)
+        .then((res) =>
+          res.json().then((body) => {
+            if (res.status === 200) return body;
+            console.log(res, body);
+            throw new Error('Gist ' + gistId + ', ' + String(body.message || 'request failed').replace(/\(.*\)/, ''));
+          })
+        )
+        .then((info) => {
+          if (fileName === '') {
+            for (const file in info.files) {
+              if (fileName === '' || file === 'index.html') {
+                fileName = file;
+              }
+            }
+          }
+
+          if (!Object.prototype.hasOwnProperty.call(info.files, fileName)) {
+            throw new Error('File ' + (fileName || '(none)') + ' does not exist');
+          }
+
+          const fileInfo = info.files[fileName];
+
+          // 5. fetch full content if truncated, otherwise use inline content
+          if (fileInfo.truncated && fileInfo.raw_url) {
+            return fetch(fileInfo.raw_url).then((res) => {
+              if (!res.ok) throw new Error('Failed to fetch full content for ' + fileName);
+              return res.text();
+            });
+          }
+          return fileInfo.content;
+        })
+        .then((content) => {
+          // 6. replace this page with the gist's content
+          document.open();
+          document.write(content);
+          document.close();
+        })
+        .catch((err) => {
+          showMainPage();
+          showStatus(err.message, 'error', 0);
+        });
+    })();
+  </script>
+</body>
+</html>
