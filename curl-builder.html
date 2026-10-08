@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>cURL Command Builder | tools.eliana.lol</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.svg" />
+  <style>
+    .container { display: flex; flex-direction: column; gap: 1.25rem; }
+    label, .input-label {
+      display: block; font-size: 0.75rem; font-weight: bold; text-transform: uppercase;
+      color: var(--puny); letter-spacing: 0.05em; margin-bottom: 4px;
+    }
+    select {
+      font-family: monospace; padding: 9px 10px; background: var(--bg); color: var(--text);
+      border: 1px solid var(--puny); border-radius: 4px; box-sizing: border-box;
+    }
+    textarea, input[type="text"], input[type="number"], input[type="password"] { border-radius: 4px; font-size: 0.9rem; }
+    textarea:focus, input:focus, select:focus { outline: none; border-color: var(--accent); }
+    input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--accent); }
+    textarea { resize: vertical; }
+    button { border-radius: 4px; transition: all 150ms; margin: 0; }
+    button:hover { border-color: var(--accent); }
+    button.primary { border-color: var(--accent); color: var(--accent); font-weight: bold; }
+    button.small { padding: 2px 8px; font-size: 0.8rem; }
+    .row { display: flex; gap: 0.5rem; align-items: stretch; }
+    .row > input { flex: 1; min-width: 0; }
+    .wrap { flex-wrap: wrap; }
+    .bar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+    .opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0.4rem 1rem; }
+    .opts label.chk { display: flex; gap: 6px; align-items: center; text-transform: none; font-weight: normal; color: var(--text); font-size: 0.85rem; letter-spacing: 0; margin: 0; cursor: pointer; }
+    .kv { display: grid; grid-template-columns: auto 1fr 1.4fr auto; gap: 0.4rem; align-items: center; margin-bottom: 0.4rem; }
+    .kv input[type="text"] { padding: 7px 8px; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 1px solid var(--puny); margin-bottom: 0.75rem; }
+    .tabs button { border: 1px solid transparent; border-bottom: none; border-radius: 4px 4px 0 0; margin-bottom: -1px; }
+    .tabs button.active { border-color: var(--puny); border-bottom: 1px solid var(--bg); color: var(--accent); font-weight: bold; }
+    .out {
+      background: var(--highlight); border: 1px dashed var(--accent); padding: 0.75rem; margin: 0;
+      white-space: pre-wrap; word-break: break-all; font-size: 0.85rem; min-height: 3rem; max-height: 420px; overflow: auto;
+    }
+    .hint { font-size: 0.75rem; color: var(--puny); }
+    .status { padding: 0.5rem 0.75rem; border-radius: 4px; font-size: 0.85rem; display: none; }
+    .status.show { display: block; }
+    .status.ok { border-left: 3px solid var(--accent); color: var(--accent); background: var(--highlight); }
+    .status.err { border-left: 3px solid #ef4444; color: #ef4444; }
+    .saved-item { display: flex; gap: 0.5rem; align-items: center; justify-content: space-between; border: 1px solid var(--puny); padding: 6px 10px; margin-bottom: 6px; border-radius: 4px; }
+    .saved-item .meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .m-GET{color:#16a34a}.m-POST{color:#d97706}.m-PUT{color:#2563eb}.m-PATCH{color:#7c3aed}.m-DELETE{color:#dc2626}
+    details { border: 1px solid var(--puny); border-radius: 4px; padding: 0.5rem 0.75rem; }
+    details > summary { cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; }
+    details[open] > summary { margin-bottom: 0.75rem; }
+    @media (max-width: 700px) {
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+      .kv { grid-template-columns: auto 1fr auto; }
+      .kv input.v { grid-column: 2 / 3; }
+      .row.method-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="left">
+      <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+      <a href="credits.html">credits</a> |
+      <a href="changelog.html">logs</a>
+    </div>
+    <div class="right">
+      <button id="theme-toggle">[theme]</button> |
+      <a href="https://eliana.lol">site</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>cURL Command Builder</h1>
+    <p class="puny">Build curl commands for your API endpoints. Set the method, URL, params, headers, auth and body, then copy as curl (bash / cmd / PowerShell), fetch, Python or HTTPie. Import an existing curl command, send the request from your browser, save requests, and share a link.</p>
+
+    <div class="container">
+
+      <!-- Request line -->
+      <div>
+        <span class="input-label">Request</span>
+        <div class="row method-row">
+          <select id="method" style="min-width:110px">
+            <option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option>
+            <option>DELETE</option><option>HEAD</option><option>OPTIONS</option>
+          </select>
+          <input type="text" id="url" placeholder="https://api.example.com/v1/items" spellcheck="false" autocomplete="off" />
+        </div>
+      </div>
+
+      <div class="bar">
+        <select id="example" aria-label="Examples">
+          <option value="">Load example…</option>
+          <option value="get">GET with query params</option>
+          <option value="json">POST JSON</option>
+          <option value="bearer">GET with bearer token</option>
+          <option value="form">POST urlencoded form</option>
+          <option value="upload">POST multipart upload</option>
+          <option value="basic">GET with basic auth</option>
+        </select>
+        <button id="btn-import">Import curl…</button>
+        <button id="btn-reset">Reset</button>
+      </div>
+
+      <div id="import-box" style="display:none">
+        <label for="import-text">Paste a curl command</label>
+        <textarea id="import-text" rows="5" spellcheck="false" placeholder="curl -X POST https://api.example.com -H 'Content-Type: application/json' -d '{&quot;a&quot;:1}'"></textarea>
+        <div class="bar" style="margin-top:0.5rem">
+          <button class="primary" id="btn-import-go">Parse into builder</button>
+          <button id="btn-import-cancel">Cancel</button>
+          <span class="hint">Supports -X -H -d/--data* -F -u -b -A -e -L -k -i -v -s -I -G -o -x -m --compressed and more. Line continuations (\ ^ `) are handled.</span>
+        </div>
+      </div>
+
+      <!-- Params / Headers / Auth / Body -->
+      <details open>
+        <summary>Query params</summary>
+        <div id="params"></div>
+        <button class="small" data-add="params">+ add param</button>
+      </details>
+
+      <details open>
+        <summary>Headers</summary>
+        <div id="headers"></div>
+        <div class="bar">
+          <button class="small" data-add="headers">+ add header</button>
+          <select id="hdr-preset" aria-label="Common headers">
+            <option value="">Common header…</option>
+            <option>Accept: application/json</option>
+            <option>Content-Type: application/json</option>
+            <option>Content-Type: application/x-www-form-urlencoded</option>
+            <option>Accept-Language: en-US</option>
+            <option>Cache-Control: no-cache</option>
+            <option>X-Requested-With: XMLHttpRequest</option>
+            <option>Origin: https://example.com</option>
+            <option>If-None-Match: *</option>
+          </select>
+        </div>
+      </details>
+
+      <details>
+        <summary>Authentication</summary>
+        <div class="grid3">
+          <div>
+            <label for="auth-type">Type</label>
+            <select id="auth-type" style="width:100%">
+              <option value="none">None</option>
+              <option value="bearer">Bearer token</option>
+              <option value="basic">Basic auth</option>
+              <option value="apikey">API key</option>
+            </select>
+          </div>
+          <div id="auth-a"></div>
+          <div id="auth-b"></div>
+        </div>
+      </details>
+
+      <details open>
+        <summary>Body</summary>
+        <div class="bar" style="margin-bottom:0.75rem">
+          <label for="body-type" style="margin:0">Type</label>
+          <select id="body-type">
+            <option value="none">None</option>
+            <option value="json">JSON</option>
+            <option value="raw">Raw text</option>
+            <option value="urlencoded">Form (urlencoded)</option>
+            <option value="multipart">Form (multipart)</option>
+            <option value="binary">Binary file</option>
+          </select>
+          <span id="body-hint" class="hint"></span>
+        </div>
+        <div id="body-text-wrap">
+          <textarea id="body-text" rows="9" spellcheck="false" placeholder='{"name": "example"}'></textarea>
+          <div class="bar" style="margin-top:0.5rem">
+            <button class="small" id="btn-beautify">Beautify JSON</button>
+            <button class="small" id="btn-minify">Minify JSON</button>
+            <span id="json-status" class="hint"></span>
+          </div>
+        </div>
+        <div id="body-form-wrap">
+          <div id="form"></div>
+          <button class="small" data-add="form">+ add field</button>
+          <p class="hint" id="form-hint"></p>
+        </div>
+        <div id="body-binary-wrap">
+          <label for="binary-path">File path</label>
+          <input type="text" id="binary-path" placeholder="./payload.bin" />
+        </div>
+      </details>
+
+      <details>
+        <summary>Options</summary>
+        <div class="opts" style="margin-bottom:1rem">
+          <label class="chk"><input type="checkbox" id="o-L" /> Follow redirects (-L)</label>
+          <label class="chk"><input type="checkbox" id="o-k" /> Skip TLS verify (-k)</label>
+          <label class="chk"><input type="checkbox" id="o-i" /> Include response headers (-i)</label>
+          <label class="chk"><input type="checkbox" id="o-v" /> Verbose (-v)</label>
+          <label class="chk"><input type="checkbox" id="o-s" /> Silent (-s)</label>
+          <label class="chk"><input type="checkbox" id="o-S" /> Show errors when silent (-S)</label>
+          <label class="chk"><input type="checkbox" id="o-f" /> Fail on HTTP errors (-f)</label>
+          <label class="chk"><input type="checkbox" id="o-compressed" /> Compressed (--compressed)</label>
+          <label class="chk"><input type="checkbox" id="o-timing" /> Print status &amp; timing (-w)</label>
+          <label class="chk"><input type="checkbox" id="o-O" /> Save remote filename (-O)</label>
+        </div>
+        <div class="grid3">
+          <div><label for="o-maxtime">Max time (s)</label><input type="number" id="o-maxtime" min="0" /></div>
+          <div><label for="o-connect">Connect timeout (s)</label><input type="number" id="o-connect" min="0" /></div>
+          <div><label for="o-retry">Retries</label><input type="number" id="o-retry" min="0" /></div>
+          <div><label for="o-ua">User agent (-A)</label><input type="text" id="o-ua" /></div>
+          <div><label for="o-referer">Referer (-e)</label><input type="text" id="o-referer" /></div>
+          <div><label for="o-cookie">Cookie (-b)</label><input type="text" id="o-cookie" placeholder="name=value; other=value" /></div>
+          <div><label for="o-proxy">Proxy (-x)</label><input type="text" id="o-proxy" placeholder="http://localhost:8080" /></div>
+          <div><label for="o-output">Output file (-o)</label><input type="text" id="o-output" placeholder="response.json" /></div>
+          <div>
+            <label for="o-http">HTTP version</label>
+            <select id="o-http" style="width:100%">
+              <option value="">default</option><option value="--http1.1">HTTP/1.1</option>
+              <option value="--http2">HTTP/2</option><option value="--http3">HTTP/3</option>
+            </select>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Variables</summary>
+        <label for="vars">One KEY=value per line. Use <code>{{KEY}}</code> anywhere above.</label>
+        <textarea id="vars" rows="4" spellcheck="false" placeholder="BASE_URL=https://api.example.com&#10;TOKEN=abc123"></textarea>
+      </details>
+
+      <!-- Output -->
+      <div>
+        <span class="input-label">Generated command</span>
+        <div class="tabs" id="tabs">
+          <button data-tab="bash" class="active">curl (bash)</button>
+          <button data-tab="cmd">curl (cmd)</button>
+          <button data-tab="ps">curl (PowerShell)</button>
+          <button data-tab="fetch">fetch</button>
+          <button data-tab="python">Python</button>
+          <button data-tab="httpie">HTTPie</button>
+        </div>
+        <pre class="out" id="output"></pre>
+        <div class="bar" style="margin-top:0.5rem">
+          <label class="chk" style="display:flex;gap:6px;align-items:center;text-transform:none;font-weight:normal;color:var(--text);margin:0;cursor:pointer">
+            <input type="checkbox" id="multiline" checked /> Multi-line
+          </label>
+          <button class="primary" id="btn-copy">Copy</button>
+          <button id="btn-download">Download .sh</button>
+          <button id="btn-link">Copy share link</button>
+          <button id="btn-save">Save request</button>
+        </div>
+        <div class="status" id="status" role="status"></div>
+      </div>
+
+      <!-- Send -->
+      <div>
+        <span class="input-label">Try it from your browser</span>
+        <p class="hint">Uses <code>fetch()</code>, so the target must allow CORS from this page. Browsers ignore some headers (Cookie, User-Agent, Host…) and cannot send local files. Use the curl command for the full request.</p>
+        <div class="bar">
+          <button class="primary" id="btn-send">Send request</button>
+          <span id="send-meta" class="hint"></span>
+        </div>
+        <pre class="out" id="response" style="margin-top:0.5rem;display:none"></pre>
+      </div>
+
+      <!-- Saved -->
+      <div>
+        <span class="input-label">Saved requests</span>
+        <div id="saved"></div>
+        <div class="bar">
+          <button class="small" id="btn-export">Export JSON</button>
+          <button class="small" id="btn-import-saved">Import JSON</button>
+          <button class="small" id="btn-clear-saved">Clear all</button>
+          <input type="file" id="saved-file" accept="application/json" style="display:none" />
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer style="margin-top: 4rem; text-align: center" class="puny">
+    © 2026 eliana.lol • <a href="credits.html">credits</a>
+  </footer>
+
+  <!-- Theme Toggle Script (Required for all tools) -->
+  <script>
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-theme', saved);
+    if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+    if (toggle) toggle.onclick = () => { const now = html.getAttribute('data-theme'); const next = now==='dark'?'light':'dark'; html.setAttribute('data-theme',next); localStorage.setItem('theme',next); toggle.innerText=next==='dark'?'[light]':'[dark]'; };
+  </script>
+
+  <script>
+  (() => {
+    const $ = id => document.getElementById(id);
+    const STORE = 'curlbuilder.saved';
+
+    /* ---------- state ---------- */
+    const blank = () => ({
+      method: 'GET', url: '',
+      params: [], headers: [], form: [],
+      auth: { type: 'none', token: '', user: '', pass: '', keyName: 'X-API-Key', keyValue: '', keyIn: 'header' },
+      bodyType: 'none', body: '', binaryPath: '',
+      opts: { L:false,k:false,i:false,v:false,s:false,S:false,f:false,compressed:false,timing:false,O:false,
+              maxtime:'',connect:'',retry:'',ua:'',referer:'',cookie:'',proxy:'',output:'',http:'' },
+      vars: '', shell: 'bash', multiline: true
+    });
+    let S = blank();
+    let tab = 'bash';
+
+    const row = (k='', v='', on=true) => ({ k, v, on });
+
+    /* ---------- helpers ---------- */
+    function status(msg, kind='ok') {
+      const el = $('status'); el.textContent = msg; el.className = 'status show ' + kind;
+      clearTimeout(status.t); status.t = setTimeout(() => el.className = 'status', 3500);
+    }
+    function lsGet(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }
+    function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } }
+    const has = (list, name) => list.some(([k]) => k.toLowerCase() === name.toLowerCase());
+
+    function parseVars(text) {
+      const m = {};
+      text.split(/\r?\n/).forEach(l => { const i = l.indexOf('='); if (i > 0 && !l.trim().startsWith('#')) m[l.slice(0, i).trim()] = l.slice(i + 1).trim(); });
+      return m;
+    }
+    function sub(s, vars) { return String(s ?? '').replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (m, k) => k in vars ? vars[k] : m); }
+
+    /* ---------- form <-> state ---------- */
+    function readForm() {
+      S.method = $('method').value;
+      S.url = $('url').value.trim();
+      S.auth.type = $('auth-type').value;
+      const a = id => $(id) ? $(id).value : '';
+      if (S.auth.type === 'bearer') S.auth.token = a('a-token');
+      if (S.auth.type === 'basic') { S.auth.user = a('a-user'); S.auth.pass = a('a-pass'); }
+      if (S.auth.type === 'apikey') { S.auth.keyName = a('a-name'); S.auth.keyValue = a('a-value'); S.auth.keyIn = a('a-in') || 'header'; }
+      S.bodyType = $('body-type').value;
+      S.body = $('body-text').value;
+      S.binaryPath = $('binary-path').value;
+      for (const k of ['L','k','i','v','s','S','f','compressed','timing','O']) S.opts[k] = $('o-' + k).checked;
+      S.opts.maxtime = $('o-maxtime').value; S.opts.connect = $('o-connect').value; S.opts.retry = $('o-retry').value;
+      S.opts.ua = $('o-ua').value; S.opts.referer = $('o-referer').value; S.opts.cookie = $('o-cookie').value;
+      S.opts.proxy = $('o-proxy').value; S.opts.output = $('o-output').value; S.opts.http = $('o-http').value;
+      S.vars = $('vars').value;
+      S.multiline = $('multiline').checked;
+    }
+
+    function writeForm() {
+      $('method').value = S.method; $('url').value = S.url;
+      $('auth-type').value = S.auth.type; renderAuth();
+      $('body-type').value = S.bodyType; $('body-text').value = S.body; $('binary-path').value = S.binaryPath;
+      for (const k of ['L','k','i','v','s','S','f','compressed','timing','O']) $('o-' + k).checked = !!S.opts[k];
+      $('o-maxtime').value = S.opts.maxtime; $('o-connect').value = S.opts.connect; $('o-retry').value = S.opts.retry;
+      $('o-ua').value = S.opts.ua; $('o-referer').value = S.opts.referer; $('o-cookie').value = S.opts.cookie;
+      $('o-proxy').value = S.opts.proxy; $('o-output').value = S.opts.output; $('o-http').value = S.opts.http;
+      $('vars').value = S.vars; $('multiline').checked = S.multiline;
+      renderTable('params'); renderTable('headers'); renderTable('form');
+      updateBodyUI();
+    }
+
+    function renderAuth() {
+      const t = $('auth-type').value, A = $('auth-a'), B = $('auth-b');
+      const inp = (id, label, val, type='text') => `<label for="${id}">${label}</label><input type="${type}" id="${id}" value="${esc(val)}" autocomplete="off" />`;
+      A.innerHTML = B.innerHTML = '';
+      if (t === 'bearer') A.innerHTML = inp('a-token', 'Token', S.auth.token);
+      if (t === 'basic') { A.innerHTML = inp('a-user', 'Username', S.auth.user); B.innerHTML = inp('a-pass', 'Password', S.auth.pass); }
+      if (t === 'apikey') {
+        A.innerHTML = inp('a-name', 'Key name', S.auth.keyName) + `<label for="a-in" style="margin-top:6px">Send in</label><select id="a-in" style="width:100%"><option value="header">Header</option><option value="query">Query param</option></select>`;
+        B.innerHTML = inp('a-value', 'Key value', S.auth.keyValue);
+        $('a-in').value = S.auth.keyIn;
+      }
+      $('auth-a').querySelectorAll('input,select').forEach(e => e.addEventListener('input', update));
+      $('auth-b').querySelectorAll('input,select').forEach(e => e.addEventListener('input', update));
+    }
+    const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+    function renderTable(name) {
+      const host = $(name), list = S[name];
+      host.innerHTML = '';
+      list.forEach((r, i) => {
+        const d = document.createElement('div'); d.className = 'kv';
+        d.innerHTML = `<input type="checkbox" ${r.on ? 'checked' : ''} aria-label="enabled" />
+          <input type="text" class="k" placeholder="${name === 'headers' ? 'Header-Name' : 'key'}" value="${esc(r.k)}" spellcheck="false" />
+          <input type="text" class="v" placeholder="${name === 'form' ? 'value  (or @/path/to/file)' : 'value'}" value="${esc(r.v)}" spellcheck="false" />
+          <button class="small" aria-label="remove">✕</button>`;
+        const [cb, k, v, del] = d.children;
+        cb.onchange = () => { r.on = cb.checked; update(); };
+        k.oninput = () => { r.k = k.value; update(); };
+        v.oninput = () => { r.v = v.value; update(); };
+        del.onclick = () => { list.splice(i, 1); renderTable(name); update(); };
+        host.appendChild(d);
+      });
+    }
+
+    function updateBodyUI() {
+      const t = $('body-type').value;
+      $('body-text-wrap').style.display = (t === 'json' || t === 'raw') ? '' : 'none';
+      $('body-form-wrap').style.display = (t === 'urlencoded' || t === 'multipart') ? '' : 'none';
+      $('body-binary-wrap').style.display = t === 'binary' ? '' : 'none';
+      $('btn-beautify').style.display = $('btn-minify').style.display = t === 'json' ? '' : 'none';
+      $('body-hint').textContent = {
+        json: 'Content-Type: application/json is added automatically if missing.',
+        raw: 'Sent as-is. Set a Content-Type header yourself.',
+        urlencoded: 'Sent with --data-urlencode (values are encoded for you).',
+        multipart: 'Sent with -F. Prefix a value with @ to upload a file.',
+        binary: 'Sent with --data-binary @file.', none: ''
+      }[t];
+      $('form-hint').textContent = t === 'multipart' ? 'Tip: a value like @./photo.png uploads that file; ;type=image/png can be appended.' : '';
+      jsonCheck();
+    }
+    function jsonCheck() {
+      const el = $('json-status');
+      if ($('body-type').value !== 'json' || !$('body-text').value.trim()) { el.textContent = ''; return; }
+      const txt = $('body-text').value.replace(/\{\{[^}]*\}\}/g, '0');
+      try { JSON.parse(txt); el.textContent = '✓ valid JSON'; el.style.color = ''; }
+      catch (e) { el.textContent = '✗ ' + e.message; el.style.color = '#ef4444'; }
+    }
+
+    /* ---------- resolve state into a concrete request ---------- */
+    function resolve() {
+      const vars = parseVars(S.vars), v = s => sub(s, vars);
+      const q = [];
+      S.params.filter(p => p.on && p.k).forEach(p => q.push([v(p.k), v(p.v)]));
+      const headers = S.headers.filter(h => h.on && h.k).map(h => [v(h.k), v(h.v)]);
+      let basic = null;
+      const A = S.auth;
+      if (A.type === 'bearer' && A.token) headers.push(['Authorization', 'Bearer ' + v(A.token)]);
+      if (A.type === 'basic' && (A.user || A.pass)) basic = v(A.user) + ':' + v(A.pass);
+      if (A.type === 'apikey' && A.keyName && A.keyValue) {
+        if (A.keyIn === 'query') q.push([v(A.keyName), v(A.keyValue)]); else headers.push([v(A.keyName), v(A.keyValue)]);
+      }
+      let url = v(S.url);
+      if (q.length) {
+        const [base, hash] = url.split(/#(.*)/s);
+        const qs = q.map(([k, val]) => encodeURIComponent(k) + '=' + encodeURIComponent(val)).join('&');
+        url = base + (base.includes('?') ? (/[?&]$/.test(base) ? '' : '&') : '?') + qs + (hash !== undefined ? '#' + hash : '');
+      }
+      const body = { kind: 'none' };
+      const fields = S.form.filter(f => f.on && f.k).map(f => [v(f.k), v(f.v)]);
+      switch (S.bodyType) {
+        case 'json': if (S.body.trim()) { body.kind = 'text'; body.text = v(S.body); if (!has(headers, 'content-type')) headers.push(['Content-Type', 'application/json']); } break;
+        case 'raw': if (S.body.length) { body.kind = 'text'; body.text = v(S.body); } break;
+        case 'urlencoded': if (fields.length) { body.kind = 'urlencoded'; body.fields = fields; } break;
+        case 'multipart': if (fields.length) { body.kind = 'multipart'; body.fields = fields; } break;
+        case 'binary': if (S.binaryPath) { body.kind = 'binary'; body.path = v(S.binaryPath); } break;
+      }
+      const o = S.opts;
+      return { method: S.method, url, headers, basic, body, o, vars };
+    }
+
+    /* ---------- shell quoting ---------- */
+    const quoters = {
+      bash: s => /^[A-Za-z0-9_\/.:@%+=,-]+$/.test(s) ? s : "'" + s.replace(/'/g, "'\\''") + "'",
+      ps:   s => "'" + s.replace(/'/g, "''") + "'",
+      cmd:  s => '"' + s.replace(/"/g, '\\"').replace(/%/g, '%%') + '"'
+    };
+    const forceQuote = { bash: s => "'" + s.replace(/'/g, "'\\''") + "'", ps: quoters.ps, cmd: quoters.cmd };
+    const contChar = { bash: ' \\', cmd: ' ^', ps: ' `' };
+
+    function genCurl(r, shell) {
+      const q = forceQuote[shell];
+      const qq = s => (shell === 'bash' && /^[A-Za-z0-9_\/.:@%+=,-]+$/.test(s)) ? s : q(s);
+      const parts = [];            // each entry = one logical line
+      const add = (...a) => parts.push(a.join(' '));
+      const o = r.o, hasBody = r.body.kind !== 'none';
+      const autoPost = hasBody && r.method === 'POST';
+      if (r.method === 'HEAD') add('-I');
+      else if (!(r.method === 'GET' && !hasBody) && !autoPost) add('-X', r.method);
+      for (const [k, val] of r.headers) add('-H', q(k + ': ' + val));
+      if (r.basic) add('-u', q(r.basic));
+      if (o.cookie) add('-b', q(sub(o.cookie, r.vars)));
+      if (o.ua) add('-A', q(sub(o.ua, r.vars)));
+      if (o.referer) add('-e', q(sub(o.referer, r.vars)));
+      const b = r.body;
+      if (b.kind === 'text') add('--data-raw', q(b.text));
+      if (b.kind === 'urlencoded') b.fields.forEach(([k, val]) => add('--data-urlencode', q(k + '=' + val)));
+      if (b.kind === 'multipart') b.fields.forEach(([k, val]) => add('-F', q(k + '=' + val)));
+      if (b.kind === 'binary') add('--data-binary', q('@' + b.path));
+      const flags = [];
+      if (o.L) flags.push('-L'); if (o.k) flags.push('-k'); if (o.i) flags.push('-i'); if (o.v) flags.push('-v');
+      if (o.s) flags.push('-s'); if (o.S) flags.push('-S'); if (o.f) flags.push('-f');
+      if (o.O) flags.push('-O');
+      flags.forEach(f => add(f));
+      if (o.compressed) add('--compressed');
+      if (o.http) add(o.http);
+      if (o.maxtime) add('--max-time', o.maxtime);
+      if (o.connect) add('--connect-timeout', o.connect);
+      if (o.retry) add('--retry', o.retry);
+      if (o.proxy) add('-x', q(sub(o.proxy, r.vars)));
+      if (o.output && !o.O) add('-o', q(sub(o.output, r.vars)));
+      if (o.timing) add('-w', q('\\nstatus: %{http_code}\\ntime_total: %{time_total}s\\nsize: %{size_download} bytes\\n'.replace(/%/g, shell === 'cmd' ? '%%' : '%')));
+      parts.push(qq(r.url || 'https://example.com'));
+      const bin = shell === 'bash' ? 'curl' : 'curl' + (shell === 'ps' ? '.exe' : '');
+      if (!S.multiline) return bin + ' ' + parts.join(' ');
+      const sep = contChar[shell] + '\n  ';
+      return bin + (parts.length ? sep : ' ') + parts.join(sep);
+    }
+
+    function genFetch(r) {
+      const lines = [];
+      const hdr = {}; r.headers.forEach(([k, v]) => hdr[k] = v);
+      if (r.basic) hdr['Authorization'] = 'Basic ${btoa(' + JSON.stringify(r.basic) + ')}';
+      const opts = ['  method: ' + JSON.stringify(r.method)];
+      const hdrKeys = Object.keys(hdr);
+      if (hdrKeys.length) {
+        const body = hdrKeys.map(k => '    ' + JSON.stringify(k) + ': ' + (hdr[k].startsWith('Basic ${') ? '`' + hdr[k] + '`' : JSON.stringify(hdr[k]))).join(',\n');
+        opts.push('  headers: {\n' + body + '\n  }');
+      }
+      const b = r.body;
+      if (b.kind === 'text') opts.push('  body: ' + JSON.stringify(b.text));
+      if (b.kind === 'urlencoded') opts.push('  body: new URLSearchParams(' + JSON.stringify(Object.fromEntries(b.fields)) + ')');
+      if (b.kind === 'multipart') {
+        lines.push('const form = new FormData();');
+        b.fields.forEach(([k, v]) => lines.push(v.startsWith('@') ? `// form.append(${JSON.stringify(k)}, fileInput.files[0]); // ${v}` : `form.append(${JSON.stringify(k)}, ${JSON.stringify(v)});`));
+        lines.push('');
+        opts.push('  body: form');
+      }
+      if (b.kind === 'binary') opts.push('  body: file // a File/Blob for ' + b.path);
+      if (r.o.L === false) opts.push('  redirect: "manual"');
+      lines.push(`const res = await fetch(${JSON.stringify(r.url)}, {\n${opts.join(',\n')}\n});`);
+      lines.push('console.log(res.status, await res.text());');
+      return lines.join('\n');
+    }
+
+    function genPython(r) {
+      const L = ['import requests', ''];
+      const hdr = {}; r.headers.forEach(([k, v]) => hdr[k] = v);
+      const args = [`    ${JSON.stringify(r.method)}`, `    ${JSON.stringify(r.url)}`];
+      if (Object.keys(hdr).length) args.push('    headers=' + JSON.stringify(hdr, null, 4).replace(/\n/g, '\n    '));
+      if (r.basic) { const i = r.basic.indexOf(':'); args.push(`    auth=(${JSON.stringify(r.basic.slice(0, i))}, ${JSON.stringify(r.basic.slice(i + 1))})`); }
+      const b = r.body;
+      if (b.kind === 'text') args.push('    data=' + JSON.stringify(b.text));
+      if (b.kind === 'urlencoded') args.push('    data=' + JSON.stringify(Object.fromEntries(b.fields)));
+      if (b.kind === 'multipart') {
+        const files = b.fields.filter(([, v]) => v.startsWith('@')), data = b.fields.filter(([, v]) => !v.startsWith('@'));
+        if (data.length) args.push('    data=' + JSON.stringify(Object.fromEntries(data)));
+        if (files.length) args.push('    files={' + files.map(([k, v]) => `${JSON.stringify(k)}: open(${JSON.stringify(v.slice(1).split(';')[0])}, "rb")`).join(', ') + '}');
+      }
+      if (b.kind === 'binary') args.push(`    data=open(${JSON.stringify(b.path)}, "rb")`);
+      if (!r.o.L) args.push('    allow_redirects=False');
+      if (r.o.k) args.push('    verify=False');
+      if (r.o.maxtime) args.push('    timeout=' + Number(r.o.maxtime));
+      if (r.o.proxy) args.push(`    proxies={"http": ${JSON.stringify(r.o.proxy)}, "https": ${JSON.stringify(r.o.proxy)}}`);
+      L.push('res = requests.request(\n' + args.join(',\n') + '\n)', 'print(res.status_code)', 'print(res.text)');
+      return L.join('\n');
+    }
+
+    function genHttpie(r) {
+      const q = quoters.bash, p = ['http'];
+      if (r.o.L) p.push('--follow'); if (r.o.k) p.push('--verify=no'); if (r.o.v) p.push('-v'); if (r.o.maxtime) p.push('--timeout=' + r.o.maxtime);
+      const b = r.body;
+      if (b.kind === 'urlencoded') p.push('--form'); if (b.kind === 'multipart') p.push('--multipart');
+      if (r.basic) p.push('-a', q(r.basic));
+      p.push(r.method, q(r.url || 'https://example.com'));
+      r.headers.forEach(([k, v]) => p.push(q(k + ':' + v)));
+      if (b.kind === 'urlencoded') b.fields.forEach(([k, v]) => p.push(q(k + '=' + v)));
+      if (b.kind === 'multipart') b.fields.forEach(([k, v]) => p.push(q(k + (v.startsWith('@') ? '@' + v.slice(1).split(';')[0] : '=' + v))));
+      let out = p.join(' ');
+      if (b.kind === 'text') out = `printf %s ${q(b.text)} | ` + out;
+      if (b.kind === 'binary') out += ' < ' + q(b.path);
+      return out;
+    }
+
+    function generate() {
+      const r = resolve();
+      switch (tab) {
+        case 'bash': case 'cmd': case 'ps': return genCurl(r, tab);
+        case 'fetch': return genFetch(r);
+        case 'python': return genPython(r);
+        case 'httpie': return genHttpie(r);
+      }
+    }
+
+    function update() {
+      readForm();
+      $('output').textContent = generate();
+    }
+
+    /* ---------- curl parser ---------- */
+    function tokenize(src) {
+      src = src.replace(/\\\r?\n/g, ' ').replace(/\^\r?\n/g, ' ').replace(/`\r?\n/g, ' ');
+      const out = []; let cur = '', inTok = false, i = 0;
+      const push = () => { if (inTok) { out.push(cur); cur = ''; inTok = false; } };
+      while (i < src.length) {
+        const c = src[i];
+        if (/\s/.test(c)) { push(); i++; continue; }
+        inTok = true;
+        if (c === "'") { i++; while (i < src.length && src[i] !== "'") cur += src[i++]; i++; }
+        else if (c === '$' && src[i + 1] === "'") {
+          i += 2;
+          while (i < src.length && src[i] !== "'") {
+            if (src[i] === '\\') { const n = src[++i]; cur += ({ n: '\n', t: '\t', r: '\r', "'": "'", '\\': '\\', '"': '"' })[n] ?? n; i++; } else cur += src[i++];
+          }
+          i++;
+        }
+        else if (c === '"') {
+          i++;
+          while (i < src.length && src[i] !== '"') {
+            if (src[i] === '\\' && /["\\$`]/.test(src[i + 1] || '')) { cur += src[i + 1]; i += 2; } else cur += src[i++];
+          }
+          i++;
+        }
+        else if (c === '\\') { cur += src[i + 1] ?? ''; i += 2; }
+        else cur += src[i++];
+      }
+      push();
+      return out;
+    }
+
+    const SHORT_ARG = new Set(['X','H','d','F','u','b','A','e','o','x','m','w','T']);
+    const LONG_ARG = new Set(['request','header','data','data-raw','data-binary','data-ascii','data-urlencode','form','form-string','user','cookie','user-agent','referer','output','proxy','max-time','connect-timeout','retry','url','write-out','upload-file','json']);
+    const LONG_TO_SHORT = { request:'X', header:'H', data:'d', 'data-ascii':'d', form:'F', 'form-string':'F', user:'u', cookie:'b', 'user-agent':'A', referer:'e', output:'o', proxy:'x', 'max-time':'m', 'write-out':'w', 'upload-file':'T' };
+
+    function parseCurl(src) {
+      const toks = tokenize(src.trim());
+      if (!toks.length) throw new Error('Nothing to parse');
+      if (/^curl(\.exe)?$/i.test(toks[0])) toks.shift();
+      const n = blank(), flags = [], datas = [], forms = [], rawData = [];
+      let url = '', method = '', get = false, head = false, jsonFlag = false;
+      const hdrs = [];
+      const apply = (f, val) => {
+        switch (f) {
+          case 'X': method = val.toUpperCase(); break;
+          case 'H': { const i = val.indexOf(':'); if (i > 0) hdrs.push([val.slice(0, i).trim(), val.slice(i + 1).trim()]); break; }
+          case 'd': datas.push({ t: 'd', v: val }); break;
+          case 'data-raw': datas.push({ t: 'raw', v: val }); break;
+          case 'data-binary': if (val.startsWith('@')) n.binaryPath = val.slice(1); else datas.push({ t: 'raw', v: val }); break;
+          case 'data-urlencode': datas.push({ t: 'enc', v: val }); break;
+          case 'json': jsonFlag = true; datas.push({ t: 'raw', v: val }); break;
+          case 'F': case 'form-string': forms.push(val); break;
+          case 'u': n.auth = { ...n.auth, type: 'basic', user: val.split(':')[0], pass: val.includes(':') ? val.slice(val.indexOf(':') + 1) : '' }; break;
+          case 'b': n.opts.cookie = val; break;
+          case 'A': n.opts.ua = val; break;
+          case 'e': n.opts.referer = val; break;
+          case 'o': n.opts.output = val; break;
+          case 'x': n.opts.proxy = val; break;
+          case 'm': n.opts.maxtime = val; break;
+          case 'connect-timeout': n.opts.connect = val; break;
+          case 'retry': n.opts.retry = val; break;
+          case 'url': url = val; break;
+          case 'w': n.opts.timing = true; break;
+        }
+      };
+      for (let i = 0; i < toks.length; i++) {
+        const t = toks[i];
+        if (t.startsWith('--')) {
+          let name = t.slice(2), val;
+          const eq = name.indexOf('=');
+          if (eq > 0) { val = name.slice(eq + 1); name = name.slice(0, eq); }
+          if (LONG_ARG.has(name)) { if (val === undefined) val = toks[++i] ?? ''; apply(LONG_TO_SHORT[name] && !['data-raw','data-binary','data-urlencode','form-string','json'].includes(name) ? LONG_TO_SHORT[name] : name, val); }
+          else if (name === 'location') n.opts.L = true;
+          else if (name === 'insecure') n.opts.k = true;
+          else if (name === 'include') n.opts.i = true;
+          else if (name === 'verbose') n.opts.v = true;
+          else if (name === 'silent') n.opts.s = true;
+          else if (name === 'show-error') n.opts.S = true;
+          else if (name === 'fail') n.opts.f = true;
+          else if (name === 'compressed') n.opts.compressed = true;
+          else if (name === 'get') get = true;
+          else if (name === 'head') head = true;
+          else if (name === 'remote-name') n.opts.O = true;
+          else if (/^http(1\.1|2|3)$/.test(name)) n.opts.http = '--' + name;
+        } else if (t.startsWith('-') && t.length > 1) {
+          for (let j = 1; j < t.length; j++) {
+            const c = t[j];
+            if (SHORT_ARG.has(c)) { const rest = t.slice(j + 1); apply(c, rest || (toks[++i] ?? '')); break; }
+            if (c === 'L') n.opts.L = true; else if (c === 'k') n.opts.k = true; else if (c === 'i') n.opts.i = true;
+            else if (c === 'v') n.opts.v = true; else if (c === 's') n.opts.s = true; else if (c === 'S') n.opts.S = true;
+            else if (c === 'f') n.opts.f = true; else if (c === 'O') n.opts.O = true; else if (c === 'G') get = true; else if (c === 'I') head = true;
+          }
+        } else if (!url) url = t;
+      }
+      // headers: lift bearer auth, keep rest
+      n.headers = [];
+      hdrs.forEach(([k, v]) => {
+        const m = /^Bearer\s+(.+)$/i.exec(v);
+        if (k.toLowerCase() === 'authorization' && m && n.auth.type === 'none') n.auth = { ...n.auth, type: 'bearer', token: m[1] };
+        else n.headers.push(row(k, v));
+      });
+      const ct = (hdrs.find(([k]) => k.toLowerCase() === 'content-type') || [, ''])[1].toLowerCase();
+      // url -> params
+      try {
+        const u = new URL(url);
+        u.searchParams.forEach((val, key) => n.params.push(row(key, val)));
+        url = u.origin + u.pathname + (u.hash || '');
+        if (!url.endsWith('/') || !/^https?:\/\/[^/]+\/$/.test(url)) url = url.replace(/\/$/, u.pathname === '/' ? '/' : '');
+      } catch {
+        const qi = url.indexOf('?');
+        if (qi >= 0) { new URLSearchParams(url.slice(qi + 1)).forEach((val, key) => n.params.push(row(key, val))); url = url.slice(0, qi); }
+      }
+      n.url = url;
+      // body
+      if (forms.length) {
+        n.bodyType = 'multipart';
+        n.form = forms.map(f => { const i = f.indexOf('='); return row(f.slice(0, i), f.slice(i + 1)); });
+      } else if (datas.length) {
+        if (get) {
+          datas.forEach(d => new URLSearchParams(d.v).forEach((val, key) => n.params.push(row(key, val))));
+        } else if (datas.every(d => d.t === 'enc')) {
+          n.bodyType = 'urlencoded';
+          n.form = datas.map(d => { const i = d.v.indexOf('='); return row(i < 0 ? '' : d.v.slice(0, i), i < 0 ? d.v : d.v.slice(i + 1)); });
+        } else {
+          const text = datas.map(d => d.v).join('&');
+          const looksJson = jsonFlag || /^\s*[\[{]/.test(text) || ct.includes('json');
+          if (looksJson) { n.bodyType = 'json'; n.body = text; }
+          else if (ct.includes('x-www-form-urlencoded') || (!ct && /^[^=&\s]+=[^]*$/.test(text))) {
+            n.bodyType = 'urlencoded';
+            n.form = text.split('&').map(p => { const i = p.indexOf('='); return row(decodeURIComponent((i < 0 ? p : p.slice(0, i)).replace(/\+/g, ' ')), i < 0 ? '' : decodeURIComponent(p.slice(i + 1).replace(/\+/g, ' '))); });
+          } else { n.bodyType = 'raw'; n.body = text; }
+        }
+      } else if (n.binaryPath) n.bodyType = 'binary';
+      if (n.bodyType === 'json') n.headers = n.headers.filter(h => !(h.k.toLowerCase() === 'content-type' && h.v.toLowerCase() === 'application/json'));
+      if (n.bodyType === 'urlencoded') n.headers = n.headers.filter(h => !(h.k.toLowerCase() === 'content-type' && h.v.toLowerCase().includes('x-www-form-urlencoded')));
+      n.method = head ? 'HEAD' : (method || (n.bodyType !== 'none' && !get ? 'POST' : 'GET'));
+      n.opts.timing = n.opts.timing && false; // -w format can't be round-tripped reliably
+      n.vars = S.vars; n.multiline = S.multiline;
+      return n;
+    }
+
+    /* ---------- examples ---------- */
+    const examples = {
+      get: () => ({ ...blank(), url: 'https://httpbin.org/get', params: [row('page', '1'), row('q', 'hello world')], headers: [row('Accept', 'application/json')] }),
+      json: () => ({ ...blank(), method: 'POST', url: 'https://httpbin.org/post', bodyType: 'json', body: '{\n  "name": "Ada",\n  "role": "admin"\n}', headers: [row('Accept', 'application/json')] }),
+      bearer: () => { const s = blank(); s.url = 'https://api.example.com/v1/me'; s.auth.type = 'bearer'; s.auth.token = '{{TOKEN}}'; s.vars = 'TOKEN=your-token-here'; s.headers = [row('Accept', 'application/json')]; return s; },
+      form: () => ({ ...blank(), method: 'POST', url: 'https://httpbin.org/post', bodyType: 'urlencoded', form: [row('username', 'ada'), row('password', 's3cret!')] }),
+      upload: () => ({ ...blank(), method: 'POST', url: 'https://httpbin.org/post', bodyType: 'multipart', form: [row('title', 'My photo'), row('file', '@./photo.png;type=image/png')] }),
+      basic: () => { const s = blank(); s.url = 'https://httpbin.org/basic-auth/user/pass'; s.auth.type = 'basic'; s.auth.user = 'user'; s.auth.pass = 'pass'; return s; }
+    };
+
+    function load(newState) {
+      const b = blank();
+      S = { ...b, ...newState, auth: { ...b.auth, ...(newState.auth || {}) }, opts: { ...b.opts, ...(newState.opts || {}) } };
+      writeForm(); update();
+    }
+
+    /* ---------- send ---------- */
+    async function send() {
+      readForm();
+      const r = resolve(), box = $('response'), meta = $('send-meta');
+      if (!/^https?:\/\//i.test(r.url)) { status('Enter a full http(s) URL first.', 'err'); return; }
+      const h = new Headers();
+      r.headers.forEach(([k, v]) => { try { h.append(k, v); } catch {} });
+      if (r.basic) h.set('Authorization', 'Basic ' + btoa(unescape(encodeURIComponent(r.basic))));
+      const init = { method: r.method, headers: h, redirect: r.o.L ? 'follow' : 'manual' };
+      const b = r.body;
+      if (b.kind === 'text') init.body = b.text;
+      if (b.kind === 'urlencoded') init.body = new URLSearchParams(b.fields);
+      if (b.kind === 'multipart') { const fd = new FormData(); b.fields.forEach(([k, v]) => { if (!v.startsWith('@')) fd.append(k, v); }); init.body = fd; }
+      if (['GET', 'HEAD'].includes(r.method)) delete init.body;
+      box.style.display = ''; box.textContent = 'Sending…'; meta.textContent = '';
+      const t0 = performance.now();
+      try {
+        const res = await fetch(r.url, init);
+        const text = await res.text();
+        const ms = Math.round(performance.now() - t0);
+        let pretty = text;
+        try { pretty = JSON.stringify(JSON.parse(text), null, 2); } catch {}
+        const hdrs = [...res.headers].map(([k, v]) => `${k}: ${v}`).join('\n');
+        meta.textContent = `${res.status} ${res.statusText} · ${ms} ms · ${text.length} bytes`;
+        box.textContent = `HTTP ${res.status} ${res.statusText}\n${hdrs}\n\n${pretty}`;
+      } catch (e) {
+        meta.textContent = 'failed';
+        box.textContent = 'Request failed: ' + e.message + '\n\nThis is usually CORS (the server does not allow browser requests from this origin), a mixed-content block, or a network error. Copy the curl command and run it in a terminal instead.';
+      }
+    }
+
+    /* ---------- saved requests ---------- */
+    function renderSaved() {
+      const list = lsGet(STORE, []), host = $('saved');
+      host.innerHTML = list.length ? '' : '<p class="hint">Nothing saved yet. Requests are stored in this browser only.</p>';
+      list.forEach((item, i) => {
+        const d = document.createElement('div'); d.className = 'saved-item';
+        d.innerHTML = `<span class="meta"><b class="m-${esc(item.state.method)}">${esc(item.state.method)}</b> ${esc(item.name)} <span class="hint">${esc(item.state.url)}</span></span><span><button class="small">load</button> <button class="small">✕</button></span>`;
+        const [ld, rm] = d.querySelectorAll('button');
+        ld.onclick = () => { load(item.state); status('Loaded "' + item.name + '"'); };
+        rm.onclick = () => { list.splice(i, 1); lsSet(STORE, list); renderSaved(); };
+        host.appendChild(d);
+      });
+    }
+
+    function shareLink() {
+      readForm();
+      const enc = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
+      return location.origin + location.pathname + '#r=' + enc;
+    }
+
+    /* ---------- wiring ---------- */
+    document.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { S[b.dataset.add].push(row()); renderTable(b.dataset.add); update(); });
+    $('tabs').addEventListener('click', e => {
+      const b = e.target.closest('button[data-tab]'); if (!b) return;
+      tab = b.dataset.tab;
+      document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('active', x === b));
+      $('btn-download').textContent = tab === 'python' ? 'Download .py' : tab === 'fetch' ? 'Download .js' : tab === 'cmd' ? 'Download .bat' : tab === 'ps' ? 'Download .ps1' : 'Download .sh';
+      update();
+    });
+    document.querySelectorAll('#method,#url,#auth-type,#body-type,#body-text,#binary-path,#vars,#multiline,[id^="o-"]').forEach(e => {
+      e.addEventListener('input', update); e.addEventListener('change', update);
+    });
+    $('auth-type').addEventListener('change', () => { readForm(); renderAuth(); update(); });
+    $('body-type').addEventListener('change', updateBodyUI);
+    $('body-text').addEventListener('input', jsonCheck);
+    $('hdr-preset').onchange = e => {
+      const v = e.target.value; if (!v) return;
+      const i = v.indexOf(':'); S.headers.push(row(v.slice(0, i), v.slice(i + 1).trim()));
+      e.target.value = ''; renderTable('headers'); update();
+    };
+    $('example').onchange = e => { if (e.target.value) { load(examples[e.target.value]()); e.target.value = ''; } };
+    $('btn-reset').onclick = () => { load(blank()); $('response').style.display = 'none'; $('send-meta').textContent = ''; };
+    $('btn-import').onclick = () => { $('import-box').style.display = ''; $('import-text').focus(); };
+    $('btn-import-cancel').onclick = () => $('import-box').style.display = 'none';
+    $('btn-import-go').onclick = () => {
+      try { load(parseCurl($('import-text').value)); $('import-box').style.display = 'none'; status('Imported curl command'); }
+      catch (e) { status('Could not parse: ' + e.message, 'err'); }
+    };
+    $('btn-beautify').onclick = () => { try { $('body-text').value = JSON.stringify(JSON.parse($('body-text').value), null, 2); update(); jsonCheck(); } catch (e) { status('Invalid JSON: ' + e.message, 'err'); } };
+    $('btn-minify').onclick = () => { try { $('body-text').value = JSON.stringify(JSON.parse($('body-text').value)); update(); jsonCheck(); } catch (e) { status('Invalid JSON: ' + e.message, 'err'); } };
+    $('btn-copy').onclick = async () => {
+      try { await navigator.clipboard.writeText($('output').textContent); status('Copied to clipboard'); }
+      catch { const r = document.createRange(); r.selectNodeContents($('output')); getSelection().removeAllRanges(); getSelection().addRange(r); status('Select + copy manually (clipboard blocked)', 'err'); }
+    };
+    $('btn-download').onclick = () => {
+      const ext = { bash: 'sh', cmd: 'bat', ps: 'ps1', fetch: 'js', python: 'py', httpie: 'sh' }[tab];
+      const pre = tab === 'bash' || tab === 'httpie' ? '#!/usr/bin/env bash\n' : '';
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([pre + $('output').textContent + '\n'], { type: 'text/plain' }));
+      a.download = 'request.' + ext; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    };
+    $('btn-link').onclick = async () => {
+      const link = shareLink();
+      try { await navigator.clipboard.writeText(link); history.replaceState(null, '', link.slice(link.indexOf('#'))); status('Share link copied. It contains your full request, including any tokens.'); }
+      catch { prompt('Copy this link:', link); }
+    };
+    $('btn-save').onclick = () => {
+      readForm();
+      const name = prompt('Name this request:', (S.method + ' ' + S.url.replace(/^https?:\/\//, '')).slice(0, 60));
+      if (!name) return;
+      const list = lsGet(STORE, []);
+      list.unshift({ name, state: JSON.parse(JSON.stringify(S)) });
+      if (lsSet(STORE, list)) { renderSaved(); status('Saved'); } else status('Could not save (storage unavailable)', 'err');
+    };
+    $('btn-send').onclick = send;
+    $('btn-export').onclick = () => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(lsGet(STORE, []), null, 2)], { type: 'application/json' }));
+      a.download = 'curl-builder-requests.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    };
+    $('btn-import-saved').onclick = () => $('saved-file').click();
+    $('saved-file').onchange = async e => {
+      try {
+        const data = JSON.parse(await e.target.files[0].text());
+        if (!Array.isArray(data)) throw new Error('expected an array');
+        lsSet(STORE, [...data.filter(x => x && x.name && x.state), ...lsGet(STORE, [])]); renderSaved(); status('Imported');
+      } catch (err) { status('Import failed: ' + err.message, 'err'); }
+      e.target.value = '';
+    };
+    $('btn-clear-saved').onclick = () => { if (confirm('Delete all saved requests?')) { lsSet(STORE, []); renderSaved(); } };
+
+    /* ---------- init ---------- */
+    let initial = null;
+    if (location.hash.startsWith('#r=')) {
+      try { initial = JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(3))))); } catch {}
+    }
+    load(initial || examples.json());
+    renderSaved();
+  })();
+  </script>
+</body>
+</html>
