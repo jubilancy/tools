@@ -33,6 +33,7 @@
         { "file": "Bulk-Hyperlink-Generator.html", "title": "Bulk Hyperlink Generator" },
         { "file": "bulk-rss-finder.html", "title": "Bulk RSS Finder" },
         { "file": "bulk-url.html", "title": "Bulk URL" },
+        { "file": "curl-builder.html", "title": "cURL Command Builder" },
         { "file": "Feed Finder.html", "title": "Feed Finder" },
         { "file": "OPML-Converter.html", "title": "OPML Converter" },
         { "file": "rss-reader.html", "title": "RSS Reader" },
