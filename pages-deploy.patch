@@ -1,0 +1,27 @@
+diff --git a/index.html b/index.html
+index 36ac87a..7cc2fe5 100644
+--- a/index.html
++++ b/index.html
+@@ -4,8 +4,8 @@
+     <meta charset="UTF-8" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     <title>RSS Viewer</title>
+-    <link rel="icon" type="image/png" href="/favicon.png" />
+-    <link rel="apple-touch-icon" href="/favicon.png" />
++    <link rel="icon" type="image/png" href="./favicon.png" />
++    <link rel="apple-touch-icon" href="./favicon.png" />
+     <meta name="description" content="Modern, lightweight RSS feed viewer with URL query parameter support (?rss=), media previews, and local favorites." />
+     <meta property="og:title" content="RSS Viewer" />
+     <meta property="og:description" content="Modern, lightweight RSS feed viewer with URL query parameter support (?rss=), media previews, and local favorites." />
+diff --git a/vite.config.ts b/vite.config.ts
+index b130869..40cd5b9 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -4,6 +4,7 @@ import {defineConfig} from 'vite';
+ 
+ export default defineConfig(() => {
+   return {
++    base: process.env.BASE_PATH || '/',
+     plugins: [react(), tailwindcss()],
+     resolve: {
+       alias: {
