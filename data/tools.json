@@ -18,6 +18,7 @@
         { "file": "metadata-extractor.html", "title": "Metadata Extractor" },
         { "file": "password-generator-test-1.html", "title": "Password Generator (test 1)" },
         { "file": "regex-tester.html", "title": "Regex Tester" },
+        { "file": "slug-generator.html", "title": "Clean URL Slug Generator" },
         { "file": "Strip HTML & Formatting.html", "title": "Strip HTML & Formatting" },
         { "file": "toc-generator.html", "title": "TOC Generator" },
         { "file": "url-categorizer-test-1.html", "title": "URL Categorizer (test 1)" },
