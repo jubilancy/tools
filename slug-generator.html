@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Clean URL Slug Generator | tools.eliana.lol</title>
+    <link rel="stylesheet" href="global.css" />
+    <link rel="icon" type="image/x-icon" href="favicon.svg" />
+    <style>
+      .options-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        padding: 15px;
+        border: 1px dashed var(--puny);
+        background: var(--hover);
+        margin-bottom: 20px;
+      }
+      .option-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .option-group label {
+        font-size: 0.85rem;
+        cursor: pointer;
+      }
+      .option-group select,
+      .option-group input[type='number'],
+      .option-group input[type='text'] {
+        width: 100px;
+        padding: 2px;
+        font-family: monospace;
+        background: var(--bg);
+        color: var(--text);
+        border: 1px solid var(--puny);
+      }
+      .option-group input[type='text'] {
+        width: 120px;
+      }
+      .results {
+        margin-top: 20px;
+        border: 1px solid var(--puny);
+        max-height: 420px;
+        overflow-y: auto;
+      }
+      .result-row {
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 10px;
+        border-bottom: 1px dotted var(--puny);
+        font-size: 0.85rem;
+      }
+      .result-row:last-child {
+        border-bottom: none;
+      }
+      .result-row:hover {
+        background: var(--hover);
+      }
+      .result-row .orig {
+        color: var(--puny);
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .result-row .slug {
+        flex: 1;
+        font-weight: bold;
+        word-break: break-all;
+      }
+      .result-row button {
+        margin: 0;
+        padding: 1px 6px;
+        font-size: 0.75rem;
+        flex-shrink: 0;
+      }
+      #status {
+        margin-top: 15px;
+        padding: 10px;
+        border: 1px solid var(--accent);
+        background: var(--highlight);
+        font-size: 0.85rem;
+      }
+      .hidden {
+        display: none;
+      }
+      @media (max-width: 600px) {
+        .options-grid {
+          grid-template-columns: 1fr;
+        }
+        .result-row {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="left">
+        <a href="index.html">home</a> | <a href="extra.html">extra</a> |
+        <a href="credits.html">credits</a> |
+        <a href="changelog.html">logs</a>
+      </div>
+      <div class="right">
+        <button id="theme-toggle">[theme]</button> |
+        <a href="https://eliana.lol">site</a>
+      </div>
+    </nav>
+
+    <main>
+      <h1>Clean URL Slug Generator</h1>
+      <p class="puny">
+        Turn titles into clean, URL-safe slugs. One line gives one slug; paste
+        many lines for bulk mode.
+      </p>
+
+      <div class="options-grid">
+        <div class="option-group">
+          <span class="section-title" style="margin-top: 0; font-size: 0.7rem"
+            >Format</span
+          >
+          <label
+            >Separator:
+            <select id="separator">
+              <option value="-" selected>hyphen ( - )</option>
+              <option value="_">underscore ( _ )</option>
+              <option value=".">dot ( . )</option>
+              <option value="">none</option>
+            </select>
+          </label>
+          <label
+            >Max length:
+            <input type="number" id="maxLen" value="0" min="0" />
+            <span class="puny">(0 = no limit)</span></label
+          >
+          <label
+            >Prefix: <input type="text" id="prefix" placeholder="blog/"
+          /></label>
+          <label
+            >Suffix: <input type="text" id="suffix" placeholder=".html"
+          /></label>
+        </div>
+        <div class="option-group">
+          <span class="section-title" style="margin-top: 0; font-size: 0.7rem"
+            >Cleanup</span
+          >
+          <label
+            ><input type="checkbox" id="lowercase" checked /> Lowercase</label
+          >
+          <label
+            ><input type="checkbox" id="transliterate" checked /> Transliterate
+            accents (é → e, ß → ss)</label
+          >
+          <label
+            ><input type="checkbox" id="ampersand" checked /> Replace &amp; with
+            "and"</label
+          >
+          <label
+            ><input type="checkbox" id="stopwords" /> Remove stop words (a,
+            the, of…)</label
+          >
+          <label
+            ><input type="checkbox" id="dedupe" checked /> Make duplicates
+            unique (-2, -3…)</label
+          >
+          <label
+            ><input type="checkbox" id="skipEmpty" checked /> Skip lines with
+            empty slugs</label
+          >
+        </div>
+      </div>
+
+      <textarea
+        id="input"
+        rows="10"
+        placeholder="Hello, World! This is my First Post&#10;Café Crème: A Guide to Brûlée&#10;10 Tips &amp; Tricks for the Web"
+      ></textarea>
+
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 10px;
+        "
+      >
+        <div id="stats" class="puny italic">0 lines</div>
+        <div>
+          <button id="example">Load Example</button>
+          <button id="clear">Clear</button>
+        </div>
+      </div>
+
+      <span class="section-title">Slugs</span>
+      <div id="results" class="results"></div>
+
+      <div>
+        <button id="copyAll" style="border-color: var(--accent); font-weight: bold">
+          📋 Copy All
+        </button>
+        <label style="font-size: 0.85rem"
+          >Export:
+          <select
+            id="format"
+            style="
+              font-family: monospace;
+              background: var(--bg);
+              color: var(--text);
+              border: 1px solid var(--puny);
+              padding: 4px;
+            "
+          >
+            <option value="txt">Slugs (.txt)</option>
+            <option value="csv">Title + slug (.csv)</option>
+            <option value="json">Title + slug (.json)</option>
+          </select>
+        </label>
+        <button id="download">⬇ Download</button>
+      </div>
+
+      <div id="status" class="hidden"></div>
+    </main>
+
+    <script>
+      const html = document.documentElement;
+      const toggle = document.getElementById('theme-toggle');
+      const saved =
+        localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light');
+
+      html.setAttribute('data-theme', saved);
+      if (toggle) toggle.innerText = saved === 'dark' ? '[light]' : '[dark]';
+
+      if (toggle) {
+        toggle.onclick = () => {
+          const now = html.getAttribute('data-theme');
+          const next = now === 'dark' ? 'light' : 'dark';
+          html.setAttribute('data-theme', next);
+          localStorage.setItem('theme', next);
+          toggle.innerText = next === 'dark' ? '[light]' : '[dark]';
+        };
+      }
+    </script>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const inputEl = $('input');
+      const resultsEl = $('results');
+      const statsEl = $('stats');
+      const statusDiv = $('status');
+      let results = [];
+
+      const STOP_WORDS = new Set(
+        'a an and are as at be but by for if in into is it of on or so the to with'.split(
+          ' '
+        )
+      );
+      const EXTRA_CHARS = {
+        ß: 'ss', æ: 'ae', Æ: 'AE', œ: 'oe', Œ: 'OE', ø: 'o', Ø: 'O',
+        đ: 'd', Đ: 'D', ł: 'l', Ł: 'L', þ: 'th', Þ: 'Th', ð: 'd', Ð: 'D',
+        ı: 'i', ħ: 'h', Ħ: 'H'
+      };
+
+      function slugify(text, o) {
+        let s = text.trim();
+        if (o.transliterate) {
+          s = s
+            .replace(/[^\u0000-\u007f]/g, (c) => EXTRA_CHARS[c] ?? c)
+            .normalize('NFKD')
+            .replace(/[̀-ͯ]/g, '');
+        }
+        if (o.ampersand) s = s.replace(/\s*&\s*/g, ' and ');
+        if (o.lowercase) s = s.toLowerCase();
+        s = s.replace(/['’‘`]/g, '');
+
+        // Keep letters/digits from any script when not transliterating
+        let words = s.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+        if (o.stopwords) {
+          const kept = words.filter((w) => !STOP_WORDS.has(w.toLowerCase()));
+          if (kept.length) words = kept;
+        }
+
+        if (o.maxLen > 0) {
+          const kept = [];
+          let len = 0;
+          for (const w of words) {
+            const add = w.length + (kept.length ? o.sep.length : 0);
+            if (len + add > o.maxLen) break;
+            kept.push(w);
+            len += add;
+          }
+          // First word alone is too long: hard-cut it
+          words = kept.length ? kept : [words[0]?.slice(0, o.maxLen)].filter(Boolean);
+        }
+        return words.join(o.sep);
+      }
+
+      function readOptions() {
+        return {
+          sep: $('separator').value,
+          maxLen: Math.max(0, parseInt($('maxLen').value) || 0),
+          prefix: $('prefix').value,
+          suffix: $('suffix').value,
+          lowercase: $('lowercase').checked,
+          transliterate: $('transliterate').checked,
+          ampersand: $('ampersand').checked,
+          stopwords: $('stopwords').checked,
+          dedupe: $('dedupe').checked,
+          skipEmpty: $('skipEmpty').checked
+        };
+      }
+
+      function generate() {
+        const o = readOptions();
+        const lines = inputEl.value
+          .split(/\r?\n/)
+          .map((l) => l.trim())
+          .filter(Boolean);
+        const seen = new Map();
+        results = [];
+
+        for (const line of lines) {
+          let slug = slugify(line, o);
+          if (!slug && o.skipEmpty) continue;
+          if (o.dedupe && slug) {
+            const n = (seen.get(slug) || 0) + 1;
+            seen.set(slug, n);
+            if (n > 1) slug += (o.sep || '-') + n;
+          }
+          results.push({ title: line, slug: o.prefix + slug + o.suffix });
+        }
+        statsEl.textContent = `${lines.length} line${lines.length !== 1 ? 's' : ''}, ${results.length} slug${results.length !== 1 ? 's' : ''}`;
+        render();
+      }
+
+      function render() {
+        resultsEl.replaceChildren();
+        if (!results.length) {
+          const empty = document.createElement('div');
+          empty.className = 'result-row puny';
+          empty.textContent = 'Nothing yet. Type or paste some titles above.';
+          resultsEl.appendChild(empty);
+          return;
+        }
+        results.forEach((r) => {
+          const row = document.createElement('div');
+          row.className = 'result-row';
+          const orig = document.createElement('span');
+          orig.className = 'orig';
+          orig.textContent = r.title;
+          orig.title = r.title;
+          const slug = document.createElement('span');
+          slug.className = 'slug';
+          slug.textContent = r.slug;
+          const btn = document.createElement('button');
+          btn.textContent = 'copy';
+          btn.onclick = () => copy(r.slug, 'Copied slug');
+          row.append(orig, slug, btn);
+          resultsEl.appendChild(row);
+        });
+      }
+
+      function showStatus(message) {
+        statusDiv.textContent = message;
+        statusDiv.classList.remove('hidden');
+        clearTimeout(showStatus.t);
+        showStatus.t = setTimeout(() => statusDiv.classList.add('hidden'), 3000);
+      }
+
+      function copy(text, msg) {
+        navigator.clipboard
+          .writeText(text)
+          .then(() => showStatus(msg))
+          .catch(() => showStatus('Copy failed. Check clipboard permissions.'));
+      }
+
+      $('copyAll').onclick = () => {
+        if (!results.length) return showStatus('Nothing to copy yet.');
+        copy(
+          results.map((r) => r.slug).join('\n'),
+          `Copied ${results.length} slug${results.length !== 1 ? 's' : ''}`
+        );
+      };
+
+      const csvEscape = (v) =>
+        /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+
+      $('download').onclick = () => {
+        if (!results.length) return showStatus('Nothing to export yet.');
+        const fmt = $('format').value;
+        let content, mime;
+        if (fmt === 'txt') {
+          content = results.map((r) => r.slug).join('\n');
+          mime = 'text/plain';
+        } else if (fmt === 'csv') {
+          content = [
+            'title,slug',
+            ...results.map((r) => csvEscape(r.title) + ',' + csvEscape(r.slug))
+          ].join('\n');
+          mime = 'text/csv';
+        } else {
+          content = JSON.stringify(results, null, 2);
+          mime = 'application/json';
+        }
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+        a.download = `slugs.${fmt}`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        showStatus(`Downloaded slugs.${fmt}`);
+      };
+
+      $('clear').onclick = () => {
+        inputEl.value = '';
+        generate();
+      };
+      $('example').onclick = () => {
+        inputEl.value = [
+          'Hello, World! This is my First Post',
+          'Café Crème: A Guide to Brûlée',
+          '10 Tips & Tricks for the Web',
+          "Don't Panic — It's Only a Test!!",
+          'Straße nach Zürich',
+          'Hello, World! This is my First Post'
+        ].join('\n');
+        generate();
+      };
+
+      inputEl.addEventListener('input', generate);
+      document
+        .querySelectorAll('.options-grid input, .options-grid select')
+        .forEach((el) => el.addEventListener('input', generate));
+      generate();
+    </script>
+  </body>
+</html>
