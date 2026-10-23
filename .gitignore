@@ -4,3 +4,11 @@
 !.dev.vars.example
 .env*
 !.env.example
+
+# build outputs
+node_modules
+dist
+site
+test-results
+playwright-report
+.e2e-samples
