@@ -5,16 +5,8 @@ title: toolbox
 {%- assign new_tools = site.tools -%}
 {%- assign total = new_tools.size | plus: site.data.legacy.size -%}
 <style>
-  body { font-size: 1.05rem; }
-  .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 1rem; }
-  .tool-grid a { border: 1px solid var(--puny); padding: 10px 12px; font-size: 1rem; display: block; }
-  .tool-grid a:hover { border-color: var(--text); background: var(--hover); }
-  .section-title { margin-top: 2rem; font-size: 1.05rem; }
-  h1 { font-size: 1.5rem; }
-  .search-box { display: flex; flex-direction: column; gap: 0.5rem; margin: 1.5rem 0 0; }
-  .search-label { font-size: 0.85rem; font-weight: bold; text-transform: uppercase; color: var(--puny); letter-spacing: 0.05em; }
-  #tool-search { border-radius: 4px; font-size: 0.95rem; }
-  #tool-search:focus { outline: none; border-color: var(--accent); }
+  .search-box { display: flex; flex-direction: column; gap: 8px; margin: 24px 0 0; }
+  .search-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--puny); }
   .search-hidden { display: none !important; }
 </style>
 
@@ -33,12 +25,12 @@ title: toolbox
 {%- assign cat_old = site.data.legacy | where: "category", cat.name -%}
 {%- if cat_new.size > 0 or cat_old.size > 0 -%}
 <span class="section-title">{{ cat.emoji }} {{ cat.name | escape }}</span>
-<div class="tool-grid">
+<div class="tool-list">
 {%- for t in cat_new %}
-  <a href="{{ t.url }}">{{ t.title | escape }}</a>
+  <a href="{{ t.url }}"><span>{{ t.title | escape }}</span>{% if t.description %}<span class="desc">{{ t.description | escape }}</span>{% endif %}</a>
 {%- endfor %}
 {%- for t in cat_old %}
-  <a href="{{ t.url }}">{{ t.title | escape }}</a>
+  <a href="{{ t.url }}"><span>{{ t.title | escape }}</span>{% if t.description %}<span class="desc">{{ t.description | escape }}</span>{% endif %}</a>
 {%- endfor %}
 </div>
 {% endif -%}
@@ -46,11 +38,11 @@ title: toolbox
 {%- assign cat_names = site.data.categories | map: "name" -%}
 {%- capture orphans -%}
 {%- for t in new_tools -%}{%- unless cat_names contains t.category -%}
-  <a href="{{ t.url }}">{{ t.title | escape }}</a>
+  <a href="{{ t.url }}"><span>{{ t.title | escape }}</span>{% if t.description %}<span class="desc">{{ t.description | escape }}</span>{% endif %}</a>
 {%- endunless -%}{%- endfor -%}
 {%- endcapture -%}
 {%- if orphans != "" -%}
 <span class="section-title">🆕 Uncategorized / New</span>
-<div class="tool-grid">{{ orphans }}</div>
+<div class="tool-list">{{ orphans }}</div>
 {%- endif %}
 <script src="/assets/index-search.js"></script>

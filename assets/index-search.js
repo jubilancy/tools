@@ -13,7 +13,7 @@
     const groups = Array.from(document.querySelectorAll('main .section-title'))
         .map((title) => {
             const grid = title.nextElementSibling;
-            if (!grid || !grid.classList.contains('tool-grid')) return null;
+            if (!grid || !grid.classList.contains('tool-list')) return null;
             const items = Array.from(grid.querySelectorAll('a')).map((a) => {
                 const file = safeDecode(a.getAttribute('href') || '')
                     .replace(/\.html$/i, '')
@@ -65,7 +65,7 @@
         } catch (e) { /* non-critical */ }
     }
 
-    const firstVisible = () => document.querySelector('.tool-grid a:not(.' + HIDE + ')');
+    const firstVisible = () => document.querySelector('.tool-list a:not(.' + HIDE + ')');
 
     input.addEventListener('input', () => apply(input.value));
 
