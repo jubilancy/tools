@@ -1,6 +1,12 @@
 /* Glosse "mono garden" theme: quiet, flat, monospaced, thin borders.
    Variable names are kept stable because many tool pages reference them. */
 
+/* Luxi Mono, self-hosted (license: assets/fonts/LICENSE.txt) */
+@font-face { font-family: "Luxi Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("assets/fonts/luximr.ttf") format("truetype"); }
+@font-face { font-family: "Luxi Mono"; font-style: italic; font-weight: 400; font-display: swap; src: url("assets/fonts/luximri.ttf") format("truetype"); }
+@font-face { font-family: "Luxi Mono"; font-style: normal; font-weight: 600 700; font-display: swap; src: url("assets/fonts/luximb.ttf") format("truetype"); }
+@font-face { font-family: "Luxi Mono"; font-style: italic; font-weight: 600 700; font-display: swap; src: url("assets/fonts/luximbi.ttf") format("truetype"); }
+
 /* 1. TOKENS */
 :root {
   --bg: #fafafa;
@@ -42,11 +48,11 @@ html[data-theme='dark'] {
   }
 }
 
-/* 2. LAYOUT: single narrow column, airy margins */
+/* 2. LAYOUT: centered column, airy margins */
 html {
   font-family: var(--font);
   font-size: 14px;
-  max-width: 760px;
+  max-width: 900px; /* tools need room; the homepage narrows itself */
   margin: 0 auto;
   padding: 0 24px;
   overflow-y: scroll;
@@ -138,7 +144,7 @@ code, pre, kbd, samp { font-family: var(--font); font-size: 13px; line-height: 2
 }
 
 /* 6. CONTROLS: compact, transparent, thin neutral border */
-textarea, input, select {
+textarea, input {
   width: 100%;
   background: var(--surface);
   color: var(--text);
@@ -148,6 +154,16 @@ textarea, input, select {
   font-size: 13px;
   padding: 6px 12px;
   box-sizing: border-box;
+}
+
+select {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 6px 12px;
 }
 
 input[type='checkbox'], input[type='radio'] { width: auto; padding: 0; }
