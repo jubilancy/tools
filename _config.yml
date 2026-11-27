@@ -1,0 +1,32 @@
+title: toolbox
+url: https://tools.eliana.lol
+description: A collection of single-purpose utilities for the small web.
+
+plugins:
+  - jekyll-sitemap
+
+# New tools live in _tools/*.md and are served at /<filename> (no .html).
+collections:
+  tools:
+    output: true
+    permalink: /:name
+
+defaults:
+  - scope:
+      path: ""
+      type: tools
+    values:
+      layout: tool
+      # Tool scripts are full of {{ }} / {% %} (templates, JS). Don't run Liquid on them.
+      render_with_liquid: false
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - wrangler.jsonc
+  - scripts
+  - node_modules
+  - vendor
+  - _templates
+  - .github
