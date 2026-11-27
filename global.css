@@ -1,177 +1,251 @@
-/* 1. LAYOUT & MONOSPACE */
-html {
-  font-family: monospace;
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 20px;
-  overflow-y: scroll;
-}
+/* Glosse "mono garden" theme: quiet, flat, monospaced, thin borders.
+   Variable names are kept stable because many tool pages reference them. */
 
-/* Variables for Theme Toggle */
+/* Luxi Mono, self-hosted (license: assets/fonts/LICENSE.txt) */
+@font-face { font-family: "Luxi Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("assets/fonts/luximr.ttf") format("truetype"); }
+@font-face { font-family: "Luxi Mono"; font-style: italic; font-weight: 400; font-display: swap; src: url("assets/fonts/luximri.ttf") format("truetype"); }
+@font-face { font-family: "Luxi Mono"; font-style: normal; font-weight: 600 700; font-display: swap; src: url("assets/fonts/luximb.ttf") format("truetype"); }
+@font-face { font-family: "Luxi Mono"; font-style: italic; font-weight: 600 700; font-display: swap; src: url("assets/fonts/luximbi.ttf") format("truetype"); }
+
+/* 1. TOKENS */
 :root {
-  --bg: #ffffff;
-  --text: #000000;
-  --hover: #eaddca;
-  --puny: grey;
-  --accent: #ff6600;
-  --highlight: #ffff99;
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --text: #111111;
+  --puny: #6e7787;          /* secondary text */
+  --border: #e5e5e5;
+  --accent: #c9a35a;        /* honey gold, use sparingly */
+  --hover: rgba(201, 163, 90, 0.16);
+  --highlight: rgba(201, 163, 90, 0.12);
+  --error: #b42318;
+  --radius: 6px;
+  --radius-card: 8px;
+  --font: "Luxi Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 html[data-theme='dark'] {
-  --bg: #1c1c1c;
-  --text: #d4d4d4;
-  --hover: #3a3a3a;
-  --puny: #a0a0a0;
-  --accent: #ff9900;
-  --highlight: #444;
+  --bg: #161616;
+  --surface: #1e1e1e;
+  --text: #e5e5e5;
+  --puny: #9aa3b2;
+  --border: #333333;
+  --hover: rgba(201, 163, 90, 0.2);
+  --highlight: rgba(201, 163, 90, 0.14);
+  --error: #f97066;
 }
 
 /* System fallback */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #1c1c1c;
-    --text: #d4d4d4;
-    --hover: #3a3a3a;
-    --puny: #a0a0a0;
-    --accent: #ff9900;
-    --highlight: #444;
+    --bg: #161616;
+    --surface: #1e1e1e;
+    --text: #e5e5e5;
+    --puny: #9aa3b2;
+    --border: #333333;
+    --hover: rgba(201, 163, 90, 0.2);
+    --highlight: rgba(201, 163, 90, 0.14);
+    --error: #f97066;
   }
+}
+
+/* 2. LAYOUT: centered column, airy margins */
+html {
+  font-family: var(--font);
+  font-size: 14px;
+  max-width: 900px; /* tools need room; the homepage narrows itself */
+  margin: 0 auto;
+  padding: 0 24px;
+  overflow-y: scroll;
 }
 
 body {
   background-color: var(--bg);
   color: var(--text);
-  line-height: 1.5;
+  line-height: 22px;
   margin: 0;
-  padding: 20px 0;
+  padding: 24px 0 48px;
 }
 
-main {
-  width: 100%;
-}
+main { width: 100%; }
 
-/* 2. NAVIGATION (Fixed Flexbox) */
+/* 3. NAVIGATION */
 nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--puny);
-  margin-bottom: 2rem;
-  font-size: 0.9rem;
-  min-height: 1.5rem; /* Prevents layout jump during JS injection */
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 48px;
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 1.5rem;
 }
 
-nav .left {
-  display: flex;
-  gap: 15px;
+nav .left { display: flex; gap: 15px; }
+nav .right { display: flex; align-items: center; gap: 10px; }
+
+/* 4. LINKS & THEME TOGGLE */
+a {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--puny);
+  text-underline-offset: 3px;
 }
 
-nav .right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* 3. LINKS & THEME TOGGLE */
-a { 
-  color: var(--text); 
-  text-decoration: none; 
-  border-bottom: 1px dotted var(--text); 
-}
-
-a:hover { 
-  background-color: var(--hover); 
-}
-
-nav a {
-  border-bottom: 1px dotted var(--text);
-}
+a:hover { background-color: var(--hover); text-decoration-color: var(--accent); }
 
 #theme-toggle {
-    background: none;
-    border: none;
-    color: inherit;
-    font-family: monospace;
-    cursor: pointer;
-    padding: 0;
-    border-bottom: 1px dotted var(--text);
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  text-decoration: underline;
+  text-decoration-color: var(--puny);
+  text-underline-offset: 3px;
 }
 
-#theme-toggle:hover {
-  background-color: var(--hover);
-}
+#theme-toggle:hover { background-color: var(--hover); }
 
-/* 4. CHARACTER ELEMENTS */
+/* 5. TYPOGRAPHY */
+h1, h2, h3, h4 { font-weight: 600; text-transform: none; letter-spacing: 0; }
+h1 { font-size: 24px; line-height: 29px; margin: 0 0 12px; }
+h2 { font-size: 20px; line-height: 24px; margin: 48px 0 12px; }
+h3 { font-size: 18px; line-height: 22px; margin: 24px 0 12px; }
+
+.puny { color: var(--puny); font-size: 13px; line-height: 20px; }
+
+code, pre, kbd, samp { font-family: var(--font); font-size: 13px; line-height: 20px; }
+
 .changelog-marquee {
-  font-size: 0.8rem;
-  margin: 1rem 0;
+  font-size: 13px;
+  margin: 24px 0;
   background-color: var(--highlight);
-  border: 1px dashed var(--accent);
-  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
 }
 
-.puny { color: var(--puny); font-size: 0.75rem; }
-
-h1 { font-size: 1.2rem; text-transform: uppercase; margin-top: 2rem; }
-
+/* Small uppercase section label, e.g. "SITES" */
 .section-title {
-  font-weight: bold;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-size: 0.9rem;
+  color: var(--puny);
   display: block;
-  border-bottom: 1px solid var(--puny);
-  margin-top: 2rem;
-  padding-bottom: 5px;
+  margin-top: 48px;
+  padding-bottom: 12px;
 }
 
-/* 5. TOOL UI */
+/* 6. CONTROLS: compact, transparent, thin neutral border */
 textarea, input {
   width: 100%;
-  background: var(--bg);
+  background: var(--surface);
   color: var(--text);
-  border: 1px solid var(--puny);
-  font-family: monospace;
-  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 6px 12px;
   box-sizing: border-box;
 }
 
-button {
-  font-family: monospace;
-  padding: 5px 10px;
-  margin: 10px 5px 10px 0;
-  cursor: pointer;
-  background: var(--bg);
+select {
+  background: var(--surface);
   color: var(--text);
-  border: 1px solid var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 6px 12px;
 }
 
-button:hover { 
-  background-color: var(--hover); 
+input[type='checkbox'], input[type='radio'] { width: auto; padding: 0; }
+
+textarea { line-height: 20px; padding: 10px 12px; }
+
+textarea:focus, input:focus, select:focus {
+  outline: none;
+  border-color: var(--text);
 }
 
-/* 6. GRID FOR INDEX */
+button {
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 18px;
+  padding: 5px 13px;
+  margin: 10px 8px 10px 0;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+button:hover { background-color: var(--surface); border-color: var(--puny); }
+
+/* Optional components */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+}
+
+.chip {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--puny);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+}
+
+/* 7. INDEX LIST: flat rows, thin dividers, title + description columns */
+.tool-list { border-top: 1px solid var(--border); }
+
+.tool-list a {
+  display: grid;
+  grid-template-columns: minmax(10rem, 17rem) 1fr;
+  gap: 24px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+}
+
+.tool-list a:hover { background-color: var(--hover); }
+.tool-list .desc { color: var(--puny); font-size: 13px; }
+
+@media (max-width: 600px) {
+  .tool-list a { grid-template-columns: 1fr; gap: 0; }
+}
+
+/* Legacy list used by extra.html: same flat treatment */
 .tool-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.5rem;
-  margin-top: 2rem;
+  gap: 12px;
+  margin-top: 24px;
   padding: 0;
 }
 
 .tool-grid li {
-  border: 1px solid var(--puny);
-  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  padding: 14px 16px;
   list-style: none;
 }
 
-.tool-grid li:hover {
-  border-color: var(--text);
-  background-color: var(--hover);
-}
-
-.tool-grid a {
-  font-weight: bold;
-  font-size: 1.1rem;
-  border: none;
-}
+.tool-grid li:hover { border-color: var(--puny); }
+.tool-grid a { font-weight: 600; }

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page.title }} | tools.eliana.lol</title>
+  {% if page.description %}<meta name="description" content="{{ page.description | escape }}">{% endif %}
+  <link rel="stylesheet" href="/global.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.svg">
+</head>
+<body>
+  {% include nav.html %}
+  <main>
+{{ content }}
+  </main>
+  <footer style="margin-top:4rem;text-align:center" class="puny">© 2026 eliana.lol • <a href="/credits.html">credits</a></footer>
+  <script src="/assets/theme.js"></script>
+</body>
+</html>
